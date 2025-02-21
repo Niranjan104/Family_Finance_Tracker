@@ -1,140 +1,269 @@
-/* General Styling */
+/* GLOBAL STYLES */
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #f4f4f4;
+  background-color: #ECEFF1; /* Light background */
 }
 
-/* Header Styling */
+/* HEADER */
 header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 20px;
-  background-color: #2196F3;
-  color: white;
+  background: #38647a; /* Blue Grey 500 */
+  color: #fff;
+  padding: 15px;
 }
 
+header h1 {
+  margin: 0;
+  flex: 1;
+  text-align: left;
+  font-size: 1.5em; /* Make the text smaller */
+}
+
+/* NAVIGATION */
 nav {
   display: flex;
   gap: 15px;
+  flex: 2;
+  justify-content: center;
 }
 
-/* Stats Section */
+nav button {
+  padding: 10px 15px;
+  background: #CFD8DC;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+nav button:hover {
+  background: #B0BEC5;
+  transform: scale(1.05);
+}
+
+nav span {
+  align-self: center;
+  font-weight: bold;
+}
+
+/* Loading Message */
+#loading-message {
+  text-align: center;
+  margin: 10px auto;
+  font-size: 18px;
+  color: #607D8B;
+}
+
+/* STATS SECTION */
 .stats {
   display: flex;
-  justify-content: space-between;
-  padding: 10px;
-  background-color: #d4eaf7;
+  justify-content: space-around;
+  margin: 20px;
+  flex-wrap: wrap;
 }
 
-.stats .box {
+.box {
   flex: 1;
+  min-width: 150px; /* Ensures boxes don't get too narrow */
+  margin: 5px;
   padding: 15px;
+  border-radius: 5px;
   text-align: center;
   font-weight: bold;
-  border-radius: 10px;
-  background-color: white;
-  box-shadow: 0px 0px 10px gray;
+  color: #fff;
 }
 
-/* Main Content Layout */
+/* Different color boxes for stats */
+.green { background: #4CAF50; }
+.pink { background: #E91E63; }
+.blue { background: #2196F3; }
+.gray { background: #9E9E9E; }
+.orange { background: #FF9800; }
+
+/* MAIN CONTENT: Expense List & Add Expense Side by Side */
 .main-content {
   display: flex;
-  flex-wrap: wrap;
   gap: 20px;
-  padding: 20px;
+  margin: 20px;
 }
 
-/* Expense List */
+/* EXPENSE LIST */
 .expense-list {
-  flex: 2;
-  background-color: white;
+  background: #FAFAFA;
+  color: #333;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
-  min-width: 320px;
+  flex: 2; /* Wider than the form */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* Add Expense Form (Aligned in Column) */
+.expense-list h2 {
+  text-align: center;
+  margin-top: 0;
+}
+
+.filter {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.filter label {
+  margin: 0 10px;
+}
+
+/* TABLE STYLING */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+th, td {
+  padding: 10px;
+  border: 1px solid #ccc;
+  text-align: center;
+}
+
+th {
+  background: #f5f5f5;
+}
+
+/* EDIT/DELETE BUTTONS */
+button.edit,
+button.delete {
+  padding: 5px 8px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  color: #fff;
+  transition: 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px; /* Ensure buttons are the same size */
+  height: 40px; /* Ensure buttons are the same size */
+}
+
+button.edit { background: #4CAF50; }
+button.edit:hover {
+  background: #43A047;
+  transform: scale(1.05);
+}
+
+button.delete { background: #F44336; }
+button.delete:hover {
+  background: #D32F2F;
+  transform: scale(1.05);
+}
+
+button.edit i,
+button.delete i {
+  margin: 0; /* Remove margin to center the icon */
+}
+
+/* ADD EXPENSE SECTION */
 .add-expense {
-  flex: 1;
-  background-color: white;
+  background: #fff;
+  color: #333;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
-  min-width: 280px;
-  
+  flex: 1; /* Narrower than the list */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .add-expense h2 {
   text-align: center;
-  color: #2196F3;
+  margin-top: 0;
 }
 
-.add-expense form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.add-expense label {
-  font-weight: bold;
-  color: #333;
-}
-
-.add-expense input, .add-expense select, .add-expense textarea {
-  width: 100%;
-  padding: 10px;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-}
-
-/* Table Styling */
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th, td {
-  border: 1px solid #ddd;
-  padding: 10px;
-  text-align: left;
-}
-
-th {
-  background-color: #2196F3;
-  color: white;
-}
-
-/* Button Styling */
-button {
-  cursor: pointer;
-  padding: 8px 12px;
+/* ADD EXPENSE BUTTON */
+.add-btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  background: #2196F3;
+  color: #fff;
   border: none;
   border-radius: 5px;
-  font-weight: bold;
-  transition: 0.3s;
+  cursor: pointer;
+  margin: 10px 0;
+  transition: 0.2s ease-in-out;
 }
 
-button:hover {
-  opacity: 0.8;
+.add-btn:hover {
+  background: #1976D2;
+  transform: scale(1.05);
 }
 
-/* Edit & Delete Buttons */
-.edit-btn {
-  background-color: #f0ad4e;
-  color: white;
+/* FORM FIELDS */
+form {
+  margin-top: 10px;
 }
 
-.delete-btn {
-  background-color: #d9534f;
-  color: white;
+form label {
+  display: block;
+  margin: 10px 0;
+}
+
+form input,
+form select,
+form textarea {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+form button {
+  width: 100%;
+  padding: 10px;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+form button:hover {
+  background: #333;
+  transform: scale(1.05);
+}
+
+/* OPTIONAL: Show Form Animation if needed */
+.show-form {
+  display: block !important;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Mobile Optimization */
 @media screen and (max-width: 768px) {
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  nav {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
   .main-content {
     flex-direction: column;
   }

@@ -16,7 +16,7 @@ class Expense(db.Model):
     name = db.Column(db.String(255), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.category_id'), nullable=False)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
-    date = db.Column(db.Date, nullable=False)
+    date = db.Column(db.Date, nullable=False)  # Ensure only the date is stored
     description = db.Column(db.Text)
     image = db.Column(db.String(255))
     created_on = db.Column(db.DateTime, default=db.func.current_timestamp())

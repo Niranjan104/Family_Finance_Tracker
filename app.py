@@ -24,57 +24,42 @@ def get_categories():
     categories = Category.query.all()
     return jsonify([{"name": cat.name, "description": cat.category_desc} for cat in categories])
 
-@app.route("/get_expense/<int:expense_id>")
-def get_expense(expense_id):
-    expense = Expense.query.get(expense_id)
-    if not expense:
-        return jsonify({"message": "Expense not found"}), 404
-
-    return jsonify({
-        "id": expense.id,
-        "name": expense.name,
-        "category": expense.category.name,
-        "category_desc": expense.category.category_desc,
-        "date": expense.date.strftime("%Y-%m-%d"),
-        "amount": expense.amount,
-        "description": expense.description,
-        "image": expense.image
-    })
-
 @app.route("/add_expense", methods=["POST"])
 def add_expense():
     data = request.form.to_dict()
-    print("Received data:", data)  # Debugging statement
 
     name = data.get("name")
     category_name = data.get("category")
-    category_desc = data.get("category-desc", "")
     date_str = data.get("date")
     amount = data.get("amount")
     description = data.get("description", "")
     file_name = None
 
     if not name or not category_name or not date_str or not amount:
-        print("Missing required fields!")  # Debugging statement
         return jsonify({"message": "Missing required fields!"}), 400
 
     try:
         amount = float(amount)
     except ValueError:
-        print("Invalid amount!")  # Debugging statement
         return jsonify({"message": "Invalid amount!"}), 400
 
-    try:
-        date = datetime.strptime(date_str, "%Y-%m-%d").date()
-    except ValueError:
-        print("Invalid date format!")  # Debugging statement
-        return jsonify({"message": "Invalid date format!"}), 400
+    if category_name == "Others":
+        category_name = data.get("custom-category")
+        category_desc = data.get("custom-category-desc")
+        if not category_name or not category_desc:
+            return jsonify({"message": "Custom category name and description are required!"}), 400
 
     category = Category.query.filter_by(name=category_name).first()
     if not category:
+        category_desc = data.get("category-desc", "")
         category = Category(name=category_name, category_desc=category_desc)
         db.session.add(category)
         db.session.commit()
+
+    try:
+        date = datetime.strptime(date_str, "%Y-%m-%d").date()  # Ensure only the date is stored
+    except ValueError:
+        return jsonify({"message": "Invalid date format!"}), 400
 
     file = request.files.get("file-upload")
     if file and file.filename:
@@ -87,14 +72,13 @@ def add_expense():
     db.session.add(new_expense)
     db.session.commit()
 
-    print("Expense added:", new_expense)  # Debugging statement
     return jsonify({"message": "Expense added successfully!"})
 
 @app.route("/get_expenses")
 def get_expenses():
     expenses = Expense.query.all()
     return jsonify([{
-        "id": exp.id, "name": exp.name, "category": exp.category.name, "date": exp.date,
+        "id": exp.id, "name": exp.name, "category": exp.category.name, "date": exp.date.strftime("%Y-%m-%d"),
         "amount": exp.amount, "description": exp.description, "image": exp.image
     } for exp in expenses])
 
@@ -109,29 +93,35 @@ def edit_expense(expense_id):
 
     expense.name = data.get("name", expense.name)
     category_name = data.get("category", expense.category.name)
-    category_desc = data.get("category-desc", "")
-    date_str = data.get("date")
+    expense.date = data.get("date", expense.date)
     expense.amount = float(data.get("amount", expense.amount))
     expense.description = data.get("description", expense.description)
 
-    try:
-        expense.date = datetime.strptime(date_str, "%Y-%m-%d").date()
-    except ValueError:
-        return jsonify({"message": "Invalid date format!"}), 400
+    if category_name == "Others":
+        category_name = data.get("custom-category")
+        category_desc = data.get("custom-category-desc")
+        if not category_name or not category_desc:
+            return jsonify({"message": "Custom category name and description are required!"}), 400
 
     category = Category.query.filter_by(name=category_name).first()
     if not category:
+        category_desc = data.get("category-desc", "")
         category = Category(name=category_name, category_desc=category_desc)
         db.session.add(category)
         db.session.commit()
     expense.category_id = category.category_id
+
+    try:
+        expense.date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()  # Ensure only the date is stored
+    except ValueError:
+        return jsonify({"message": "Invalid date format!"}), 400
 
     file = request.files.get("file-upload")
     if file and file.filename:
         os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
         file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
         file.save(file_path)
-        expense.image = file.filename
+        expense.image = file.filename  # Update file name in the database
 
     db.session.commit()
 
