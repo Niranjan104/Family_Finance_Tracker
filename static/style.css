@@ -12,7 +12,7 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 15px 20px;
-  background-color: #4CAF50;
+  background-color: #2196F3;
   color: white;
 }
 
@@ -70,7 +70,7 @@ nav {
 
 .add-expense h2 {
   text-align: center;
-  color: #4CAF50;
+  color: #2196F3;
 }
 
 .add-expense form {
@@ -104,7 +104,7 @@ th, td {
 }
 
 th {
-  background-color: #4CAF50;
+  background-color: #2196F3;
   color: white;
 }
 
