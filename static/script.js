@@ -74,6 +74,12 @@ document.getElementById("category").addEventListener("change", function() {
     }
 });
 
+// Update file upload label with file name
+document.getElementById("file-upload").addEventListener("change", function() {
+    const fileName = this.files[0] ? this.files[0].name : "Upload File";
+    document.getElementById("file-upload-label").textContent = fileName;
+});
+
 // Fetch and display expenses
 async function fetchExpenses() {
     startMessageCycle();
@@ -178,6 +184,7 @@ document.getElementById("expense-form").addEventListener("submit", async functio
     event.target.reset();
     document.getElementById("custom-category-label").style.display = "none";
     document.getElementById("expense-id").value = ""; // Clear the hidden input field
+    document.getElementById("file-upload-label").textContent = "Upload File"; // Reset file upload label
 });
 
 // Update expense field inline

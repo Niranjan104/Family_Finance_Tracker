@@ -76,7 +76,8 @@
         <label>Date: <input type="date" id="date" name="date" required /></label>
         <label>Amount(₹): <input type="number" id="amount" name="amount" min="1" required /></label>
         <label>Description: <textarea id="description" name="description"></textarea></label>
-        <label>Upload File: <input type="file" id="file-upload" name="file-upload" accept=".jpg,.png,.pdf,.jpeg,.doc,.docx,.xlsx" /></label>
+        <label for="file-upload" id="file-upload-label" class="file-upload-label">Upload File</label>
+        <input type="file" id="file-upload" name="file-upload" accept=".jpg,.png,.pdf,.jpeg,.doc,.docx,.xlsx" />
         <button type="submit" class="hover-effect">SUBMIT</button>
       </form>
     </section>

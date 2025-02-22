@@ -243,7 +243,31 @@ form button {
 }
 
 form button:hover {
-  background: #333;
+  background: #06875e;
+  transform: scale(1.05);
+}
+
+/* File Upload Styling */
+input[type="file"] {
+  display: none;
+}
+
+.file-upload-label {
+  display: inline-block;
+  padding: 10px 20px;
+  background: #2196F3;
+  color: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+  max-width: 200px; /* Set a maximum width */
+  white-space: nowrap; /* Prevent text from wrapping */
+  overflow: hidden; /* Hide overflow text */
+  text-overflow: ellipsis; /* Add ellipsis for overflow text */
+}
+
+.file-upload-label:hover {
+  background: #046cd4;
   transform: scale(1.05);
 }
 
