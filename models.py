@@ -18,5 +18,5 @@ class Expense(db.Model):
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     date = db.Column(db.Date, nullable=False)  # Ensure only the date is stored
     description = db.Column(db.Text)
-    image = db.Column(db.String(255))
+    image_data = db.Column(db.LargeBinary)  # Add this line to store image data
     created_on = db.Column(db.DateTime, default=db.func.current_timestamp())

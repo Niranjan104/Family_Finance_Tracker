@@ -49,11 +49,32 @@ async function fetchExpenses() {
                 <button class="delete-btn" onclick="deleteExpense(${exp.id})">❌</button>
             </td>
             <td>
-                ${exp.image ? `<a href="/uploads/${exp.image}" target="_blank">View</a>` : "No file"}
+                ${exp.image_url ? `<img src="${exp.image_url}" class="thumbnail" onclick="showImagePopup('${exp.image_url}')" />` : "No file"}
             </td>
         `;
         tableBody.appendChild(row);
     });
+}
+
+// Show image in a popup
+function showImagePopup(imageUrl) {
+    let popup = document.createElement("div");
+    popup.classList.add("image-popup");
+    popup.innerHTML = `
+        <div class="popup-content">
+            <span class="close-btn" onclick="closeImagePopup()">&times;</span>
+            <img src="${imageUrl}" />
+        </div>
+    `;
+    document.body.appendChild(popup);
+}
+
+// Close image popup
+function closeImagePopup() {
+    let popup = document.querySelector(".image-popup");
+    if (popup) {
+        popup.remove();
+    }
 }
 
 // Add new expense

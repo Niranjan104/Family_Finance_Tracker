@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 import os
 from datetime import datetime
+from io import BytesIO
 
 app = Flask(__name__)
 
@@ -62,12 +63,14 @@ def add_expense():
 
     file = request.files.get("file-upload")
     if file and file.filename:
-        os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-        file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
-        file.save(file_path)
-        file_name = file.filename
-
-    new_expense = Expense(name=name, category_id=category.category_id, date=date, amount=amount, description=description, image=file_name)
+        file_data = file.read()
+        new_expense = Expense(
+            name=name, category_id=category.category_id, date=date, amount=amount, description=description, image_data=file_data
+        )
+    else:
+        new_expense = Expense(
+            name=name, category_id=category.category_id, date=date, amount=amount, description=description
+        )
     db.session.add(new_expense)
     db.session.commit()
 
@@ -80,7 +83,7 @@ def get_expenses():
     expenses = Expense.query.all()
     return jsonify([{
         "id": exp.id, "name": exp.name, "category": exp.category.name if exp.category else "Unknown", "date": exp.date.strftime("%Y-%m-%d"),
-        "amount": exp.amount, "description": exp.description, "image": exp.image
+        "amount": exp.amount, "description": exp.description, "image_url": f"/get_image/{exp.id}" if exp.image_data else None
     } for exp in expenses])
 
 @app.route("/get_expense/<int:expense_id>")
@@ -97,8 +100,15 @@ def get_expense(expense_id):
         "date": expense.date.strftime("%Y-%m-%d"),
         "amount": expense.amount,
         "description": expense.description,
-        "image": expense.image
+        "image_url": f"/get_image/{expense.id}" if expense.image_data else None  # Update to use image_data
     })
+
+@app.route("/get_image/<int:expense_id>")
+def get_image(expense_id):
+    expense = Expense.query.get(expense_id)
+    if not expense or not expense.image_data:
+        return jsonify({"message": "Image not found"}), 404
+    return send_file(BytesIO(expense.image_data), mimetype='image/jpeg')
 
 @app.route("/edit_expense/<int:expense_id>", methods=["PUT"])
 def edit_expense(expense_id):
@@ -134,10 +144,8 @@ def edit_expense(expense_id):
 
     file = request.files.get("file-upload")
     if file and file.filename:
-        os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-        file_path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
-        file.save(file_path)
-        expense.image = file.filename  # Update file name in the database
+        file_data = file.read()
+        expense.image_data = file_data  # Update file data in the database
 
     db.session.commit()
 
