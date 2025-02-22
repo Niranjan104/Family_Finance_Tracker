@@ -158,8 +158,16 @@ def delete_expense(expense_id):
     if not expense:
         return jsonify({"message": "Expense not found"}), 404
 
+    category_id = expense.category_id
     db.session.delete(expense)
     db.session.commit()
+
+    # Check if the category is still used by any other expenses
+    remaining_expenses = Expense.query.filter_by(category_id=category_id).count()
+    if remaining_expenses == 0:
+        category = Category.query.get(category_id)
+        db.session.delete(category)
+        db.session.commit()
 
     return jsonify({"message": "Expense deleted successfully!"})
 
