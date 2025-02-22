@@ -45,9 +45,8 @@ def add_expense():
 
     if category_name == "Others":
         category_name = data.get("custom-category")
-        category_desc = data.get("custom-category-desc")
-        if not category_name or not category_desc:
-            return jsonify({"message": "Custom category name and description are required!"}), 400
+        if not category_name:
+            return jsonify({"message": "Custom category name is required!"}), 400
 
     category = Category.query.filter_by(name=category_name).first()
     if not category:
@@ -72,15 +71,34 @@ def add_expense():
     db.session.add(new_expense)
     db.session.commit()
 
-    return jsonify({"message": "Expense added successfully!"})
+    return jsonify({
+        "message": "Expense added successfully!"
+    })
 
 @app.route("/get_expenses")
 def get_expenses():
     expenses = Expense.query.all()
     return jsonify([{
-        "id": exp.id, "name": exp.name, "category": exp.category.name, "date": exp.date.strftime("%Y-%m-%d"),
+        "id": exp.id, "name": exp.name, "category": exp.category.name if exp.category else "Unknown", "date": exp.date.strftime("%Y-%m-%d"),
         "amount": exp.amount, "description": exp.description, "image": exp.image
     } for exp in expenses])
+
+@app.route("/get_expense/<int:expense_id>")
+def get_expense(expense_id):
+    expense = Expense.query.get(expense_id)
+    if not expense:
+        return jsonify({"message": "Expense not found"}), 404
+
+    return jsonify({
+        "id": expense.id,
+        "name": expense.name,
+        "category": expense.category.name if expense.category else "Unknown",
+        "category_desc": expense.category.category_desc if expense.category else "",
+        "date": expense.date.strftime("%Y-%m-%d"),
+        "amount": expense.amount,
+        "description": expense.description,
+        "image": expense.image
+    })
 
 @app.route("/edit_expense/<int:expense_id>", methods=["PUT"])
 def edit_expense(expense_id):
@@ -93,15 +111,13 @@ def edit_expense(expense_id):
 
     expense.name = data.get("name", expense.name)
     category_name = data.get("category", expense.category.name)
-    expense.date = data.get("date", expense.date)
     expense.amount = float(data.get("amount", expense.amount))
     expense.description = data.get("description", expense.description)
 
     if category_name == "Others":
         category_name = data.get("custom-category")
-        category_desc = data.get("custom-category-desc")
-        if not category_name or not category_desc:
-            return jsonify({"message": "Custom category name and description are required!"}), 400
+        if not category_name:
+            return jsonify({"message": "Custom category name is required!"}), 400
 
     category = Category.query.filter_by(name=category_name).first()
     if not category:

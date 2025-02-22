@@ -59,6 +59,7 @@
     <section class="add-expense">
       <h2>Add Expense</h2>
       <form id="expense-form">
+        <input type="hidden" id="expense-id" name="expense-id" />
         <label>Name: <input type="text" id="name" name="name" required /></label>
         <label>
           Category:
@@ -73,9 +74,6 @@
         </label>
         <label id="custom-category-label" style="display: none;">
           Custom Category Name: <input type="text" id="custom-category" name="custom-category" />
-        </label>
-        <label id="custom-category-desc-label" style="display: none;">
-          Custom Category Description: <input type="text" id="custom-category-desc" name="custom-category-desc" />
         </label>
         <label>
           Category Description: <input type="text" id="category-desc" name="category-desc" />

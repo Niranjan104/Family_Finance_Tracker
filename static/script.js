@@ -1,39 +1,30 @@
 const API_URL = window.location.origin;
 
+const DEFAULT_CATEGORIES = ["Food", "Transport", "Utilities", "Entertainment", "Others"];
+
 // Fetch categories and populate dropdown
 async function fetchCategories() {
-    let response = await fetch(`${API_URL}/get_categories`);
-    let categories = await response.json();
     let select = document.getElementById("category");
     select.innerHTML = '<option value="">Select</option>';
-    categories.forEach(cat => {
+    // Add default categories
+    DEFAULT_CATEGORIES.forEach(cat => {
         let option = document.createElement("option");
-        option.value = cat.name;
-        option.textContent = cat.name;
+        option.value = cat;
+        option.textContent = cat;
         select.appendChild(option);
     });
-    let othersOption = document.createElement("option");
-    othersOption.value = "Others";
-    othersOption.textContent = "Others";
-    select.appendChild(othersOption);
 }
 
 // Show/hide custom category input
 document.getElementById("category").addEventListener("change", function() {
     let customCategoryLabel = document.getElementById("custom-category-label");
-    let customCategoryDescLabel = document.getElementById("custom-category-desc-label");
     let customCategoryInput = document.getElementById("custom-category");
-    let customCategoryDescInput = document.getElementById("custom-category-desc");
     if (this.value === "Others") {
         customCategoryLabel.style.display = "block";
-        customCategoryDescLabel.style.display = "block";
         customCategoryInput.required = true;
-        customCategoryDescInput.required = true;
     } else {
         customCategoryLabel.style.display = "none";
-        customCategoryDescLabel.style.display = "none";
         customCategoryInput.required = false;
-        customCategoryDescInput.required = false;
     }
 });
 
@@ -65,14 +56,6 @@ async function fetchExpenses() {
     });
 }
 
-// Generate category dropdown options
-function generateCategoryOptions(selectedCategory) {
-    let categories = JSON.parse(localStorage.getItem("categories") || "[]");
-    return categories.map(cat => 
-        `<option value="${cat.name}" ${cat.name === selectedCategory ? "selected" : ""}>${cat.name}</option>`
-    ).join("");
-}
-
 // Add new expense
 document.getElementById("expense-form").addEventListener("submit", async function(event) {
     event.preventDefault();
@@ -82,20 +65,28 @@ document.getElementById("expense-form").addEventListener("submit", async functio
     let categorySelect = document.getElementById("category");
     if (categorySelect.value === "Others") {
         let customCategory = document.getElementById("custom-category").value;
-        let customCategoryDesc = document.getElementById("custom-category-desc").value;
         formData.set("category", customCategory);
-        formData.set("custom-category-desc", customCategoryDesc);
     }
 
-    await fetch(`${API_URL}/add_expense`, {
-        method: "POST",
+    let expenseId = document.getElementById("expense-id").value;
+    let url = `${API_URL}/add_expense`;
+    let method = "POST";
+
+    if (expenseId) {
+        url = `${API_URL}/edit_expense/${expenseId}`;
+        method = "PUT";
+    }
+
+    let response = await fetch(url, {
+        method: method,
         body: formData
     });
 
+    let result = await response.json();
     fetchExpenses();
     event.target.reset();
     document.getElementById("custom-category-label").style.display = "none";
-    document.getElementById("custom-category-desc-label").style.display = "none";
+    document.getElementById("expense-id").value = ""; // Clear the hidden input field
 });
 
 // Update expense field inline
@@ -133,8 +124,13 @@ async function deleteExpense(id) {
 // Fetch and display expense details for editing
 async function fetchExpenseDetails(id) {
     let response = await fetch(`${API_URL}/get_expense/${id}`);
+    if (response.status === 404) {
+        alert("Expense not found");
+        return;
+    }
     let expense = await response.json();
 
+    document.getElementById("expense-id").value = expense.id; // Set the hidden input field with the expense ID
     document.getElementById("name").value = expense.name;
     document.getElementById("category").value = expense.category;
     document.getElementById("category-desc").value = expense.category_desc;
@@ -142,6 +138,21 @@ async function fetchExpenseDetails(id) {
     document.getElementById("amount").value = expense.amount;
     document.getElementById("description").value = expense.description;
     document.getElementById("file-upload").value = ""; // Clear the file input
+
+    // Show custom category input if the category is "Others" or a custom category
+    if (expense.category === "Others" || !DEFAULT_CATEGORIES.includes(expense.category)) {
+        document.getElementById("custom-category-label").style.display = "block";
+        document.getElementById("custom-category").value = expense.category;
+        document.getElementById("category").value = "Others";
+    } else {
+        document.getElementById("custom-category-label").style.display = "none";
+    }
+}
+
+// Edit expense
+async function editExpense(id) {
+    await fetchExpenseDetails(id);
+    document.getElementById("expense-form").scrollIntoView({ behavior: "smooth" });
 }
 
 // Initialize
