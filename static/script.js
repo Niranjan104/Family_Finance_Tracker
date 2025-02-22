@@ -1,6 +1,6 @@
 const API_URL = window.location.origin;
 
-const DEFAULT_CATEGORIES = ["Food", "Transport", "Utilities", "Entertainment", "Others"];
+const DEFAULT_CATEGORIES = ["Food🍕", "Transport🚂 ", "Bills💸", "Entertainment🤡","Shopping🛍️","Therapy 🩺", "Others"];
 
 // Fetch categories and populate dropdown
 async function fetchCategories() {
