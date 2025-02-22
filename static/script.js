@@ -2,6 +2,52 @@ const API_URL = window.location.origin;
 
 const DEFAULT_CATEGORIES = ["Food🍕", "Transport🚂 ", "Bills💸", "Entertainment🤡","Shopping🛍️","Therapy 🩺", "Others"];
 
+const messages = [
+    "💸 Counting your regrets… I mean, transactions… 💸",
+    "🏦 Asking your bank if it’s okay to proceed… 📞",
+    "🎢 Analyzing your financial rollercoaster… 📊",
+    "🛍️ Rethinking that last online shopping spree… 🤔",
+    "🛒 Compiling all your 'just one more' purchases… 💳",
+    "💳 Checking if your card is still breathing… 🚑",
+    "🍕 Calculating how much of your salary went to food… 😋",
+    "🎰 Spinning the wheel of 'Do I have enough money?' 🤞",
+    "🏖️ Searching for your retirement fund… Found: 404 🔎",
+    "🏃‍♂️ Watching your money run faster than you… 💨",
+    "📅 Estimating how long until payday saves you… ⏳",
+    "🔎 Looking for savings… Please wait… 🧐",
+    "💰 Your money was here… and now it’s gone! 💨",
+    "🚀 Sending a rescue mission for your budget… 🆘",
+    "🤷‍♂️ Trying to explain your expenses to your future self… 😬"
+];
+
+let messageIndex = 0;
+let charIndex = 0;
+let typingInterval;
+
+function typeMessage() {
+    const message = messages[messageIndex];
+    const loadingMessageElement = document.getElementById("loading-message");
+    loadingMessageElement.textContent = message.slice(0, charIndex);
+    charIndex++;
+
+    if (charIndex > message.length) {
+        clearInterval(typingInterval);
+        setTimeout(() => {
+            loadingMessageElement.classList.add("fade-out");
+            setTimeout(() => {
+                messageIndex = (messageIndex + 1) % messages.length;
+                charIndex = 0;
+                loadingMessageElement.classList.remove("fade-out");
+                typingInterval = setInterval(typeMessage, 75);
+            }, 500); // Wait for the fade-out effect to complete
+        }, 2000); // Wait for 2 seconds before typing the next message
+    }
+}
+
+function startMessageCycle() {
+    typingInterval = setInterval(typeMessage, 100);
+}
+
 // Fetch categories and populate dropdown
 async function fetchCategories() {
     let select = document.getElementById("category");
@@ -30,6 +76,7 @@ document.getElementById("category").addEventListener("change", function() {
 
 // Fetch and display expenses
 async function fetchExpenses() {
+    startMessageCycle();
     let response = await fetch(`${API_URL}/get_expenses`);
     let expenses = await response.json();
     let tableBody = document.getElementById("expense-table-body");

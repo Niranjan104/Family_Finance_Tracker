@@ -13,7 +13,7 @@ header {
   align-items: center;
   background: #38647a; /* Blue Grey 500 */
   color: #fff;
-  padding: 15px;
+  padding: 25px;
 }
 
 header h1 {
@@ -53,9 +53,18 @@ nav span {
 /* Loading Message */
 #loading-message {
   text-align: center;
-  margin: 10px auto;
-  font-size: 18px;
+  margin: 5px auto;
+  font-size: 15px;
   color: #607D8B;
+  transition: opacity 0.5s ease-in-out; /* Add transition for smooth fade-out */
+  height: 20px; /* Set a fixed height to prevent content shifting */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fade-out {
+  opacity: 0;
 }
 
 /* STATS SECTION */
@@ -87,7 +96,7 @@ nav span {
 /* MAIN CONTENT: Expense List & Add Expense Side by Side */
 .main-content {
   display: flex;
-  gap: 20px;
+  gap: 10px;
   margin: 20px;
 }
 
@@ -97,7 +106,7 @@ nav span {
   color: #333;
   padding: 20px;
   border-radius: 10px;
-  flex: 2; /* Wider than the form */
+  flex: 3; /* Wider than the form */
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
@@ -118,7 +127,10 @@ nav span {
 /* TABLE STYLING */
 table {
   width: 100%;
-  border-collapse: collapse;
+  border-spacing: 0;
+  border-radius: 12px; /* Makes the corners rounded */
+  overflow: hidden; 
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2); /* Adds a soft shadow */
   margin-top: 10px;
 }
 
@@ -129,7 +141,7 @@ th, td {
 }
 
 th {
-  background: #f5f5f5;
+  background: #dedddd;
 }
 
 /* EDIT/DELETE BUTTONS */
@@ -215,14 +227,14 @@ form textarea {
   padding: 8px;
   margin-top: 5px;
   box-sizing: border-box;
-  border: 1px solid #ccc;
+  border: 1px solid #bab7b7;
   border-radius: 4px;
 }
 
 form button {
   width: 100%;
   padding: 10px;
-  background: #000;
+  background: #343333;
   color: #fff;
   border: none;
   border-radius: 5px;
