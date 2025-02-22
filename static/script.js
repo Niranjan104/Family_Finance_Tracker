@@ -61,7 +61,9 @@ function getFileLink(url, fileType) {
     if (imageTypes.includes(fileType)) {
         return `<img src="${url}" class="thumbnail" onclick="showImagePopup('${url}')" />`;
     } else if (fileType === "application/pdf") {
-        return `<a href="${url}" target="_blank">View PDF</a>`;
+        return `<a href="${url}" target="_blank">👀📄</a>`;
+    } else if (fileType === "application/msword" || fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+        return `<a href="${url}" target="_blank">📥📄</a>`;
     } else {
         return `<a href="${url}" target="_blank">View File</a>`;
     }
