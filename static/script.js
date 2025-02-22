@@ -49,11 +49,32 @@ async function fetchExpenses() {
                 <button class="delete-btn" onclick="deleteExpense(${exp.id})">❌</button>
             </td>
             <td>
-                ${exp.image_url ? `<img src="${exp.image_url}" class="thumbnail" onclick="showImagePopup('${exp.image_url}')" />` : "No file"}
+                ${exp.image_url ? getFileLink(exp.image_url, exp.file_type) : "No file"}
             </td>
         `;
         tableBody.appendChild(row);
     });
+}
+
+function getFileLink(url, fileType) {
+    const imageTypes = ["image/jpeg", "image/png"];
+    if (imageTypes.includes(fileType)) {
+        return `<img src="${url}" class="thumbnail" onclick="showImagePopup('${url}')" />`;
+    } else if (fileType === "application/pdf") {
+        return `<a href="${url}" target="_blank">View PDF</a>`;
+    } else {
+        return `<a href="${url}" target="_blank">View File</a>`;
+    }
+}
+
+function openPdfInNewTab(url) {
+    fetch(url)
+        .then(response => response.blob())
+        .then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            window.open(blobUrl, '_blank');
+        })
+        .catch(error => console.error('Error opening PDF:', error));
 }
 
 // Show image in a popup

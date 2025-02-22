@@ -64,8 +64,9 @@ def add_expense():
     file = request.files.get("file-upload")
     if file and file.filename:
         file_data = file.read()
+        file_type = file.mimetype
         new_expense = Expense(
-            name=name, category_id=category.category_id, date=date, amount=amount, description=description, image_data=file_data
+            name=name, category_id=category.category_id, date=date, amount=amount, description=description, image_data=file_data, file_type=file_type
         )
     else:
         new_expense = Expense(
@@ -83,7 +84,7 @@ def get_expenses():
     expenses = Expense.query.all()
     return jsonify([{
         "id": exp.id, "name": exp.name, "category": exp.category.name if exp.category else "Unknown", "date": exp.date.strftime("%Y-%m-%d"),
-        "amount": exp.amount, "description": exp.description, "image_url": f"/get_image/{exp.id}" if exp.image_data else None
+        "amount": exp.amount, "description": exp.description, "image_url": f"/get_file/{exp.id}" if exp.image_data else None, "file_type": exp.file_type
     } for exp in expenses])
 
 @app.route("/get_expense/<int:expense_id>")
@@ -100,15 +101,16 @@ def get_expense(expense_id):
         "date": expense.date.strftime("%Y-%m-%d"),
         "amount": expense.amount,
         "description": expense.description,
-        "image_url": f"/get_image/{expense.id}" if expense.image_data else None  # Update to use image_data
+        "image_url": f"/get_file/{expense.id}" if expense.image_data else None,
+        "file_type": expense.file_type
     })
 
-@app.route("/get_image/<int:expense_id>")
-def get_image(expense_id):
+@app.route("/get_file/<int:expense_id>")
+def get_file(expense_id):
     expense = Expense.query.get(expense_id)
     if not expense or not expense.image_data:
-        return jsonify({"message": "Image not found"}), 404
-    return send_file(BytesIO(expense.image_data), mimetype='image/jpeg')
+        return jsonify({"message": "File not found"}), 404
+    return send_file(BytesIO(expense.image_data), mimetype=expense.file_type)
 
 @app.route("/edit_expense/<int:expense_id>", methods=["PUT"])
 def edit_expense(expense_id):
@@ -146,6 +148,7 @@ def edit_expense(expense_id):
     if file and file.filename:
         file_data = file.read()
         expense.image_data = file_data  # Update file data in the database
+        expense.file_type = file.mimetype  # Update file type in the database
 
     db.session.commit()
 

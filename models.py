@@ -19,4 +19,5 @@ class Expense(db.Model):
     date = db.Column(db.Date, nullable=False)  # Ensure only the date is stored
     description = db.Column(db.Text)
     image_data = db.Column(db.LargeBinary)  # Add this line to store image data
+    file_type = db.Column(db.String(50))  # Add this line to store the file type
     created_on = db.Column(db.DateTime, default=db.func.current_timestamp())
