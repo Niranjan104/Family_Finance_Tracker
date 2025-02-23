@@ -334,3 +334,18 @@ fetchCategories().then(() => {
 
 // Automatically change the message every 3 seconds
 setInterval(displayRandomMessage, 3000);
+
+// Toggle between dark mode and light mode
+document.getElementById("dark-mode-toggle").addEventListener("click", function() {
+    document.body.classList.toggle("dark-mode");
+    const isDarkMode = document.body.classList.contains("dark-mode");
+    localStorage.setItem("darkMode", isDarkMode ? "enabled" : "disabled");
+});
+
+// Check for saved dark mode preference on page load
+window.addEventListener("load", function() {
+    const darkMode = localStorage.getItem("darkMode");
+    if (darkMode === "enabled") {
+        document.body.classList.add("dark-mode");
+    }
+});
