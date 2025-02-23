@@ -67,6 +67,20 @@ nav span {
   opacity: 0;
 }
 
+/* Message Container */
+#message-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 10px; /* Adjust height as needed */
+  margin: 10px 0; /* Add some margin for spacing */
+}
+
+#message {
+  font-size: 18px;
+  color: #607D8B;
+}
+
 /* STATS SECTION */
 .stats {
   display: flex;

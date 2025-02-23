@@ -2,21 +2,6 @@ const API_URL = window.location.origin;
 
 const DEFAULT_CATEGORIES = ["Food🍕", "Transport🚂 ", "Bills💸", "Entertainment🤡","Shopping🛍️","Therapy 🩺", "Others"];
 
-// Function to strip emojis from a string
-function stripEmojis(text) {
-    return text.replace(/[\u{1F600}-\u{1F64F}]/gu, '')
-               .replace(/[\u{1F300}-\u{1F5FF}]/gu, '')
-               .replace(/[\u{1F680}-\u{1F6FF}]/gu, '')
-               .replace(/[\u{1F700}-\u{1F77F}]/gu, '')
-               .replace(/[\u{1F780}-\u{1F7FF}]/gu, '')
-               .replace(/[\u{1F800}-\u{1F8FF}]/gu, '')
-               .replace(/[\u{1F900}-\u{1F9FF}]/gu, '')
-               .replace(/[\u{1FA00}-\u{1FA6F}]/gu, '')
-               .replace(/[\u{1FA70}-\u{1FAFF}]/gu, '')
-               .replace(/[\u{2600}-\u{26FF}]/gu, '')
-               .replace(/[\u{2700}-\u{27BF}]/gu, '');
-}
-
 const messages = [
     "💸 Counting your regrets… I mean, transactions… 💸",
     "🏦 Asking your bank if it’s okay to proceed… 📞",
@@ -35,32 +20,26 @@ const messages = [
     "🤷‍♂️ Trying to explain your expenses to your future self… 😬"
 ];
 
-let messageIndex = 0;
-let charIndex = 0;
-let typingInterval;
-
-function typeMessage() {
-    const message = messages[messageIndex];
-    const loadingMessageElement = document.getElementById("loading-message");
-    loadingMessageElement.textContent = message.slice(0, charIndex);
-    charIndex++;
-
-    if (charIndex > message.length) {
-        clearInterval(typingInterval);
-        setTimeout(() => {
-            loadingMessageElement.classList.add("fade-out");
-            setTimeout(() => {
-                messageIndex = (messageIndex + 1) % messages.length;
-                charIndex = 0;
-                loadingMessageElement.classList.remove("fade-out");
-                typingInterval = setInterval(typeMessage, 75);
-            }, 500); // Wait for the fade-out effect to complete
-        }, 2000); // Wait for 2 seconds before typing the next message
-    }
+function displayRandomMessage() {
+    const messageContainer = document.getElementById("message");
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    messageContainer.textContent = randomMessage;
+    messageContainer.style.textAlign = "center"; // Ensure the message is displayed in the center
 }
 
-function startMessageCycle() {
-    typingInterval = setInterval(typeMessage, 100);
+// Function to strip emojis from a string
+function stripEmojis(text) {
+    return text.replace(/[\u{1F600}-\u{1F64F}]/gu, '')
+               .replace(/[\u{1F300}-\u{1F5FF}]/gu, '')
+               .replace(/[\u{1F680}-\u{1F6FF}]/gu, '')
+               .replace(/[\u{1F700}-\u{1F77F}]/gu, '')
+               .replace(/[\u{1F780}-\u{1F7FF}]/gu, '')
+               .replace(/[\u{1F800}-\u{1F8FF}]/gu, '')
+               .replace(/[\u{1F900}-\u{1F9FF}]/gu, '')
+               .replace(/[\u{1FA00}-\u{1FA6F}]/gu, '')
+               .replace(/[\u{1FA70}-\u{1FAFF}]/gu, '')
+               .replace(/[\u{2600}-\u{26FF}]/gu, '')
+               .replace(/[\u{2700}-\u{27BF}]/gu, '');
 }
 
 // Fetch categories and populate dropdown
@@ -97,7 +76,6 @@ document.getElementById("file-upload").addEventListener("change", function() {
 
 // Fetch and display expenses
 async function fetchExpenses(fromDate = "", toDate = "") {
-    startMessageCycle();
     let url = `${API_URL}/get_expenses`;
     if (fromDate && toDate) {
         url += `?from_date=${fromDate}&to_date=${toDate}`;
@@ -202,6 +180,7 @@ document.getElementById("expense-form").addEventListener("submit", async functio
 
     let result = await response.json();
     fetchExpenses();
+    fetchStats(); // Fetch and update stats immediately
     event.target.reset();
     document.getElementById("custom-category-label").style.display = "none";
     document.getElementById("expense-id").value = ""; // Clear the hidden input field
@@ -236,8 +215,13 @@ async function uploadImage(id, file) {
 
 // Delete expense
 async function deleteExpense(id) {
+    if (!confirm("😃Sure you want to Delete?")) {
+        return; // Exit if the user cancels the deletion
+    }
+
     await fetch(`${API_URL}/delete_expense/${id}`, { method: "DELETE" });
     fetchExpenses();
+    setTimeout(fetchStats, 500); // Add a delay to ensure the database updates before fetching stats
 }
 
 // Fetch and display expense details for editing
@@ -278,6 +262,28 @@ async function editExpense(id) {
 document.getElementById("filter-btn").addEventListener("click", function() {
     const fromDate = document.getElementById("from-date").value;
     const toDate = document.getElementById("to-date").value;
+
+    if (!fromDate || !toDate) {
+        const alertBox = document.createElement("div");
+        alertBox.textContent = "😯Please fill out both date fields😅 ";
+        alertBox.style.position = "fixed";
+        alertBox.style.top = "5px";
+        alertBox.style.left = "50%";
+        alertBox.style.transform = "translateX(-50%)";
+        alertBox.style.backgroundColor = "#f44336";
+        alertBox.style.color = "#fff";
+        alertBox.style.padding = "20px";
+        alertBox.style.borderRadius = "20px";
+        alertBox.style.boxShadow = "3px 3px 10px rgba(0, 0, 0, 0.1)";
+        document.body.appendChild(alertBox);
+
+        setTimeout(() => {
+            document.body.removeChild(alertBox);
+        }, 2000); // Automatically close the alert after 2 seconds
+
+        return;
+    }
+
     fetchExpenses(fromDate, toDate);
 });
 
@@ -288,7 +294,23 @@ document.getElementById("refresh-btn").addEventListener("click", function() {
     fetchExpenses();
 });
 
+// Fetch and update stats
+async function fetchStats() {
+    let response = await fetch(`${API_URL}/get_stats`);
+    let stats = await response.json();
+
+    document.getElementById("total-spent-value").textContent = stats.total_spent.toFixed(2);
+    document.getElementById("expense-count-value").textContent = stats.expense_count;
+    document.getElementById("last-7days-spent-value").textContent = stats.last_7days_spent.toFixed(2);
+    document.getElementById("highest-category-value").textContent = stats.highest_category;
+    document.getElementById("highest-amount-value").textContent = stats.highest_amount.toFixed(2);
+}
+
 // Initialize
 fetchCategories().then(() => {
     fetchExpenses();
+    fetchStats();
 });
+
+// Automatically change the message every 3 seconds
+setInterval(displayRandomMessage, 3000);

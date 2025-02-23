@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 import re
 
@@ -110,7 +110,7 @@ def get_expenses():
     if to_date:
         query = query.filter(Expense.date <= to_date)
 
-    expenses = query.all()
+    expenses = query.order_by(Expense.date.desc()).all()  # Sort by date in descending order
     return jsonify([{
         "id": exp.id, "name": exp.name, "category": exp.category.name if exp.category else "Unknown", "date": exp.date.strftime("%Y-%m-%d"),
         "amount": exp.amount, "description": exp.description, "image_url": f"/get_file/{exp.id}" if exp.image_data else None, "file_type": exp.file_type
@@ -202,6 +202,31 @@ def delete_expense(expense_id):
         db.session.commit()
 
     return jsonify({"message": "Expense deleted successfully!"})
+
+@app.route("/get_stats")
+def get_stats():
+    total_spent = db.session.query(db.func.sum(Expense.amount)).scalar() or 0
+    expense_count = db.session.query(db.func.count(Expense.id)).scalar() or 0
+
+    last_7days_spent = db.session.query(db.func.sum(Expense.amount)).filter(
+        Expense.date >= (datetime.now().date() - timedelta(days=7))
+    ).scalar() or 0
+
+    highest_category = db.session.query(
+        Category.name, db.func.sum(Expense.amount)
+    ).join(Expense).group_by(Category.name).order_by(db.func.sum(Expense.amount).desc()).first()
+
+    highest_amount = db.session.query(db.func.max(Expense.amount)).scalar() or 0
+
+    highest_category_name = highest_category[0] if highest_category else "N/A"
+
+    return jsonify({
+        "total_spent": float(total_spent),
+        "expense_count": expense_count,
+        "last_7days_spent": float(last_7days_spent),
+        "highest_category": highest_category_name,
+        "highest_amount": float(highest_amount)
+    })
 
 if __name__ == "__main__":
     app.run(debug=True)
