@@ -35,6 +35,22 @@ def strip_emojis(text):
         "]+", flags=re.UNICODE)
     return emoji_pattern.sub(r'', text)
 
+# Function to attach emojis to categories
+def attach_emojis(category_name):
+    emoji_map = {
+        "Food": "🍕",
+        "Transport": "🚂",
+        "Bills": "💸",
+        "Entertainment": "🤡",
+        "Shopping": "🛍️",
+        "Therapy": "🩺",
+        "Others": ""
+    }
+    for key, emoji in emoji_map.items():
+        if key in category_name:
+            return f"{category_name}{emoji}"
+    return category_name
+
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -49,7 +65,7 @@ def add_expense():
     data = request.form.to_dict()
 
     name = data.get("name")
-    category_name = strip_emojis(data.get("category"))
+    category_name = data.get("category")
     date_str = data.get("date")
     amount = data.get("amount")
     description = data.get("description", "")
@@ -64,14 +80,14 @@ def add_expense():
         return jsonify({"message": "Invalid amount!"}), 400
 
     if category_name == "Others":
-        category_name = strip_emojis(data.get("custom-category"))
+        category_name = data.get("custom-category")
         if not category_name:
             return jsonify({"message": "Custom category name is required!"}), 400
 
-    category = Category.query.filter_by(name=category_name).first()
+    category = Category.query.filter_by(name=strip_emojis(category_name)).first()
     if not category:
         category_desc = data.get("category-desc", "")
-        category = Category(name=category_name, category_desc=category_desc)
+        category = Category(name=strip_emojis(category_name), category_desc=category_desc)
         db.session.add(category)
         db.session.commit()
 
@@ -112,7 +128,7 @@ def get_expenses():
 
     expenses = query.order_by(Expense.date.desc()).all()  # Sort by date in descending order
     return jsonify([{
-        "id": exp.id, "name": exp.name, "category": exp.category.name if exp.category else "Unknown", "date": exp.date.strftime("%Y-%m-%d"),
+        "id": exp.id, "name": exp.name, "category": attach_emojis(exp.category.name) if exp.category else "Unknown", "date": exp.date.strftime("%Y-%m-%d"),
         "amount": exp.amount, "description": exp.description, "image_url": f"/get_file/{exp.id}" if exp.image_data else None, "file_type": exp.file_type
     } for exp in expenses])
 
@@ -125,7 +141,7 @@ def get_expense(expense_id):
     return jsonify({
         "id": expense.id,
         "name": expense.name,
-        "category": expense.category.name if expense.category else "Unknown",
+        "category": attach_emojis(exp.category.name) if expense.category else "Unknown",
         "category_desc": expense.category.category_desc if expense.category else "",
         "date": expense.date.strftime("%Y-%m-%d"),
         "amount": expense.amount,
@@ -151,19 +167,19 @@ def edit_expense(expense_id):
     data = request.form.to_dict()
 
     expense.name = data.get("name", expense.name)
-    category_name = strip_emojis(data.get("category", expense.category.name))
+    category_name = data.get("category", expense.category.name)
     expense.amount = float(data.get("amount", expense.amount))
     expense.description = data.get("description", expense.description)
 
     if category_name == "Others":
-        category_name = strip_emojis(data.get("custom-category"))
+        category_name = data.get("custom-category")
         if not category_name:
             return jsonify({"message": "Custom category name is required!"}), 400
 
-    category = Category.query.filter_by(name=category_name).first()
+    category = Category.query.filter_by(name=strip_emojis(category_name)).first()
     if not category:
         category_desc = data.get("category-desc", "")
-        category = Category(name=category_name, category_desc=category_desc)
+        category = Category(name=strip_emojis(category_name), category_desc=category_desc)
         db.session.add(category)
         db.session.commit()
     expense.category_id = category.category_id
@@ -196,7 +212,7 @@ def delete_expense(expense_id):
 
     # Check if the category is still used by any other expenses
     remaining_expenses = Expense.query.filter_by(category_id=category_id).count()
-    if remaining_expenses == 0:
+    if (remaining_expenses == 0):
         category = Category.query.get(category_id)
         db.session.delete(category)
         db.session.commit()
@@ -218,7 +234,7 @@ def get_stats():
 
     highest_amount = db.session.query(db.func.max(Expense.amount)).scalar() or 0
 
-    highest_category_name = highest_category[0] if highest_category else "N/A"
+    highest_category_name = attach_emojis(highest_category[0]) if highest_category else "N/A"
 
     return jsonify({
         "total_spent": float(total_spent),

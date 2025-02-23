@@ -49,7 +49,7 @@ async function fetchCategories() {
     // Add default categories
     DEFAULT_CATEGORIES.forEach(cat => {
         let option = document.createElement("option");
-        option.value = stripEmojis(cat);
+        option.value = cat; // Do not strip emojis here
         option.textContent = cat;
         select.appendChild(option);
     });
