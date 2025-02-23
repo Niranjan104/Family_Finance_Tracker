@@ -100,7 +100,17 @@ def add_expense():
 
 @app.route("/get_expenses")
 def get_expenses():
-    expenses = Expense.query.all()
+    from_date = request.args.get("from_date")
+    to_date = request.args.get("to_date")
+
+    query = Expense.query
+
+    if from_date:
+        query = query.filter(Expense.date >= from_date)
+    if to_date:
+        query = query.filter(Expense.date <= to_date)
+
+    expenses = query.all()
     return jsonify([{
         "id": exp.id, "name": exp.name, "category": exp.category.name if exp.category else "Unknown", "date": exp.date.strftime("%Y-%m-%d"),
         "amount": exp.amount, "description": exp.description, "image_url": f"/get_file/{exp.id}" if exp.image_data else None, "file_type": exp.file_type

@@ -124,6 +124,38 @@ nav span {
   margin: 0 10px;
 }
 
+/* Filter and Refresh Buttons */
+.filter button {
+  width: 30px; /* Set a fixed width */
+  height: 30px; /* Set a fixed height */
+  background: #4CAF50; /* Green background */
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+  margin-left: 10px; /* Add some space between buttons */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px; /* Adjust font size for icons */
+}
+
+.filter #filter-btn:hover {
+  background: #5cca60;
+  box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2); 
+}
+
+/* Refresh Button */
+.filter #refresh-btn {
+  background: #FF9800; /* Orange background */
+}
+
+.filter #refresh-btn:hover {
+  background: #ffae34;
+  box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2); 
+}
+
 /* TABLE STYLING */
 table {
   width: 100%;

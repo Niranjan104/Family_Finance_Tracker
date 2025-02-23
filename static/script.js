@@ -96,9 +96,13 @@ document.getElementById("file-upload").addEventListener("change", function() {
 });
 
 // Fetch and display expenses
-async function fetchExpenses() {
+async function fetchExpenses(fromDate = "", toDate = "") {
     startMessageCycle();
-    let response = await fetch(`${API_URL}/get_expenses`);
+    let url = `${API_URL}/get_expenses`;
+    if (fromDate && toDate) {
+        url += `?from_date=${fromDate}&to_date=${toDate}`;
+    }
+    let response = await fetch(url);
     let expenses = await response.json();
     let tableBody = document.getElementById("expense-table-body");
     tableBody.innerHTML = "";
@@ -269,6 +273,20 @@ async function editExpense(id) {
     await fetchExpenseDetails(id);
     document.getElementById("expense-form").scrollIntoView({ behavior: "smooth" });
 }
+
+// Filter expenses by date
+document.getElementById("filter-btn").addEventListener("click", function() {
+    const fromDate = document.getElementById("from-date").value;
+    const toDate = document.getElementById("to-date").value;
+    fetchExpenses(fromDate, toDate);
+});
+
+// Refresh the filter and bring back the expense list to normal
+document.getElementById("refresh-btn").addEventListener("click", function() {
+    document.getElementById("from-date").value = "";
+    document.getElementById("to-date").value = "";
+    fetchExpenses();
+});
 
 // Initialize
 fetchCategories().then(() => {
