@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 from datetime import datetime
 from io import BytesIO
+import re
 
 app = Flask(__name__)
 
@@ -15,6 +16,24 @@ from models import db, Expense, Category
 with app.app_context():
     db.init_app(app)
     db.create_all()
+
+# Function to strip emojis from a string
+def strip_emojis(text):
+    emoji_pattern = re.compile(
+        "["
+        "\U0001F600-\U0001F64F"  # emoticons
+        "\U0001F300-\U0001F5FF"  # symbols & pictographs
+        "\U0001F680-\U0001F6FF"  # transport & map symbols
+        "\U0001F700-\U0001F77F"  # alchemical symbols
+        "\U0001F780-\U0001F7FF"  # Geometric Shapes Extended
+        "\U0001F800-\U0001F8FF"  # Supplemental Arrows-C
+        "\U0001F900-\U0001F9FF"  # Supplemental Symbols and Pictographs
+        "\U0001FA00-\U0001FA6F"  # Chess Symbols
+        "\U0001FA70-\U0001FAFF"  # Symbols and Pictographs Extended-A
+        "\U00002600-\U000026FF"  # Miscellaneous Symbols
+        "\U00002700-\U000027BF"  # Dingbats
+        "]+", flags=re.UNICODE)
+    return emoji_pattern.sub(r'', text)
 
 @app.route("/")
 def home():
@@ -30,7 +49,7 @@ def add_expense():
     data = request.form.to_dict()
 
     name = data.get("name")
-    category_name = data.get("category")
+    category_name = strip_emojis(data.get("category"))
     date_str = data.get("date")
     amount = data.get("amount")
     description = data.get("description", "")
@@ -45,7 +64,7 @@ def add_expense():
         return jsonify({"message": "Invalid amount!"}), 400
 
     if category_name == "Others":
-        category_name = data.get("custom-category")
+        category_name = strip_emojis(data.get("custom-category"))
         if not category_name:
             return jsonify({"message": "Custom category name is required!"}), 400
 
@@ -122,12 +141,12 @@ def edit_expense(expense_id):
     data = request.form.to_dict()
 
     expense.name = data.get("name", expense.name)
-    category_name = data.get("category", expense.category.name)
+    category_name = strip_emojis(data.get("category", expense.category.name))
     expense.amount = float(data.get("amount", expense.amount))
     expense.description = data.get("description", expense.description)
 
     if category_name == "Others":
-        category_name = data.get("custom-category")
+        category_name = strip_emojis(data.get("custom-category"))
         if not category_name:
             return jsonify({"message": "Custom category name is required!"}), 400
 

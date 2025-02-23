@@ -2,6 +2,21 @@ const API_URL = window.location.origin;
 
 const DEFAULT_CATEGORIES = ["Food🍕", "Transport🚂 ", "Bills💸", "Entertainment🤡","Shopping🛍️","Therapy 🩺", "Others"];
 
+// Function to strip emojis from a string
+function stripEmojis(text) {
+    return text.replace(/[\u{1F600}-\u{1F64F}]/gu, '')
+               .replace(/[\u{1F300}-\u{1F5FF}]/gu, '')
+               .replace(/[\u{1F680}-\u{1F6FF}]/gu, '')
+               .replace(/[\u{1F700}-\u{1F77F}]/gu, '')
+               .replace(/[\u{1F780}-\u{1F7FF}]/gu, '')
+               .replace(/[\u{1F800}-\u{1F8FF}]/gu, '')
+               .replace(/[\u{1F900}-\u{1F9FF}]/gu, '')
+               .replace(/[\u{1FA00}-\u{1FA6F}]/gu, '')
+               .replace(/[\u{1FA70}-\u{1FAFF}]/gu, '')
+               .replace(/[\u{2600}-\u{26FF}]/gu, '')
+               .replace(/[\u{2700}-\u{27BF}]/gu, '');
+}
+
 const messages = [
     "💸 Counting your regrets… I mean, transactions… 💸",
     "🏦 Asking your bank if it’s okay to proceed… 📞",
@@ -55,7 +70,7 @@ async function fetchCategories() {
     // Add default categories
     DEFAULT_CATEGORIES.forEach(cat => {
         let option = document.createElement("option");
-        option.value = cat;
+        option.value = stripEmojis(cat);
         option.textContent = cat;
         select.appendChild(option);
     });
@@ -98,8 +113,8 @@ async function fetchExpenses() {
             <td>${exp.description || ""}</td>
             <td>₹${exp.amount}</td>
             <td>
-                <button class="edit-btn" onclick="editExpense(${exp.id})">✏️</button>
-                <button class="delete-btn" onclick="deleteExpense(${exp.id})">❌</button>
+                <button class="edit-btn edit" onclick="editExpense(${exp.id})">✏️</button>
+                <button class="delete-btn delete" onclick="deleteExpense(${exp.id})">❌</button>
             </td>
             <td>
                 ${exp.image_url ? getFileLink(exp.image_url, exp.file_type) : "No file"}
@@ -162,7 +177,9 @@ document.getElementById("expense-form").addEventListener("submit", async functio
     let categorySelect = document.getElementById("category");
     if (categorySelect.value === "Others") {
         let customCategory = document.getElementById("custom-category").value;
-        formData.set("category", customCategory);
+        formData.set("category", stripEmojis(customCategory));
+    } else {
+        formData.set("category", stripEmojis(categorySelect.value));
     }
 
     let expenseId = document.getElementById("expense-id").value;

@@ -144,6 +144,10 @@ th {
   background: #dedddd;
 }
 
+tr:hover {
+  background: #f1f1f1;
+}
+
 /* EDIT/DELETE BUTTONS */
 button.edit,
 button.delete {
@@ -156,20 +160,22 @@ button.delete {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px; /* Ensure buttons are the same size */
-  height: 40px; /* Ensure buttons are the same size */
+  width: 35px; /* Ensure buttons are the same size */
+  height: 35px; /* Ensure buttons are the same size */
 }
 
-button.edit { background: #4CAF50; }
+button.edit { background: #f1f1f1; }
 button.edit:hover {
-  background: #43A047;
+  background: #38e141;
   transform: scale(1.05);
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-button.delete { background: #F44336; }
+button.delete { background: #f1f1f1; }
 button.delete:hover {
-  background: #D32F2F;
+  background: #fdc11e;
   transform: scale(1.05);
+  box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 button.edit i,
@@ -181,10 +187,12 @@ button.delete i {
 .add-expense {
   background: #fff;
   color: #333;
-  padding: 20px;
-  border-radius: 10px;
+  font-weight: 300; 
+  padding: 15px;
+  border-radius: 20px;
   flex: 1; /* Narrower than the list */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+  transition: border 0.2s ease-in-out; /* Add transition for smooth border change */
 }
 
 .add-expense h2 {
@@ -192,9 +200,15 @@ button.delete i {
   margin-top: 0;
 }
 
+/* Hover effect for labels inside add-expense block */
+.add-expense label:hover {
+  color: #040404; /* Change text color on hover */
+  font-weight: 600; /* Make text bold on hover */
+}
+
 /* ADD EXPENSE BUTTON */
 .add-btn {
-  padding: 10px 20px;
+  padding: 100px 20px;
   font-size: 16px;
   background: #2196F3;
   color: #fff;
@@ -212,25 +226,33 @@ button.delete i {
 
 /* FORM FIELDS */
 form {
-  margin-top: 10px;
+  margin-top: 5px;
 }
 
 form label {
   display: block;
-  margin: 10px 0;
+  margin: 5px 0;
 }
 
 form input,
 form select,
 form textarea {
   width: 100%;
-  padding: 8px;
+  padding: 10px;
   margin-top: 5px;
   box-sizing: border-box;
   border: 1px solid #bab7b7;
   border-radius: 4px;
+  outline: none; /* Remove default focus outline */
 }
 
+form input:hover,
+form select:hover,
+form textarea:hover {
+  box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.2); /* Apply box-shadow on hover */
+}
+
+/* FOR SUBMIT BUTTON */
 form button {
   width: 100%;
   padding: 10px;
@@ -240,11 +262,12 @@ form button {
   border-radius: 5px;
   cursor: pointer;
   transition: 0.2s ease-in-out;
+  outline: none; /* Remove default focus outline */
 }
 
 form button:hover {
   background: #06875e;
-  transform: scale(1.05);
+  box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.2); /* Apply box-shadow on hover */
 }
 
 /* File Upload Styling */
@@ -254,10 +277,10 @@ input[type="file"] {
 
 .file-upload-label {
   display: inline-block;
-  padding: 10px 20px;
-  background: #2196F3;
+  padding: 8px 20px;
+  background: #046cd4;
   color: #fff;
-  border-radius: 5px;
+  border-radius: 10px;
   cursor: pointer;
   transition: 0.2s ease-in-out;
   max-width: 200px; /* Set a maximum width */
@@ -267,8 +290,8 @@ input[type="file"] {
 }
 
 .file-upload-label:hover {
-  background: #046cd4;
-  transform: scale(1.05);
+  background: #1987fe;
+  box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.2); /* Apply box-shadow on hover */
 }
 
 /* OPTIONAL: Show Form Animation if needed */
