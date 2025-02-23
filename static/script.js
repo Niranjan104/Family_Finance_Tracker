@@ -104,6 +104,9 @@ async function fetchExpenses(fromDate = "", toDate = "") {
         `;
         tableBody.appendChild(row);
     });
+
+    // Update stats based on filtered expenses
+    updateStats(fromDate, toDate);
 }
 
 function getFileLink(url, fileType) {
@@ -292,11 +295,28 @@ document.getElementById("refresh-btn").addEventListener("click", function() {
     document.getElementById("from-date").value = "";
     document.getElementById("to-date").value = "";
     fetchExpenses();
+    fetchStats(); // Fetch and update stats immediately
 });
 
 // Fetch and update stats
 async function fetchStats() {
     let response = await fetch(`${API_URL}/get_stats`);
+    let stats = await response.json();
+
+    document.getElementById("total-spent-value").textContent = stats.total_spent.toFixed(2);
+    document.getElementById("expense-count-value").textContent = stats.expense_count;
+    document.getElementById("last-7days-spent-value").textContent = stats.last_7days_spent.toFixed(2);
+    document.getElementById("highest-category-value").textContent = stats.highest_category;
+    document.getElementById("highest-amount-value").textContent = stats.highest_amount.toFixed(2);
+}
+
+// Update stats based on filtered expenses
+async function updateStats(fromDate, toDate) {
+    let url = `${API_URL}/get_stats`;
+    if (fromDate && toDate) {
+        url += `?from_date=${fromDate}&to_date=${toDate}`;
+    }
+    let response = await fetch(url);
     let stats = await response.json();
 
     document.getElementById("total-spent-value").textContent = stats.total_spent.toFixed(2);

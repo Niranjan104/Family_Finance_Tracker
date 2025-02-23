@@ -141,7 +141,7 @@ def get_expense(expense_id):
     return jsonify({
         "id": expense.id,
         "name": expense.name,
-        "category": attach_emojis(exp.category.name) if expense.category else "Unknown",
+        "category": attach_emojis(expense.category.name) if expense.category else "Unknown",
         "category_desc": expense.category.category_desc if expense.category else "",
         "date": expense.date.strftime("%Y-%m-%d"),
         "amount": expense.amount,
@@ -221,20 +221,30 @@ def delete_expense(expense_id):
 
 @app.route("/get_stats")
 def get_stats():
-    total_spent = db.session.query(db.func.sum(Expense.amount)).scalar() or 0
-    expense_count = db.session.query(db.func.count(Expense.id)).scalar() or 0
+    from_date = request.args.get("from_date")
+    to_date = request.args.get("to_date")
 
-    last_7days_spent = db.session.query(db.func.sum(Expense.amount)).filter(
+    query = Expense.query
+
+    if from_date:
+        query = query.filter(Expense.date >= from_date)
+    if to_date:
+        query = query.filter(Expense.date <= to_date)
+
+    total_spent = query.with_entities(db.func.sum(Expense.amount)).scalar() or 0
+    expense_count = query.with_entities(db.func.count(Expense.id)).scalar() or 0
+
+    last_7days_spent = query.with_entities(db.func.sum(Expense.amount)).filter(
         Expense.date >= (datetime.now().date() - timedelta(days=7))
     ).scalar() or 0
 
-    highest_category = db.session.query(
+    highest_category = query.with_entities(
         Category.name, db.func.sum(Expense.amount)
-    ).join(Expense).group_by(Category.name).order_by(db.func.sum(Expense.amount).desc()).first()
+    ).join(Category).group_by(Category.name).order_by(db.func.sum(Expense.amount).desc()).first()
 
-    highest_amount = db.session.query(db.func.max(Expense.amount)).scalar() or 0
+    highest_amount = query.with_entities(db.func.max(Expense.amount)).scalar() or 0
 
-    highest_category_name = attach_emojis(highest_category[0]) if highest_category else "N/A"
+    highest_category_name = attach_emojis(highest_category[0]) if highest_category else "Empty!😶"
 
     return jsonify({
         "total_spent": float(total_spent),
