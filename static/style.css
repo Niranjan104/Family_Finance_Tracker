@@ -256,14 +256,14 @@ button.delete {
   height: 35px; /* Ensure buttons are the same size */
 }
 
-button.edit { background: #f1f1f1; }
+button.edit { background: #FAFAFA; }
 button.edit:hover {
   background: #38e141;
   transform: scale(1.05);
   box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-button.delete { background: #f1f1f1; }
+button.delete { background: #FAFAFA; }
 button.delete:hover {
   background: #fdc11e;
   transform: scale(1.05);
