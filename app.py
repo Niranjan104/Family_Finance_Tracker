@@ -253,6 +253,31 @@ def get_stats():
         "highest_category": highest_category_name,
         "highest_amount": float(highest_amount)
     })
+@app.route('/set_period', methods=['POST'])
+def set_period():
+    try:
+        data = request.get_json()
+        if not data or 'year' not in data or 'month' not in data:
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        # Validate month/year (add your business logic here)
+        month = int(data['month'])
+        year = int(data['year'])
+        
+        if not (1 <= month <= 12):
+            return jsonify({'error': 'Invalid month'}), 400
+            
+        if year < 2000 or year > 2100:
+            return jsonify({'error': 'Invalid year'}), 400
+
+        # Store in session/database as needed
+        # Example: session['current_period'] = f"{year}-{month:02d}"
+        
+        return jsonify({'message': 'Period set successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 
 if __name__ == "__main__":
     app.run(debug=True)

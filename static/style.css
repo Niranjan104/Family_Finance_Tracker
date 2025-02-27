@@ -500,3 +500,17 @@ body.dark-mode .budget-form-container {
     flex-direction: column;
   }
 }
+/* Ensure budget form is hidden initially */
+#budget-form-container {
+  display: none;
+  margin-left: 2rem;
+  padding: 1rem;
+  border-left: 2px solid #ccc;
+}
+
+/* Make month/year section flex container */
+.set-month-year {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2rem;
+}
