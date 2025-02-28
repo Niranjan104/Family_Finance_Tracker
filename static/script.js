@@ -1,6 +1,6 @@
 const API_URL = window.location.origin;
 
-const DEFAULT_CATEGORIES = ["Food🍕", "Transport🚂 ", "Bills💸", "Entertainment🤡","Shopping🛍️","Therapy 🩺", "Others"];
+const DEFAULT_CATEGORIES = ["Food🍕", "Transport🚂 ", "Bills💸", "Entertainment🤡", "Shopping🛍️", "Therapy 🩺", "Others"];
 
 const messages = [
     "💸 Counting your regrets… I mean, transactions… 💸",
@@ -24,7 +24,7 @@ function displayRandomMessage() {
     const messageContainer = document.getElementById("message");
     const randomMessage = messages[Math.floor(Math.random() * messages.length)];
     messageContainer.textContent = randomMessage;
-    messageContainer.style.textAlign = "center"; // Ensure the message is displayed in the center
+    messageContainer.style.textAlign = "center"; // Center the message
 }
 
 // Function to strip emojis from a string
@@ -46,7 +46,6 @@ function stripEmojis(text) {
 async function fetchCategories() {
     let select = document.getElementById("category");
     select.innerHTML = '<option value="">Select</option>';
-    // Add default categories
     DEFAULT_CATEGORIES.forEach(cat => {
         let option = document.createElement("option");
         option.value = cat; // Do not strip emojis here
@@ -104,8 +103,6 @@ async function fetchExpenses(fromDate = "", toDate = "") {
         `;
         tableBody.appendChild(row);
     });
-
-    // Update stats based on filtered expenses
     updateStats(fromDate, toDate);
 }
 
@@ -170,36 +167,31 @@ document.getElementById("expense-form").addEventListener("submit", async functio
     let expenseId = document.getElementById("expense-id").value;
     let url = `${API_URL}/add_expense`;
     let method = "POST";
-
     if (expenseId) {
         url = `${API_URL}/edit_expense/${expenseId}`;
         method = "PUT";
     }
-
     let response = await fetch(url, {
         method: method,
         body: formData
     });
-
     let result = await response.json();
     fetchExpenses();
-    fetchStats(); // Fetch and update stats immediately
+    fetchStats();
     event.target.reset();
     document.getElementById("custom-category-label").style.display = "none";
-    document.getElementById("expense-id").value = ""; // Clear the hidden input field
-    document.getElementById("file-upload-label").textContent = "Upload File"; // Reset file upload label
+    document.getElementById("expense-id").value = "";
+    document.getElementById("file-upload-label").textContent = "Upload File";
 });
 
 // Update expense field inline
 async function updateExpense(id, field, value) {
     let formData = new FormData();
     formData.append(field, value);
-
     await fetch(`${API_URL}/edit_expense/${id}`, {
         method: "PUT",
         body: formData
     });
-
     fetchExpenses();
 }
 
@@ -207,27 +199,22 @@ async function updateExpense(id, field, value) {
 async function uploadImage(id, file) {
     let formData = new FormData();
     formData.append("file-upload", file);
-
     await fetch(`${API_URL}/edit_expense/${id}`, {
         method: "PUT",
         body: formData
     });
-
     fetchExpenses();
 }
 
 // Delete expense
 async function deleteExpense(id) {
-    if (!confirm("😃Sure you want to Delete?")) {
-        return; // Exit if the user cancels the deletion
-    }
-
+    if (!confirm("😃Sure you want to Delete?")) return;
     await fetch(`${API_URL}/delete_expense/${id}`, { method: "DELETE" });
     fetchExpenses();
-    setTimeout(fetchStats, 500); // Add a delay to ensure the database updates before fetching stats
+    setTimeout(fetchStats, 500);
 }
 
-// Fetch and display expense details for editing
+// Fetch expense details for editing
 async function fetchExpenseDetails(id) {
     let response = await fetch(`${API_URL}/get_expense/${id}`);
     if (response.status === 404) {
@@ -235,17 +222,14 @@ async function fetchExpenseDetails(id) {
         return;
     }
     let expense = await response.json();
-
-    document.getElementById("expense-id").value = expense.id; // Set the hidden input field with the expense ID
+    document.getElementById("expense-id").value = expense.id;
     document.getElementById("name").value = expense.name;
     document.getElementById("category").value = expense.category;
     document.getElementById("category-desc").value = expense.category_desc;
     document.getElementById("date").value = expense.date;
     document.getElementById("amount").value = expense.amount;
     document.getElementById("description").value = expense.description;
-    document.getElementById("file-upload").value = ""; // Clear the file input
-
-    // Show custom category input if the category is "Others" or a custom category
+    document.getElementById("file-upload").value = "";
     if (expense.category === "Others" || !DEFAULT_CATEGORIES.includes(expense.category)) {
         document.getElementById("custom-category-label").style.display = "block";
         document.getElementById("custom-category").value = expense.category;
@@ -265,7 +249,6 @@ async function editExpense(id) {
 document.getElementById("filter-btn").addEventListener("click", function() {
     const fromDate = document.getElementById("from-date").value;
     const toDate = document.getElementById("to-date").value;
-
     if (!fromDate || !toDate) {
         const alertBox = document.createElement("div");
         alertBox.textContent = "😯Please fill out both date fields😅 ";
@@ -279,30 +262,24 @@ document.getElementById("filter-btn").addEventListener("click", function() {
         alertBox.style.borderRadius = "20px";
         alertBox.style.boxShadow = "3px 3px 10px rgba(0, 0, 0, 0.1)";
         document.body.appendChild(alertBox);
-
-        setTimeout(() => {
-            document.body.removeChild(alertBox);
-        }, 2000); // Automatically close the alert after 2 seconds
-
+        setTimeout(() => { document.body.removeChild(alertBox); }, 2000);
         return;
     }
-
     fetchExpenses(fromDate, toDate);
 });
 
-// Refresh the filter and bring back the expense list to normal
+// Refresh expense list
 document.getElementById("refresh-btn").addEventListener("click", function() {
     document.getElementById("from-date").value = "";
     document.getElementById("to-date").value = "";
     fetchExpenses();
-    fetchStats(); // Fetch and update stats immediately
+    fetchStats();
 });
 
 // Fetch and update stats
 async function fetchStats() {
     let response = await fetch(`${API_URL}/get_stats`);
     let stats = await response.json();
-
     document.getElementById("total-spent-value").textContent = stats.total_spent.toFixed(2);
     document.getElementById("expense-count-value").textContent = stats.expense_count;
     document.getElementById("last-7days-spent-value").textContent = stats.last_7days_spent.toFixed(2);
@@ -318,13 +295,14 @@ async function updateStats(fromDate, toDate) {
     }
     let response = await fetch(url);
     let stats = await response.json();
-
     document.getElementById("total-spent-value").textContent = stats.total_spent.toFixed(2);
     document.getElementById("expense-count-value").textContent = stats.expense_count;
     document.getElementById("last-7days-spent-value").textContent = stats.last_7days_spent.toFixed(2);
     document.getElementById("highest-category-value").textContent = stats.highest_category;
     document.getElementById("highest-amount-value").textContent = stats.highest_amount.toFixed(2);
 }
+
+// Populate year select dropdown
 function populateYearSelect() {
     const yearSelect = document.getElementById("year-select");
     const currentYear = new Date().getFullYear();
@@ -336,50 +314,46 @@ function populateYearSelect() {
     }
 }
 
-// Initialize
+// Initialization
 fetchCategories().then(() => {
     fetchExpenses();
     fetchStats();
-    populateYearSelect(); // Populate year select after categories are loaded
+    populateYearSelect();
 });
 
-// Handle month/year form submission
+// Handle month/year form submission with credentials included
 document.getElementById("month-year-form").addEventListener("submit", async function(e) {
     e.preventDefault();
     const year = document.getElementById("year-select").value;
     const month = document.getElementById("month-select").value;
     const prompt = document.getElementById("month-year-prompt");
-
     if (!year || !month) {
         showTemporaryAlert('⚠️ Please select both year and month!', 'error');
         return;
     }
-
     try {
         const response = await fetch(`${API_URL}/set_period`, {
             method: 'POST',
+            credentials: 'include', // For cookie-based sessions
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ year: parseInt(year), month: parseInt(month) })
         });
-
         const result = await response.json();
         if (!response.ok) {
             showTemporaryAlert(result.error || '⚠️ Error setting period!', 'error');
             return;
         }
-
         // Show budget form on success
         document.getElementById("budget-form-container").style.display = 'block';
         prompt.style.display = 'none';
         showTemporaryAlert('Period set successfully!', 'success');
-
     } catch (error) {
         console.error('Error:', error);
         showTemporaryAlert('⚠️ Failed to connect to server!', 'error');
     }
 });
 
-// Handle Budget Form Submission
+// Handle Budget Form Submission with updated API_URL
 document.getElementById('budget-category-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -394,11 +368,17 @@ document.getElementById('budget-category-form').addEventListener('submit', async
     try {
         const response = await fetch(`${API_URL}/add_budget`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ category, amount: parseFloat(amount) })
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                category: category.split(' ')[0], // Remove emoji from category name
+                amount: parseFloat(amount) 
+            })
         });
 
         const result = await response.json();
+        
         if (!response.ok) {
             throw new Error(result.error || 'Failed to save budget');
         }
@@ -417,26 +397,24 @@ function showTemporaryAlert(message, type = 'info') {
     const alertBox = document.createElement('div');
     alertBox.className = `alert ${type}`;
     alertBox.textContent = message;
-    
     document.body.appendChild(alertBox);
-    
     setTimeout(() => {
         alertBox.classList.add('fade-out');
         setTimeout(() => document.body.removeChild(alertBox), 300);
     }, 3000);
 }
-document.getElementById("budget-form-container").style.display = 'none';
-// Automatically change the message every 3 seconds
-setInterval(displayRandomMessage, 3000);
 
-// Toggle between dark mode and light mode
+// Initially hide the budget form container
+document.getElementById("budget-form-container").style.display = 'none';
+
+// Toggle dark mode
 document.getElementById("dark-mode-toggle").addEventListener("click", function() {
     document.body.classList.toggle("dark-mode");
     const isDarkMode = document.body.classList.contains("dark-mode");
     localStorage.setItem("darkMode", isDarkMode ? "enabled" : "disabled");
 });
 
-// Check for saved dark mode preference on page load
+// Set dark mode preference on load
 window.addEventListener("load", function() {
     const darkMode = localStorage.getItem("darkMode");
     if (darkMode === "enabled") {
@@ -444,3 +422,4 @@ window.addEventListener("load", function() {
     }
 });
 
+setInterval(displayRandomMessage, 3000);
