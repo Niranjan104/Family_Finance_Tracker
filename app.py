@@ -253,30 +253,52 @@ def get_stats():
         "highest_category": highest_category_name,
         "highest_amount": float(highest_amount)
     })
+
 @app.route('/set_period', methods=['POST'])
 def set_period():
-    try:
-        data = request.get_json()
-        if not data or 'year' not in data or 'month' not in data:
-            return jsonify({'error': 'Missing required fields'}), 400
+    data = request.get_json()
+    if not data or 'year' not in data or 'month' not in data:
+        return jsonify({'error': 'Missing required fields'}), 400
+    
+    # Store selected period in session
+    session['current_year'] = int(data['year'])
+    session['current_month'] = int(data['month'])
+    
+    return jsonify({'message': 'Period set successfully'}), 200
 
-        # Validate month/year (add your business logic here)
-        month = int(data['month'])
-        year = int(data['year'])
-        
-        if not (1 <= month <= 12):
-            return jsonify({'error': 'Invalid month'}), 400
-            
-        if year < 2000 or year > 2100:
-            return jsonify({'error': 'Invalid year'}), 400
-
-        # Store in session/database as needed
-        # Example: session['current_period'] = f"{year}-{month:02d}"
-        
-        return jsonify({'message': 'Period set successfully'}), 200
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+@app.route('/add_budget', methods=['POST'])
+def add_budget():
+    data = request.get_json()
+    if not data or 'category' not in data or 'amount' not in data:
+        return jsonify({'error': 'Missing category or amount'}), 400
+    
+    # Get period from session
+    year = session.get('current_year')
+    month = session.get('current_month')
+    if not year or not month:
+        return jsonify({'error': 'Period not set'}), 400
+    
+    category_name = strip_emojis(data['category'])
+    amount = data['amount']
+    
+    # Find or create category
+    category = Category.query.filter_by(name=category_name).first()
+    if not category:
+        category = Category(name=category_name)
+        db.session.add(category)
+        db.session.commit()
+    
+    # Create budget entry
+    new_budget = Budget(
+        category_id=category.category_id,
+        amount=amount,
+        month=month,
+        year=year
+    )
+    db.session.add(new_budget)
+    db.session.commit()
+    
+    return jsonify({'message': 'Budget saved successfully'}), 200
     
 
 if __name__ == "__main__":

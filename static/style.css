@@ -514,3 +514,34 @@ body.dark-mode .budget-form-container {
   justify-content: space-between;
   margin-top: 2rem;
 }
+.alert {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 15px 25px;
+  border-radius: 8px;
+  font-weight: bold;
+  z-index: 1000;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.alert.error {
+  background-color: #ff4444;
+  color: white;
+}
+
+.alert.success {
+  background-color: #00C851;
+  color: white;
+}
+
+.alert.info {
+  background-color: #33b5e5;
+  color: white;
+}
+
+.fade-out {
+  opacity: 0;
+}

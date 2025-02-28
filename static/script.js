@@ -351,33 +351,81 @@ document.getElementById("month-year-form").addEventListener("submit", async func
     const prompt = document.getElementById("month-year-prompt");
 
     if (!year || !month) {
-        alert('Please select both year and month');
+        showTemporaryAlert('⚠️ Please select both year and month!', 'error');
         return;
     }
 
     try {
         const response = await fetch(`${API_URL}/set_period`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ year, month })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ year: parseInt(year), month: parseInt(month) })
         });
 
-        if (!response.ok) throw new Error('Failed to set period');
-        
+        const result = await response.json();
+        if (!response.ok) {
+            showTemporaryAlert(result.error || '⚠️ Error setting period!', 'error');
+            return;
+        }
+
         // Show budget form on success
         document.getElementById("budget-form-container").style.display = 'block';
         prompt.style.display = 'none';
-        
+        showTemporaryAlert('Period set successfully!', 'success');
+
     } catch (error) {
         console.error('Error:', error);
-        prompt.textContent = '⚠️ Error setting period!';
-        prompt.style.display = 'block';
-        setTimeout(() => prompt.style.display = 'none', 3000);
+        showTemporaryAlert('⚠️ Failed to connect to server!', 'error');
     }
 });
 
+// Handle Budget Form Submission
+document.getElementById('budget-category-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const category = document.getElementById('budget-category').value;
+    const amount = document.getElementById('budget-amount').value;
+    
+    if (!category || !amount) {
+        showTemporaryAlert('⚠️ Please fill in both category and amount!', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/add_budget`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category, amount: parseFloat(amount) })
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to save budget');
+        }
+
+        showTemporaryAlert('Budget saved successfully!', 'success');
+        document.getElementById('budget-amount').value = '';
+        
+    } catch (error) {
+        console.error('Error:', error);
+        showTemporaryAlert(`⚠️ ${error.message}`, 'error');
+    }
+});
+
+// Helper function to show temporary alerts
+function showTemporaryAlert(message, type = 'info') {
+    const alertBox = document.createElement('div');
+    alertBox.className = `alert ${type}`;
+    alertBox.textContent = message;
+    
+    document.body.appendChild(alertBox);
+    
+    setTimeout(() => {
+        alertBox.classList.add('fade-out');
+        setTimeout(() => document.body.removeChild(alertBox), 300);
+    }, 3000);
+}
+document.getElementById("budget-form-container").style.display = 'none';
 // Automatically change the message every 3 seconds
 setInterval(displayRandomMessage, 3000);
 
@@ -395,3 +443,4 @@ window.addEventListener("load", function() {
         document.body.classList.add("dark-mode");
     }
 });
+
