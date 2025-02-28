@@ -353,11 +353,13 @@ document.getElementById("month-year-form").addEventListener("submit", async func
     }
 });
 
-// Handle Budget Form Submission with updated API_URL
+// Handle Budget Form Submission with updated API_URL and radio button value
 document.getElementById('budget-category-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const category = document.getElementById('budget-category').value;
+    // Get the selected radio button's value for budget-category
+    const selectedCategoryElement = document.querySelector('input[name="budget-category"]:checked');
+    const category = selectedCategoryElement ? selectedCategoryElement.value : "";
     const amount = document.getElementById('budget-amount').value;
     
     if (!category || !amount) {
@@ -372,7 +374,7 @@ document.getElementById('budget-category-form').addEventListener('submit', async
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ 
-                category: category.split(' ')[0], // Remove emoji from category name
+                category: category.split(' ')[0], // Remove emoji from category name if needed
                 amount: parseFloat(amount) 
             })
         });
