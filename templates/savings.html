@@ -4,49 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Savings Tracker</title>
-    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"> -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='savings.css') }}">
 </head>
 <body>
 
     <h1>Savings Tracker</h1>
 
-    <h2>Add Saving Target</h2>
-    <form id="savingTargetForm">
-        <input type="text" id="saving_category_name" placeholder="Category Name" required>
-        <input type="text" id="saving_category_description" placeholder="Category Description">
-        <input type="text" id="savings_goal_name" placeholder="Goal Name" required>
-        <input type="number" id="savings_target_amount" placeholder="Target Amount" required>
-        <input type="date" id="savings_target_date" required>
-        <button type="submit">Add Saving Target</button>
-    </form>
+    <div class="main-content">
+        <div class="table-container">
+            <div class="table-header">
+                <h2>All Savings Targets</h2>
+                <div class="controls">
+                    <button onclick="showForm('savingTargetForm')">Add Saving Target</button>
+                    <button onclick="showForm('savingsForm')">Add Savings</button>
+                </div>
+            </div>
+            <table id="savingsTable" class="styled-table" border="2">
+                <thead>
+                    <tr>
+                        <th>Category Name</th>
+                        <th>Category Description</th>
+                        <th>Goal Name</th>
+                        <th>Target Amount</th>
+                        <th>Target Date</th>
+                        <th>Amount Saved</th>
+                        <th>Payment Mode</th>
+                        <th>Updated Date</th>
+                        <th>Edit/Delete</th>
+                        <th>Update Savings</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
 
-    <h2>Add Savings</h2>
-    <form id="savingsForm">
-        <input type="hidden" id="savings_target_id">
-        <input type="number" id="savings_amount_saved" placeholder="Amount Saved" required>
-        <input type="text" id="savings_payment_mode" placeholder="Payment Mode" required>
-        <input type="date" id="savings_date_saved" required>
-        <button type="submit">Add Savings</button>
-    </form>
+        <div class="form-popup" id="savingTargetForm">
+            <h2>Add Saving Target</h2>
+            <form class="form-container">
+                <input type="text" id="saving_category_name" placeholder="Category Name" required>
+                <input type="text" id="saving_category_description" placeholder="Category Description">
+                <input type="text" id="savings_goal_name" placeholder="Goal Name" required>
+                <input type="number" id="savings_target_amount" placeholder="Target Amount" required>
+                <input type="date" id="savings_target_date" required>
+                <button type="submit">Add Saving Target</button>
+                <button type="button" class="cancel" onclick="closeForm('savingTargetForm')">Close</button>
+            </form>
+        </div>
 
-    <h2>All Savings Targets</h2>
-    <table id="savingsTable" border="2">
-        <thead>
-            <tr>
-                <th>Category Name</th>
-                <th>Category Description</th>
-                <th>Goal Name</th>
-                <th>Target Amount</th>
-                <th>Target Date</th>
-                <th>Amount Saved</th>
-                <th>Payment Mode</th>
-                <th>Updated Date</th>
-                <th>Edit/Delete</th>
-                <th>Update Savings</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
+        <div class="form-popup" id="savingsForm">
+            <h2>Add Savings</h2>
+            <form class="form-container">
+                <input type="hidden" id="savings_target_id">
+                <input type="number" id="savings_amount_saved" placeholder="Amount Saved" required>
+                <input type="text" id="savings_payment_mode" placeholder="Payment Mode" required>
+                <input type="date" id="savings_date_saved" required>
+                <button type="submit">Add Savings</button>
+                <button type="button" class="cancel" onclick="closeForm('savingsForm')">Close</button>
+            </form>
+        </div>
+    </div>
 
     <script src="{{ url_for('static', filename='savings.js') }}"></script>
 </body>

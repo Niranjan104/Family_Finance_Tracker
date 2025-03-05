@@ -45,11 +45,11 @@ function loadData() {
                     <td>${item.savings_payment_mode || ''}</td>
                     <td>${item.savings_date_saved || ''}</td>
                     <td>
-                        <button onclick="editTarget(${item.savings_target_id})">Edit</button>
-                        <button onclick="deleteTarget(${item.savings_target_id})">Delete</button>
+                        <button class="edit" onclick="editTarget(${item.savings_target_id})">✏️</button>
+                        <button class="delete" onclick="deleteTarget(${item.savings_target_id})">❌</button>
                     </td>
                     <td>
-                        <button onclick="updateSavings(${item.savings_target_id})">Update Savings</button>
+                        <button class="update" onclick="updateSavings(${item.savings_target_id})">Update</button>
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -65,6 +65,7 @@ function editTarget(id) {
     document.getElementById("savings_target_amount").value = target.querySelector("td:nth-child(4)").innerText;
     document.getElementById("savings_target_date").value = target.querySelector("td:nth-child(5)").innerText;
     document.getElementById("savingTargetForm").dataset.id = id;
+    showForm('savingTargetForm');
 }
 
 function deleteTarget(id) {
@@ -94,7 +95,17 @@ function updateSavings(id) {
                 document.getElementById("savings_payment_mode").value = '';
                 document.getElementById("savings_date_saved").value = '';
             }
+            showForm('savingsForm');
         });
 }
+
+function showForm(formId) {
+    document.getElementById(formId).style.display = 'block';
+}
+
+function closeForm(formId) {
+    document.getElementById(formId).style.display = 'none';
+}
+
 
 loadData();
