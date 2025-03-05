@@ -44,7 +44,6 @@ function loadData() {
                     <td>${item.savings_amount_saved || ''}</td>
                     <td>${item.savings_payment_mode || ''}</td>
                     <td>${item.savings_date_saved || ''}</td>
-                    <td>${item.savings_updated_date || ''}</td>
                     <td>
                         <button onclick="editTarget(${item.savings_target_id})">Edit</button>
                         <button onclick="deleteTarget(${item.savings_target_id})">Delete</button>
@@ -86,7 +85,6 @@ function updateSavings(id) {
         .then(response => response.json())
         .then(data => {
             document.getElementById("savings_target_id").value = id;
-            document.getElementById("savings_goal_name").value = target.querySelector("td:nth-child(3)").innerText;
             if (data.savings) {
                 document.getElementById("savings_amount_saved").value = data.savings.savings_amount_saved;
                 document.getElementById("savings_payment_mode").value = data.savings.savings_payment_mode;

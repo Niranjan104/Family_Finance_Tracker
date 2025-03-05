@@ -74,9 +74,12 @@ def update_saving_target(id):
 def delete_saving_target(id):
     target = SavingsTarget.query.get(id)
     if target:
+        savings = Savings.query.filter_by(savings_target_id=id).all()
+        for saving in savings:
+            db.session.delete(saving)
         db.session.delete(target)
         db.session.commit()
-        return jsonify({"message": "Saving target deleted successfully"}), 200
+        return jsonify({"message": "Saving target and corresponding savings deleted successfully"}), 200
     return jsonify({"message": "Saving target not found"}), 404
 
 @app.route('/add_savings', methods=['POST'])
