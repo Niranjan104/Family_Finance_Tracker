@@ -1,4 +1,21 @@
 const savingsCategories = ["Education", "Health", "Travel", "Food", "Entertainment", "Others"];
+const messages = [
+    "💸 Counting your regrets… I mean, transactions… 💸",
+    "🏦 Asking your bank if it’s okay to proceed… 📞",
+    "🎢 Analyzing your financial rollercoaster… 📊",
+    "🛍️ Rethinking that last online shopping spree… 🤔",
+    "🛒 Compiling all your 'just one more' purchases… 💳",
+    "💳 Checking if your card is still breathing… 🚑",
+    "🍕 Calculating how much of your salary went to food… 😋",
+    "🎰 Spinning the wheel of 'Do I have enough money?' 🤞",
+    "🏖️ Searching for your retirement fund… Found: 404 🔎",
+    "🏃‍♂️ Watching your money run faster than you… 💨",
+    "📅 Estimating how long until payday saves you… ⏳",
+    "🔎 Looking for savings… Please wait… 🧐",
+    "💰 Your money was here… and now it’s gone! 💨",
+    "🚀 Sending a rescue mission for your budget… 🆘",
+    "🤷‍♂️ Trying to explain your expenses to your future self… 😬"
+];
 
 document.addEventListener("DOMContentLoaded", function() {
     const categorySelect = document.getElementById("saving_category_name");
@@ -8,6 +25,9 @@ document.addEventListener("DOMContentLoaded", function() {
         option.textContent = category;
         categorySelect.appendChild(option);
     });
+    displayRandomMessage(); // Display a random message when the page loads
+    setInterval(displayRandomMessage, 2000); // Change the message every 2 seconds
+    loadDarkModePreference(); // Load dark mode preference on page load
 });
 
 document.getElementById("savingTargetForm").addEventListener("submit", function(e) {
@@ -25,9 +45,10 @@ document.getElementById("savingTargetForm").addEventListener("submit", function(
     const method = id ? "PUT" : "POST";
     fetch(url, { method: method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
         .then(response => response.json())
-        .then(() => {
+        .then(response => {
             loadData();
             closeForm('savingTargetForm');
+            showMessage(response.message);
         });
 });
 
@@ -42,9 +63,10 @@ document.getElementById("savingsForm").addEventListener("submit", function(e) {
     };
     fetch('/add_savings', { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
         .then(response => response.json())
-        .then(() => {
+        .then(response => {
             loadData();
             closeForm('savingsForm');
+            showMessage(response.message);
         });
 });
 
@@ -100,9 +122,14 @@ function editTarget(id) {
 }
 
 function deleteTarget(id) {
-    fetch(`/delete_saving_target/${id}`, { method: "DELETE" })
-        .then(response => response.json())
-        .then(() => loadData());
+    if (confirm("Are you sure you want to delete this saving target?")) {
+        fetch(`/delete_saving_target/${id}`, { method: "DELETE" })
+            .then(response => response.json())
+            .then(response => {
+                loadData();
+                showMessage(response.message);
+            });
+    }
 }
 
 function deleteSavings(id) {
@@ -150,6 +177,41 @@ function closeForm(formId) {
     form.reset();
     if (formId === 'savingTargetForm') {
         document.getElementById("savingTargetForm").dataset.id = '';
+    }
+}
+
+function showMessage(message) {
+    alert(message);
+}
+
+function displayRandomMessage() {
+    const messageContainer = document.getElementById("message");
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    messageContainer.textContent = randomMessage;
+    messageContainer.style.textAlign = "center"; // Ensure the message is displayed in the center
+}
+
+function toggleDarkMode() {
+    document.body.classList.toggle("dark-mode");
+    document.querySelector("header").classList.toggle("dark-mode");
+    document.querySelectorAll("nav button").forEach(button => button.classList.toggle("dark-mode"));
+    document.querySelector(".table-list").classList.toggle("dark-mode");
+    document.querySelectorAll("table").forEach(table => table.classList.toggle("dark-mode"));
+    document.querySelectorAll(".form-popup").forEach(form => form.classList.toggle("dark-mode"));
+    document.querySelectorAll(".close-btn").forEach(button => button.classList.toggle("dark-mode"));
+    document.querySelectorAll("form button").forEach(button => button.classList.toggle("dark-mode"));
+    saveDarkModePreference();
+}
+
+function saveDarkModePreference() {
+    const isDarkMode = document.body.classList.contains("dark-mode");
+    localStorage.setItem("darkMode", isDarkMode ? "enabled" : "disabled");
+}
+
+function loadDarkModePreference() {
+    const darkMode = localStorage.getItem("darkMode");
+    if (darkMode === "enabled") {
+        toggleDarkMode();
     }
 }
 

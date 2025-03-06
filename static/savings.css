@@ -7,6 +7,12 @@ body {
     transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out; /* Smooth transition */
 }
 
+/* Dark Mode Styles */
+body.dark-mode {
+    background-color: #121212;
+    color: #ffffff;
+}
+
 /* HEADER */
 header {
     display: flex;
@@ -16,6 +22,10 @@ header {
     color: #fff;
     padding: 25px;
     transition: background-color 0.3s ease-in-out; /* Smooth transition */
+}
+
+header.dark-mode {
+    background: #38647a;
 }
 
 header h1 {
@@ -78,6 +88,15 @@ nav button {
     transition: 0.2s ease-in-out;
 }
 
+nav button.dark-mode {
+    background: #6c95a8;
+    color: #ffffff;
+}
+
+nav button.dark-mode:hover {
+    background: #7b7a7a;
+}
+
 nav button:hover {
     background: #B0BEC5;
     transform: scale(1.05);
@@ -116,7 +135,12 @@ nav span {
 
 #message {
     font-size: 18px;
-    color: #382d2d;
+    color: #353535;
+}
+
+.dark-mode #message {
+    font-size: 18px;
+    color: #eeebeb;
 }
 
 /* MAIN CONTENT: Expense List & Add Expense Side by Side */
@@ -141,6 +165,17 @@ table {
     margin-top: 10px;
 }
 
+
+table.dark-mode th {
+    background: #204a5e;
+    color: #ffffff;
+}
+
+table.dark-mode td {
+    background: #525d62;
+    color: #ffffff;
+}
+
 th, td {
     padding: 10px;
     border: 1px solid #ccc;
@@ -148,11 +183,32 @@ th, td {
 }
 
 th {
-    background: #dedddd;
+    background: #a1d4ea;
 }
 
 tr:hover {
-    background: #f1f1f1;
+    background: #e9f8ff;
+}
+
+/* TABLE LIST */
+.table-list {
+    background: #FAFAFA;
+    color: #333;
+    padding: 20px;
+    border-radius: 10px;
+    flex: 3; /* Wider than the form */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out; /* Smooth transition */
+}
+
+.table-list.dark-mode {
+    background: #28383f;
+    color: #ffffff;
+}
+
+.table-list h2 {
+    text-align: center;
+    margin-top: 0;
 }
 
 /* EDIT/DELETE BUTTONS */
@@ -215,6 +271,11 @@ button.delete i {
     width: 350px; /* Increase the width */
 }
 
+.form-popup.dark-mode {
+    background: #1e3541;
+    color: #cecece;
+}
+
 .form-popup .form-container {
     display: flex;
     flex-direction: column;
@@ -242,6 +303,14 @@ button.delete i {
     align-items: center;
     justify-content: center;
     transition: background 0.1s ease-in-out;
+}
+
+.form-popup .close-btn.dark-mode {
+    background: #444444;
+}
+
+.form-popup .close-btn.dark-mode:hover {
+    background: #990101;
 }
 
 .form-popup .close-btn:hover {
@@ -303,6 +372,14 @@ form button {
     outline: none; /* Remove default focus outline */
 }
 
+form button.dark-mode {
+    background: #444444;
+}
+
+form button.dark-mode:hover {
+    background: #04593e;
+}
+
 form button:hover {
     background: #06875e;
     box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.2); /* Apply box-shadow on hover */
@@ -323,22 +400,6 @@ form button:hover {
       opacity: 1;
       transform: scale(1);
     }
-}
-
-/* TABLE LIST */
-.table-list {
-    background: #FAFAFA;
-    color: #333;
-    padding: 20px;
-    border-radius: 10px;
-    flex: 3; /* Wider than the form */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out; /* Smooth transition */
-}
-
-.table-list h2 {
-    text-align: center;
-    margin-top: 0;
 }
 
 /* Mobile Optimization */
