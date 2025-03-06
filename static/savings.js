@@ -100,13 +100,15 @@ function updateSavings(id) {
 }
 
 function showForm(formId) {
+    // Hide all forms
+    document.querySelectorAll('.form-popup').forEach(form => form.style.display = 'none');
+    // Show the selected form
     document.getElementById(formId).style.display = 'block';
 }
 
 function closeForm(formId) {
     document.getElementById(formId).style.display = 'none';
-    
-    // CLEAR DATA AFTER THE FORM IS CLOSED 
+    // Clear form data
     const form = document.getElementById(formId).querySelector('.form-container');
     form.reset();
     if (formId === 'savingTargetForm') {
