@@ -1,8 +1,34 @@
+const savingsCategories = ["Education", "Health", "Travel", "Food", "Entertainment", "Others"];
+
+document.addEventListener("DOMContentLoaded", function() {
+    const categorySelect = document.getElementById("saving_category_name");
+    savingsCategories.forEach(category => {
+        const option = document.createElement("option");
+        option.value = category;
+        option.textContent = category;
+        categorySelect.appendChild(option);
+    });
+
+    categorySelect.addEventListener("change", function() {
+        const customCategoryLabel = document.getElementById("custom-category-label");
+        const customCategoryInput = document.getElementById("custom_category");
+        if (this.value === "Others") {
+            customCategoryLabel.style.display = "block";
+            customCategoryInput.style.display = "block";
+        } else {
+            customCategoryLabel.style.display = "none";
+            customCategoryInput.style.display = "none";
+        }
+    });
+});
+
 document.getElementById("savingTargetForm").addEventListener("submit", function(e) {
     e.preventDefault();
     const id = document.getElementById("savingTargetForm").dataset.id;
+    const category = document.getElementById("saving_category_name").value;
+    const customCategory = document.getElementById("custom_category").value;
     const data = {
-        saving_category_name: document.getElementById("saving_category_name").value,
+        saving_category_name: category === "Others" ? customCategory : category,
         saving_category_description: document.getElementById("saving_category_description").value,
         savings_goal_name: document.getElementById("savings_goal_name").value,
         savings_target_amount: document.getElementById("savings_target_amount").value,

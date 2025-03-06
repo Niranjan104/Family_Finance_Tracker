@@ -212,6 +212,7 @@ button.delete i {
     border-radius: 10px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     z-index: 1000;
+    width: 350px; /* Increase the width */
 }
 
 .form-popup .form-container {
@@ -267,6 +268,7 @@ form {
 form label {
     display: block;
     margin: 5px 0;
+    transition: font-weight 0.2s ease-in-out; /* Smooth transition for font weight */
 }
 
 form input,
@@ -354,4 +356,9 @@ form button:hover {
     .main-content {
         flex-direction: column;
     }
+}
+
+#custom-category-label,
+#custom_category {
+    display: none;
 }
