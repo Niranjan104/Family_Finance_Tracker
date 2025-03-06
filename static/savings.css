@@ -232,20 +232,20 @@ button.delete i {
     right: 10px;
     font-size: 24px;
     cursor: pointer;
-    background: #f2776e;
+    background: #c10d00;
     border: none;
     color: #fff;
-    border-radius: 10px;
+    border-radius: 5px;
     width: 30px;
     height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.3s ease-in-out;
+    transition: background 0.1s ease-in-out;
 }
 
 .form-popup .close-btn:hover {
-    background: #e53935;
+    background: #fd0602;
 }
 
 /* BACKDROP */
@@ -356,9 +356,4 @@ form button:hover {
     .main-content {
         flex-direction: column;
     }
-}
-
-#custom-category-label,
-#custom_category {
-    display: none;
 }
