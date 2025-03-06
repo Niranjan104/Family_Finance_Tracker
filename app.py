@@ -107,18 +107,28 @@ def add_savings():
 def get_savings(id):
     savings = Savings.query.filter_by(savings_target_id=id).first()
     if savings:
+        category = SavingCategory.query.get(savings.savings_target.saving_category_id)
         return jsonify({"savings": {
             "savings_target_id": savings.savings_target_id,
+            "saving_category_name": category.saving_category_name,
+            "saving_category_description": category.saving_category_description,
             "savings_goal_name": savings.savings_target.savings_goal_name,
+            "savings_target_amount": float(savings.savings_target.savings_target_amount),
+            "savings_target_date": str(savings.savings_target.savings_target_date),
             "savings_amount_saved": float(savings.savings_amount_saved),
             "savings_payment_mode": savings.savings_payment_mode,
             "savings_date_saved": str(savings.savings_date_saved)
         }}), 200
     target = SavingsTarget.query.get(id)
     if target:
+        category = SavingCategory.query.get(target.saving_category_id)
         return jsonify({"savings": {
             "savings_target_id": target.savings_target_id,
+            "saving_category_name": category.saving_category_name,
+            "saving_category_description": category.saving_category_description,
             "savings_goal_name": target.savings_goal_name,
+            "savings_target_amount": float(target.savings_target_amount),
+            "savings_target_date": str(target.savings_target_date),
             "savings_amount_saved": 0,
             "savings_payment_mode": '',
             "savings_date_saved": str(datetime.today().date())

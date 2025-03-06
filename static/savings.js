@@ -42,17 +42,17 @@ function loadData() {
             const tbody = document.getElementById("savingsTable").querySelector("tbody");
             tbody.innerHTML = "";
             data.forEach(item => {
+                const remainingAmount = item.savings_target_amount - item.savings_amount_saved;
                 const row = document.createElement("tr");
                 row.setAttribute("data-id", item.savings_target_id);
                 row.innerHTML = `
                     <td>${item.saving_category_name || ''}</td>
-                    <td>${item.saving_category_description || ''}</td>
                     <td>${item.savings_goal_name || ''}</td>
                     <td>${item.savings_target_amount || ''}</td>
                     <td>${item.savings_target_date || ''}</td>
                     <td>${item.savings_amount_saved || ''}</td>
+                    <td>${remainingAmount || ''}</td>
                     <td>${item.savings_payment_mode || ''}</td>
-                    <td>${item.savings_date_saved || ''}</td>
                     <td>
                         <button class="edit" onclick="editTarget(${item.savings_target_id})">✏️</button>
                         <button class="delete" onclick="deleteTarget(${item.savings_target_id})">❌</button>
@@ -67,14 +67,18 @@ function loadData() {
 }
 
 function editTarget(id) {
-    const target = document.querySelector(`tr[data-id='${id}']`);
-    document.getElementById("saving_category_name").value = target.querySelector("td:nth-child(1)").innerText;
-    document.getElementById("saving_category_description").value = target.querySelector("td:nth-child(2)").innerText;
-    document.getElementById("savings_goal_name").value = target.querySelector("td:nth-child(3)").innerText;
-    document.getElementById("savings_target_amount").value = target.querySelector("td:nth-child(4)").innerText;
-    document.getElementById("savings_target_date").value = target.querySelector("td:nth-child(5)").innerText;
-    document.getElementById("savingTargetForm").dataset.id = id;
-    showForm('savingTargetForm');
+    fetch(`/get_savings/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            const target = data.savings;
+            document.getElementById("saving_category_name").value = target.saving_category_name;
+            document.getElementById("saving_category_description").value = target.saving_category_description;
+            document.getElementById("savings_goal_name").value = target.savings_goal_name;
+            document.getElementById("savings_target_amount").value = target.savings_target_amount;
+            document.getElementById("savings_target_date").value = target.savings_target_date;
+            document.getElementById("savingTargetForm").dataset.id = id;
+            showForm('savingTargetForm');
+        });
 }
 
 function deleteTarget(id) {
@@ -111,7 +115,8 @@ function updateSavings(id) {
 function showForm(formId) {
     // Hide all forms and reset them
     document.querySelectorAll('.form-popup').forEach(form => {
-        form.style.display = 'none';});
+        form.style.display = 'none';
+    });
     // Show the selected form
     document.getElementById(formId).style.display = 'block';
 }
