@@ -63,6 +63,15 @@ def update_saving_target(id):
     data = request.json
     target = SavingsTarget.query.get(id)
     if target:
+        category = SavingCategory.query.filter_by(saving_category_name=data['saving_category_name']).first()
+        if not category:
+            category = SavingCategory(
+                saving_category_name=data['saving_category_name'],
+                saving_category_description=data['saving_category_description']
+            )
+            db.session.add(category)
+            db.session.commit()
+        target.saving_category_id = category.saving_category_id
         target.savings_goal_name = data['savings_goal_name']
         target.savings_target_amount = data['savings_target_amount']
         target.savings_target_date = datetime.strptime(data['savings_target_date'], '%Y-%m-%d').date()

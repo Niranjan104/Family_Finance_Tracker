@@ -1,5 +1,6 @@
 document.getElementById("savingTargetForm").addEventListener("submit", function(e) {
     e.preventDefault();
+    const id = document.getElementById("savingTargetForm").dataset.id;
     const data = {
         saving_category_name: document.getElementById("saving_category_name").value,
         saving_category_description: document.getElementById("saving_category_description").value,
@@ -7,9 +8,14 @@ document.getElementById("savingTargetForm").addEventListener("submit", function(
         savings_target_amount: document.getElementById("savings_target_amount").value,
         savings_target_date: document.getElementById("savings_target_date").value
     };
-    fetch('/add_saving_target', { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
+    const url = id ? `/update_saving_target/${id}` : '/add_saving_target';
+    const method = id ? "PUT" : "POST";
+    fetch(url, { method: method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
         .then(response => response.json())
-        .then(() => location.reload());
+        .then(() => {
+            loadData();
+            closeForm('savingTargetForm');
+        });
 });
 
 document.getElementById("savingsForm").addEventListener("submit", function(e) {
@@ -23,7 +29,10 @@ document.getElementById("savingsForm").addEventListener("submit", function(e) {
     };
     fetch('/add_savings', { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) })
         .then(response => response.json())
-        .then(() => location.reload());
+        .then(() => {
+            loadData();
+            closeForm('savingsForm');
+        });
 });
 
 function loadData() {
@@ -71,13 +80,13 @@ function editTarget(id) {
 function deleteTarget(id) {
     fetch(`/delete_saving_target/${id}`, { method: "DELETE" })
         .then(response => response.json())
-        .then(() => location.reload());
+        .then(() => loadData());
 }
 
 function deleteSavings(id) {
     fetch(`/delete_savings/${id}`, { method: "DELETE" })
         .then(response => response.json())
-        .then(() => location.reload());
+        .then(() => loadData());
 }
 
 function updateSavings(id) {
@@ -100,8 +109,9 @@ function updateSavings(id) {
 }
 
 function showForm(formId) {
-    // Hide all forms
-    document.querySelectorAll('.form-popup').forEach(form => form.style.display = 'none');
+    // Hide all forms and reset them
+    document.querySelectorAll('.form-popup').forEach(form => {
+        form.style.display = 'none';});
     // Show the selected form
     document.getElementById(formId).style.display = 'block';
 }
