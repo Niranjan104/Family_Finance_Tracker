@@ -105,7 +105,13 @@ function showForm(formId) {
 
 function closeForm(formId) {
     document.getElementById(formId).style.display = 'none';
+    
+    // CLEAR DATA AFTER THE FORM IS CLOSED 
+    const form = document.getElementById(formId).querySelector('.form-container');
+    form.reset();
+    if (formId === 'savingTargetForm') {
+        document.getElementById("savingTargetForm").dataset.id = '';
+    }
 }
-
 
 loadData();
