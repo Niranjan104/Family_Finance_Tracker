@@ -124,10 +124,14 @@ function showForm(formId) {
     });
     // Show the selected form
     document.getElementById(formId).style.display = 'block';
+    // Show the backdrop
+    document.getElementById('backdrop').style.display = 'block';
 }
 
 function closeForm(formId) {
     document.getElementById(formId).style.display = 'none';
+    // Hide the backdrop
+    document.getElementById('backdrop').style.display = 'none';
     // Clear form data
     const form = document.getElementById(formId).querySelector('.form-container');
     form.reset();

@@ -23,6 +23,8 @@
     <div id="message"></div>
   </div>
 
+  <div id="backdrop" class="backdrop"></div>
+
     <div class="main-content">
         <div class="table-container">
             <div class="table-header">
@@ -36,11 +38,11 @@
                 <thead>
                     <tr>
                         <th>Category Name</th>
-                        <th>Category Description</th>
                         <th>Goal Name</th>
                         <th>Target Amount</th>
                         <th>Target Date</th>
                         <th>Amount Saved</th>
+                        <th>Remaining Amount</th>
                         <th>Payment Mode</th>
                         <th>Edit/Delete</th>
                         <th>Update Savings</th>
@@ -51,6 +53,7 @@
         </div>
 
         <div class="form-popup" id="savingTargetForm">
+            <button class="close-btn" onclick="closeForm('savingTargetForm')">X</button>
             <h2>Add Saving Target</h2>
             <form class="form-container">
                 <input type="text" id="saving_category_name" placeholder="Category Name" required>
@@ -59,11 +62,11 @@
                 <input type="number" id="savings_target_amount" placeholder="Target Amount" required>
                 <input type="date" id="savings_target_date" required>
                 <button type="submit">Add Saving Target</button>
-                <button type="button" class="cancel" onclick="closeForm('savingTargetForm')">Close</button>
             </form>
         </div>
 
         <div class="form-popup" id="savingsForm">
+            <button class="close-btn" onclick="closeForm('savingsForm')">X</button>
             <h2>Add Savings</h2>
             <form class="form-container">
                 <input type="hidden" id="savings_target_id">
@@ -71,7 +74,6 @@
                 <input type="text" id="savings_payment_mode" placeholder="Payment Mode" required>
                 <input type="date" id="savings_date_saved" required>
                 <button type="submit">Add Savings</button>
-                <button type="button" class="cancel" onclick="closeForm('savingsForm')">Close</button>
             </form>
         </div>
     </div>
