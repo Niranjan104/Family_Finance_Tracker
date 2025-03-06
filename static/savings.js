@@ -42,7 +42,12 @@ function loadData() {
             const tbody = document.getElementById("savingsTable").querySelector("tbody");
             tbody.innerHTML = "";
             data.forEach(item => {
-                const remainingAmount = item.savings_target_amount - item.savings_amount_saved;
+                let remainingAmount;
+                if (item.savings_amount_saved >= item.savings_target_amount) {
+                    remainingAmount = item.savings_amount_saved == item.savings_target_amount ? "Reached" : "Exceeded";
+                } else {
+                    remainingAmount = item.savings_target_amount - item.savings_amount_saved;
+                }
                 const row = document.createElement("tr");
                 row.setAttribute("data-id", item.savings_target_id);
                 row.innerHTML = `
@@ -51,7 +56,7 @@ function loadData() {
                     <td>${item.savings_target_amount || ''}</td>
                     <td>${item.savings_target_date || ''}</td>
                     <td>${item.savings_amount_saved || ''}</td>
-                    <td>${remainingAmount || ''}</td>
+                    <td>${remainingAmount}</td>
                     <td>${item.savings_payment_mode || ''}</td>
                     <td>
                         <button class="edit" onclick="editTarget(${item.savings_target_id})">✏️</button>
