@@ -323,6 +323,22 @@ form button:hover {
     }
 }
 
+/* TABLE LIST */
+.table-list {
+    background: #FAFAFA;
+    color: #333;
+    padding: 20px;
+    border-radius: 10px;
+    flex: 3; /* Wider than the form */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out; /* Smooth transition */
+}
+
+.table-list h2 {
+    text-align: center;
+    margin-top: 0;
+}
+
 /* Mobile Optimization */
 @media screen and (max-width: 768px) {
     header {
