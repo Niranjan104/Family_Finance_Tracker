@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify OTP</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: url('https://i.pinimg.com/736x/ee/20/14/ee2014c730eb4537df2fc5b6b2ec35e2.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+
+        .illustration {
+            width: 150px;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .code-inputs {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+
+        .code-inputs input {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .verify-btn {
+            background: #40E0D0;
+            color: black;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .verify-btn:hover {
+            background: #3CC8BA;
+        }
+
+        
+
+        .cancel-btn a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .cancel-btn:hover {
+            color: #333;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <img src="https://i.pinimg.com/736x/4c/d6/49/4cd64904608bbc192a6796bede2fe27a.jpg" alt="Verification illustration" class="illustration">
+        <h1>Please Verify Account</h1>
+        <p>Please enter the code we sent to your email address to verify your account</p>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}" style="color: red; margin-bottom: 5%;">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        
+        <form method="post" action="/verify">
+            <div class="code-inputs">
+                <input type="text" name="otp1" maxlength="1" pattern="[0-9]" required>
+                <input type="text" name="otp2" maxlength="1" pattern="[0-9]" required>
+                <input type="text" name="otp3" maxlength="1" pattern="[0-9]" required>
+                <input type="text" name="otp4" maxlength="1" pattern="[0-9]" required>
+                <input type="text" name="otp5" maxlength="1" pattern="[0-9]" required>
+                <input type="text" name="otp6" maxlength="1" pattern="[0-9]" required>
+            </div>
+            <button type="submit" class="verify-btn">Verify and Continue</button>
+            <p class="cancel-btn"><a href="{{ url_for('login') }}">Cancel</a></p>
+        </form>      
+    </div>
+</body>
+</html>

@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TEAM2 - Family Finance Tracker</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}" />
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
-
 <body>
+  <!-- HEADER -->
   <header>
     <h1 class="small-header">FAMILY FINANCE TRACKER</h1>
     <nav>
@@ -20,10 +20,12 @@
     </nav>
   </header>
 
-  <div id="message-container" style="text-align: center;">
+  <!-- RANDOM MESSAGES -->
+  <div id="message-container">
     <div id="message"></div>
   </div>
 
+  <!-- STATS SECTION -->
   <section class="stats">
     <div class="box green" id="total-spent">
       Total Spent💰
@@ -47,7 +49,9 @@
     </div>
   </section>
 
+  <!-- MAIN CONTENT: EXPENSE LIST + ADD EXPENSE -->
   <section class="main-content">
+    <!-- EXPENSE LIST -->
     <section class="expense-list">
       <h2>Expense List</h2>
       <div class="filter">
@@ -74,6 +78,7 @@
       </table>
     </section>
 
+    <!-- ADD EXPENSE FORM -->
     <section class="add-expense">
       <h2>Add Expense</h2>
       <form id="expense-form">
@@ -82,7 +87,7 @@
         <label>
           Category:
           <select id="category" name="category" required>
-            <!-- Options goes here -->
+            <!-- Options go here; loaded by script -->
           </select>
         </label>
         <label id="custom-category-label" style="display: none;">
@@ -99,6 +104,89 @@
         <button type="submit" class="hover-effect">SUBMIT</button>
       </form>
     </section>
+  </section>
+
+  <!-- SET MONTH & YEAR SECTION (WITH NEW CATEGORY & AMOUNT) -->
+  <h1 class="budget-heading">Budget—the Fantasy Edition</h1>
+  <section class="set-month-year">
+    <!-- LEFT: Month & Year -->
+    <div class="month-year-left">
+      <h2>Set Year and Month</h2>
+      <div id="month-year-prompt" class="prompt" style="display: none;">
+        ⚠️ This month/year is already set!
+      </div>
+      <form id="month-year-form">
+        <div class="form-group" style="display: flex; flex-direction: column; gap: 1rem;">
+          <label>Year:
+            <select id="year-select" required>
+              <option value="">Select Year</option>
+              <!-- Options populated by JavaScript -->
+            </select>
+          </label>
+          <label>Month:
+            <select id="month-select" required>
+              <option value="">Select Month</option>
+              <option value="01">January</option>
+              <option value="02">February</option>
+              <option value="03">March</option>
+              <option value="04">April</option>
+              <option value="05">May</option>
+              <option value="06">June</option>
+              <option value="07">July</option>
+              <option value="08">August</option>
+              <option value="09">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </label>
+          <button type="submit" class="hover-effect">Set</button>
+        </div>
+      </form>
+    </div>
+    <!-- RIGHT: Category & Amount (Direct Options via Radio Buttons) -->
+    <div id="budget-form-container" class="budget-form-container">
+      <h3>Set Category & Amount</h3>
+      <form id="budget-category-form">
+        <div class="budget-form-inner">
+          <fieldset>
+            <legend>Category:</legend>
+            <label>
+              <input type="radio" name="budget-category" value="Food🍕" required>
+              Food🍕
+            </label>
+            <label>
+              <input type="radio" name="budget-category" value="Transport🚂">
+              Transport🚂
+            </label>
+            <label>
+              <input type="radio" name="budget-category" value="Bills💸">
+              Bills💸
+            </label>
+            <label>
+              <input type="radio" name="budget-category" value="Entertainment🤡">
+              Entertainment🤡
+            </label>
+            <label>
+              <input type="radio" name="budget-category" value="Shopping🛍️">
+              Shopping🛍️
+            </label>
+            <label>
+              <input type="radio" name="budget-category" value="Therapy 🩺">
+              Therapy 🩺
+            </label>
+            <label>
+              <input type="radio" name="budget-category" value="Others">
+              Others
+            </label>
+          </fieldset>
+          <label for="budget-amount">Amount(₹):
+            <input type="number" id="budget-amount" name="budget-amount" required min="1" />
+          </label>
+          <button type="submit" class="hover-effect">Save Budget</button>
+        </div>
+      </form>
+    </div>
   </section>
 </body>
 </html>

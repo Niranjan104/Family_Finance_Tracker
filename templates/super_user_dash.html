@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super User Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/super_user_dash.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SUPER USER DASHBOARD</h1>
+            <a href="{{ url_for('dashboard') }}" class="dashboard-btn">Dashboard →</a>
+        </div>
+        
+        <div class="card">
+            <div class="create-account">
+                <div class="form-area">
+                    <h2 style="text-align: left; margin-top: 0; color: #333; text-shadow: none;">Create Subaccount</h2>
+                    <form id="create-subaccount-form"  action="{{ url_for('create_subaccount') }}" method="POST">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        {% endwith %}
+                        <div class="form-group">
+                            <label for="username">Username:</label>
+                            <input type="text" id="username" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email:</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="password">Password:</label>
+                            <div class="password-field-wrapper">
+                                <input type="password" id="password" name="password" required>
+                                
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="phone">Phone no:</label>
+                            <input type="tel" id="phone" name="phone_number" required>
+                        </div>
+                        
+                        <button type="submit">Create Subaccount</button>
+                        
+                        
+                    </form>
+                </div>
+                
+                <div class="image-area">
+                    <!-- Placeholder for the image - backend can replace with actual image URL -->
+                    <img src="https://i.pinimg.com/736x/b3/95/5e/b3955e8cc0d931d274b240e80ec3b4d1.jpg" alt="User dashboard illustration" id="dashboard-illustration">
+                </div>
+            </div>
+        </div>
+        
+        <h2>MY FAMILY MEMBERS</h2>
+        
+        <div class="card">
+            <div class="table-container" id="family-members-container">
+                <table id="family-members-table" class="user-table">
+                    <thead>
+                        <tr>
+                            <th>User Id</th>
+                            <th>User Name</th>
+                            <th>Email</th>
+                            <th>Phone no</th>
+                            <th>Approve/Disapprove</th>
+                        </tr>
+                    </thead>
+                    <tbody id="family-members-tbody">
+                        {% if family_members %}
+                            {% for member in family_members %}
+                            <tr>
+                                <td>{{ member.id }}</td>
+                                <td>{{ member.username }}</td>
+                                <td>{{ member.email }}</td>
+                                <td>{{ member.phone }}</td>
+                                <td class="approval-cell">
+                                    <form action="{{ url_for('update_approval') }}" method="POST">
+                                        <input type="hidden" name="user_id" value="{{ member.id }}">
+                                        <div class="approval-options">
+                                            <div class="approval-option">
+                                                <label class="checkbox-container">
+                                                    <input type="radio" name="action" value="approve"
+                                                        {% if member.status == "approved" %}checked{% endif %}
+                                                        onchange="this.form.submit()">
+                                                    <span class="checkmark"></span>
+                                                </label>
+                                                <span>Approve</span>
+                                            </div>
+                                            <div class="approval-option">
+                                                <label class="checkbox-container">
+                                                    <input type="radio" name="action" value="disapprove"
+                                                        {% if member.status == "pending" %}checked{% endif %}
+                                                        onchange="this.form.submit()">
+                                                    <span class="checkmark"></span>
+                                                </label>
+                                                <span>Disapprove</span>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="empty-table-message">No family members found</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+              
+            </div>
+        </div>
+    </div>
+    <div class="footer">
+        <a href="{{ url_for('logout') }}" class="logout-btn">LOGOUT</a>
+        
+    </div>
+
+    <!-- <script>
+    </script> -->
+</body>
+</html>
