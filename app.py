@@ -666,7 +666,119 @@ def toggle_recurring(budget_id):
     db.session.commit()
     return jsonify({"message": "Budget updated successfully!"})
 
-# TEAM 2 -------------------------- ENDS HERE(and add code related to it above this line) ----
+# TEAM 2 (expense & Budget )-------------------------- ENDS HERE(and add code related to it above this line) ----
+
+@app.route("/add_budget", methods=["POST"])
+def add_budget():
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    user_id = session['user_id']
+    data = request.form.to_dict()
+    year = data.get("year")
+    month = data.get("month")
+    category_name = data.get("budget-category")
+    amount = data.get("budget-amount")
+
+    if not year or not month or not category_name or not amount:
+        return jsonify({"message": "Missing required fields!"}), 400
+
+    try:
+        amount = float(amount)
+    except ValueError:
+        return jsonify({"message": "Invalid amount!"}), 400
+
+    category_stripped = strip_emojis(category_name)
+    category = Category.query.filter_by(name=category_stripped).first()
+    if not category:
+        category = Category(name=category_stripped)
+        db.session.add(category)
+        db.session.commit()
+
+    new_budget = Budget(
+        user_id=user_id,
+        category_id=category.category_id,
+        amount=amount,
+        month=int(month),
+        year=int(year)
+    )
+    db.session.add(new_budget)
+    db.session.commit()
+
+    return jsonify({"message": "Budget added successfully!"})
+
+@app.route("/get_budgets")
+def get_budgets():
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    user_id = session['user_id']
+    budgets = Budget.query.filter_by(user_id=user_id).all()
+    return jsonify([{
+        "id": budget.budget_id,
+        "year": budget.year,
+        "month": budget.month,
+        "category": attach_emojis(budget.category.name) if budget.category else "Unknown",
+        "amount": budget.amount,
+        "recurring": budget.recurring
+    } for budget in budgets])
+
+@app.route("/get_budget/<int:budget_id>")
+def get_budget(budget_id):
+    budget = Budget.query.get(budget_id)
+    if not budget:
+        return jsonify({"message": "Budget not found"}), 404
+    return jsonify({
+        "id": budget.budget_id,
+        "year": budget.year,
+        "month": budget.month,
+        "category": attach_emojis(budget.category.name) if budget.category else "Unknown",
+        "amount": budget.amount,
+        "recurring": budget.recurring
+    })
+
+@app.route("/edit_budget/<int:budget_id>", methods=["PUT"])
+def edit_budget(budget_id):
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    user_id = session['user_id']
+    budget = Budget.query.filter_by(budget_id=budget_id, user_id=user_id).first()
+    if not budget:
+        return jsonify({"message": "Budget not found"}), 404
+
+    data = request.form.to_dict()
+    budget.year = data.get("year", budget.year)
+    budget.month = data.get("month", budget.month)
+    category_name = data.get("budget-category", budget.category.name)
+    try:
+        budget.amount = float(data.get("budget-amount", budget.amount))
+    except ValueError:
+        return jsonify({"message": "Invalid amount!"}), 400
+
+    category = Category.query.filter_by(name=strip_emojis(category_name)).first()
+    if not category:
+        category = Category(name=strip_emojis(category_name))
+        db.session.add(category)
+        db.session.commit()
+    budget.category_id = category.category_id
+    db.session.commit()
+    return jsonify({"message": "Budget updated successfully!"})
+
+@app.route("/delete_budget/<int:budget_id>", methods=["DELETE"])
+def delete_budget(budget_id):
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    user_id = session['user_id']
+    budget = Budget.query.filter_by(budget_id=budget_id, user_id=user_id).first()
+    if not budget:
+        return jsonify({"message": "Budget not found"}), 404
+
+    db.session.delete(budget)
+    db.session.commit()
+    return jsonify({"message": "Budget deleted successfully!"})
+
 @app.route('/logout')
 def logout():
     session.pop('email', None)

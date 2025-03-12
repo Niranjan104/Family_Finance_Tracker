@@ -139,78 +139,82 @@
     </section>
   </section>
 
-  <!-- SET BUDGET FORM POPUP -->
-  <div id="set-budget-popup" class="popup">
-    <div class="popup-content">
-      <button id="close-budget-popup-btn" class="close-btn">X</button>
-      <h2 style="text-align: center; flex: 1;">Set Budget</h2>
-      <form id="budget-form">
-        <div id="set-period-section">
-          <label>Year:
-            <select id="year-select" required>
-              <option value="">Select Year</option>
-              <!-- Options populated by JavaScript -->
-            </select>
+  <!-- BUDGET FORM POPUP -->
+<div id="budget-popup" class="popup">
+  <div class="popup-content">
+    <button id="close-budget-popup-btn" class="close-btn">X</button>
+    <h2 style="text-align: center; flex: 1;">Set Budget</h2>
+    <form id="budget-form">
+      <input type="hidden" id="budget-id" name="budget-id" />
+      <!-- Set Year and Month Section -->
+      <div id="set-period-section">
+        <label>Year:
+          <select id="year-select" name="year" required>
+            <option value="">Select Year</option>
+            <!-- Options populated by JavaScript -->
+          </select>
+        </label>
+        <label>Month:
+          <select id="month-select" name="month" required>
+            <option value="">Select Month</option>
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+        </label>
+        <button type="button" id="set-budget-period-btn" class="hover-effect">Set Budget</button>
+        <button type="button" id="refresh-budget-btn" class="hover-effect">↻</button>
+      </div>
+      
+      <!-- Set Budget Category and Amount Section -->
+      <div id="set-category-amount-section" style="display: none;">
+        <fieldset>
+          <legend>Category:</legend>
+          <label class="option">
+            <input type="radio" name="budget-category" value="Food🍕" required>
+            Food🍕
           </label>
-          <label>Month:
-            <select id="month-select" required>
-              <option value="">Select Month</option>
-              <option value="01">January</option>
-              <option value="02">February</option>
-              <option value="03">March</option>
-              <option value="04">April</option>
-              <option value="05">May</option>
-              <option value="06">June</option>
-              <option value="07">July</option>
-              <option value="08">August</option>
-              <option value="09">September</option>
-              <option value="10">October</option>
-              <option value="11">November</option>
-              <option value="12">December</option>
-            </select>
+          <label class="option">
+            <input type="radio" name="budget-category" value="Transport🚂">
+            Transport🚂
           </label>
-          <button type="button" id="set-period-btn" class="hover-effect">Set</button>
-        </div>
-        <div id="set-category-amount-section" style="display: none;">
-          <button id="back-to-period-btn" class="back-btn">←</button>
-          <fieldset>
-            <legend>Category:</legend>
-            <label class="option">
-              <input type="radio" name="budget-category" value="Food🍕" required>
-              Food🍕
-            </label>
-            <label class="option">
-              <input type="radio" name="budget-category" value="Transport🚂">
-              Transport🚂
-            </label>
-            <label class="option">
-              <input type="radio" name="budget-category" value="Bills💸">
-              Bills💸
-            </label>
-            <label class="option">
-              <input type="radio" name="budget-category" value="Entertainment🤡">
-              Entertainment🤡
-            </label>
-            <label class="option">
-              <input type="radio" name="budget-category" value="Shopping🛍️">
-              Shopping🛍️
-            </label>
-            <label class="option">
-              <input type="radio" name="budget-category" value="Therapy 🩺">
-              Therapy 🩺
-            </label>
-            <label class="option">
-              <input type="radio" name="budget-category" value="Others">
-              Others
-            </label>
-          </fieldset>
-          <label for="budget-amount">Amount(₹):
-            <input type="number" id="budget-amount" name="budget-amount" required min="1" />
+          <label class="option">
+            <input type="radio" name="budget-category" value="Bills💸">
+            Bills💸
           </label>
-          <button type="submit" class="hover-effect">Save Budget</button>
-        </div>
-      </form>
-    </div>
+          <label class="option">
+            <input type="radio" name="budget-category" value="Entertainment🤡">
+            Entertainment🤡
+          </label>
+          <label class="option">
+            <input type="radio" name="budget-category" value="Shopping🛍️">
+            Shopping🛍️
+          </label>
+          <label class="option">
+            <input type="radio" name="budget-category" value="Therapy 🩺">
+            Therapy 🩺
+          </label>
+          <label class="option">
+            <input type="radio" name="budget-category" value="Others">
+            Others
+          </label>
+        </fieldset>
+        <label for="budget-amount">Amount(₹):
+          <input type="number" id="budget-amount" name="budget-amount" required min="1" />
+        </label>
+        <button type="submit" class="hover-effect">Save Budget</button>
+      </div>
+    </form>
   </div>
+</div>
 </body>
 </html>

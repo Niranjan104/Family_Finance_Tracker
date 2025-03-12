@@ -290,11 +290,147 @@ async function toggleRecurring(id, isRecurring) {
     fetchBudgets();
 }
 
+// Fetch and display budgets
+async function fetchBudgets() {
+    let response = await fetch(`${API_URL}/get_budgets`);
+    let budgets = await response.json();
+    let tableBody = document.getElementById("budget-table-body");
+    tableBody.innerHTML = "";
+
+    budgets.forEach(budget => {
+        let row = document.createElement("tr");
+        row.setAttribute("data-id", budget.id);
+        row.innerHTML = `
+            <td>${budget.year}</td>
+            <td>${budget.month}</td>
+            <td>${budget.category}</td>
+            <td>₹${budget.amount}</td>
+            <td>
+                <button class="edit-btn edit" onclick="editBudget(${budget.id})">✏️</button>
+                <button class="delete-btn delete" onclick="deleteBudget(${budget.id})">❌</button>
+            </td>
+            <td>
+                <input type="checkbox" ${budget.recurring ? "checked" : ""} onclick="toggleRecurring(${budget.id}, this.checked)" />
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Add new budget
+document.getElementById("budget-form").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    let formData = new FormData(event.target);
+    let budgetId = document.getElementById("budget-id").value;
+    let url = `${API_URL}/add_budget`;
+    let method = "POST";
+    if (budgetId) {
+        url = `${API_URL}/edit_budget/${budgetId}`;
+        method = "PUT";
+    }
+    let response = await fetch(url, {
+        method: method,
+        body: formData
+    });
+    let result = await response.json();
+    if (result.message === "Budget added successfully!" || result.message === "Budget updated successfully!") {
+        showTemporaryAlert(result.message, "success");
+    } else {
+        showTemporaryAlert(result.message || "Failed to save budget.", "error");
+    }
+    fetchBudgets();
+    document.getElementById("budget-form").reset();
+    document.getElementById("set-category-amount-section").style.display = "none";
+});
+
+// Fetch budget details for editing
+async function fetchBudgetDetails(id) {
+    let response = await fetch(`${API_URL}/get_budget/${id}`);
+    if (response.status === 404) {
+        alert("Budget not found");
+        return;
+    }
+    let budget = await response.json();
+    document.getElementById("budget-id").value = budget.id;
+    document.getElementById("year-select").value = budget.year;
+    document.getElementById("month-select").value = budget.month;
+    document.querySelector(`input[name="budget-category"][value="${budget.category}"]`).checked = true;
+    document.getElementById("budget-amount").value = budget.amount;
+}
+
+// Edit budget
+async function editBudget(id) {
+    await fetchBudgetDetails(id);
+    document.getElementById("budget-popup").style.display = "flex"; // Open the popup
+    document.body.style.overflow = "hidden"; // Disable background scrolling
+    document.getElementById("budget-form").scrollIntoView({ behavior: "smooth" });
+}
+
+// Delete budget
+async function deleteBudget(id) {
+    if (!confirm("Sure you want to delete this budget?")) return;
+    await fetch(`${API_URL}/delete_budget/${id}`, { method: "DELETE" });
+    fetchBudgets();
+}
+
+// Set year select dropdown on load
+window.addEventListener("load", function() {
+    populateYearSelect();
+});
+
+// Show the set budget popup
+document.getElementById("set-budget-btn").addEventListener("click", function() {
+    document.getElementById("budget-popup").style.display = "flex";
+    document.body.style.overflow = "hidden"; // Disable background scrolling
+});
+
+// Close the set budget popup
+document.getElementById("close-budget-popup-btn").addEventListener("click", function() {
+    document.getElementById("budget-popup").style.display = "none";
+    document.body.style.overflow = "auto"; // Enable background scrolling
+});
+
+// Handle set budget button click
+document.getElementById("set-budget-period-btn").addEventListener("click", function() {
+    document.getElementById("set-category-amount-section").style.display = "block";
+});
+
+// Handle budget form submission
+document.getElementById("budget-form").addEventListener("submit", async function(event) {
+    event.preventDefault();
+    let formData = new FormData(event.target);
+    let budgetId = document.getElementById("budget-id").value;
+    let url = `${API_URL}/add_budget`;
+    let method = "POST";
+    if (budgetId) {
+        url = `${API_URL}/edit_budget/${budgetId}`;
+        method = "PUT";
+    }
+    let response = await fetch(url, {
+        method: method,
+        body: formData
+    });
+    let result = await response.json();
+    if (result.message === "Budget added successfully!" || result.message === "Budget updated successfully!") {
+        showTemporaryAlert(result.message, "success");
+    } else {
+        showTemporaryAlert(result.message || "Failed to save budget.", "error");
+    }
+    fetchBudgets();
+    document.getElementById("budget-form").reset();
+    document.getElementById("set-category-amount-section").style.display = "none";
+});
+
+// Refresh budget form
+document.getElementById("refresh-budget-btn").addEventListener("click", function() {
+    document.getElementById("budget-form").reset();
+    document.getElementById("set-category-amount-section").style.display = "none";
+});
+
 // Initialization
 fetchExpenses();
 fetchStats();
 fetchBudgets(); // Fetch budgets on page load
-populateYearSelect();
 displayRandomMessage(); // Display message immediately on page load
 
 // Helper function to show temporary alerts
@@ -308,20 +444,5 @@ function showTemporaryAlert(message, type = 'info') {
         setTimeout(() => document.body.removeChild(alertBox), 300);
     }, 3000);
 }
-
-// Toggle dark mode
-document.getElementById("dark-mode-toggle").addEventListener("click", function() {
-    document.body.classList.toggle("dark-mode");
-    const isDarkMode = document.body.classList.contains("dark-mode");
-    localStorage.setItem("darkMode", isDarkMode ? "enabled" : "disabled");
-});
-
-// Set dark mode preference on load
-window.addEventListener("load", function() {
-    const darkMode = localStorage.getItem("darkMode");
-    if (darkMode === "enabled") {
-        document.body.classList.add("dark-mode");
-    }
-});
 
 setInterval(displayRandomMessage, 3000);
