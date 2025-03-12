@@ -1,7 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 
-
-db=SQLAlchemy()
+db = SQLAlchemy()
 
 # User Model
 class User(db.Model):
@@ -24,6 +23,8 @@ class Category(db.Model):
     category_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(255), nullable=False, unique=True)
     category_desc = db.Column(db.String(255), nullable=True)
+
+    #Relationship
     expenses = db.relationship('Expense', backref='category', lazy=True)
     budgets = db.relationship('Budget', backref='category', lazy=True)
 
@@ -43,6 +44,7 @@ class Expense(db.Model):
 class Budget(db.Model):
     __tablename__ = 'budget'
     budget_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.category_id'), nullable=False)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     month = db.Column(db.Integer, nullable=False)

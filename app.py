@@ -703,6 +703,7 @@ def add_budget():
 
         # Create budget entry
         new_budget = Budget(
+            user_id=session['user_id'],  # Add user_id to the budget
             category_id=category.category_id,
             amount=amount,
             month=month,
@@ -719,7 +720,66 @@ def add_budget():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
-    
+
+@app.route("/get_budgets")
+def get_budgets():
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    user_id = session['user_id']
+    budgets = Budget.query.filter_by(user_id=user_id).all()
+    return jsonify([{
+        "id": budget.budget_id,
+        "year": budget.year,
+        "month": budget.month,
+        "category": attach_emojis(budget.category.name) if budget.category else "Unknown",
+        "amount": budget.amount,
+        "recurring": budget.recurring
+    } for budget in budgets])
+
+@app.route("/toggle_recurring/<int:budget_id>", methods=["PUT"])
+def toggle_recurring(budget_id):
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    data = request.get_json()
+    recurring = data.get("recurring", False)
+
+    budget = Budget.query.get(budget_id)
+    if not budget:
+        return jsonify({"message": "Budget not found"}), 404
+
+    budget.recurring = recurring
+    db.session.commit()
+    return jsonify({"message": "Budget updated successfully!"})
+
+@app.route("/delete_budget/<int:budget_id>", methods=["DELETE"])
+def delete_budget(budget_id):
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
+
+    budget = Budget.query.get(budget_id)
+    if not budget:
+        return jsonify({"message": "Budget not found"}), 404
+
+    db.session.delete(budget)
+    db.session.commit()
+    return jsonify({"message": "Budget deleted successfully!"})
+
+@app.route("/get_budget/<int:budget_id>")
+def get_budget(budget_id):
+    budget = Budget.query.get(budget_id)
+    if not budget:
+        return jsonify({"message": "Budget not found"}), 404
+    return jsonify({
+        "id": budget.budget_id,
+        "year": budget.year,
+        "month": budget.month,
+        "category": attach_emojis(budget.category.name) if budget.category else "Unknown",
+        "amount": budget.amount,
+        "recurring": budget.recurring
+    })
+
 # TEAM 2 -------------------------------------- ENDS HERE --------------------------------------------------------------------
 
 @app.route('/logout')

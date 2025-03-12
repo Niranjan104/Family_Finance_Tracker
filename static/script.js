@@ -150,6 +150,18 @@ function closeImagePopup() {
     }
 }
 
+// Show the add expense popup
+document.getElementById("add-expense-btn").addEventListener("click", function() {
+    document.getElementById("add-expense-popup").style.display = "flex";
+    document.body.style.overflow = "hidden"; // Disable background scrolling
+});
+
+// Close the add expense popup
+document.getElementById("close-popup-btn").addEventListener("click", function() {
+    document.getElementById("add-expense-popup").style.display = "none";
+    document.body.style.overflow = "auto"; // Enable background scrolling
+});
+
 // Add new expense
 document.getElementById("expense-form").addEventListener("submit", async function(event) {
     event.preventDefault();
@@ -182,6 +194,8 @@ document.getElementById("expense-form").addEventListener("submit", async functio
     document.getElementById("custom-category-label").style.display = "none";
     document.getElementById("expense-id").value = "";
     document.getElementById("file-upload-label").textContent = "Upload File";
+    document.getElementById("add-expense-popup").style.display = "none"; // Close popup after submission
+    document.body.style.overflow = "auto"; // Enable background scrolling
 });
 
 // Update expense field inline
@@ -314,11 +328,144 @@ function populateYearSelect() {
     }
 }
 
+// Fetch and display budgets
+async function fetchBudgets() {
+    let response = await fetch(`${API_URL}/get_budgets`);
+    let budgets = await response.json();
+    let tableBody = document.getElementById("budget-table-body");
+    tableBody.innerHTML = "";
+
+    budgets.forEach(budget => {
+        let row = document.createElement("tr");
+        row.setAttribute("data-id", budget.id);
+        row.innerHTML = `
+            <td>${budget.year}</td>
+            <td>${budget.month}</td>
+            <td>${budget.category}</td>
+            <td>₹${budget.amount}</td>
+            <td>
+                <input type="checkbox" ${budget.recurring ? "checked" : ""} onchange="toggleRecurring(${budget.id}, this.checked)">
+            </td>
+            <td>
+                <button class="edit-btn edit" onclick="editBudget(${budget.id})">✏️</button>
+                <button class="delete-btn delete" onclick="deleteBudget(${budget.id})">❌</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Toggle recurring status
+async function toggleRecurring(id, isRecurring) {
+    const confirmation = confirm(`Set as ${isRecurring ? "recurring" : "non-recurring"}?`);
+    if (!confirmation) return;
+
+    await fetch(`${API_URL}/toggle_recurring/${id}`, {
+        method: "PUT",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recurring: isRecurring })
+    });
+    fetchBudgets();
+}
+
+// Edit budget
+async function editBudget(id) {
+    let response = await fetch(`${API_URL}/get_budget/${id}`);
+    if (response.status === 404) {
+        alert("Budget not found");
+        return;
+    }
+    let budget = await response.json();
+    document.getElementById("year-select").value = budget.year;
+    document.getElementById("month-select").value = budget.month;
+    document.querySelector(`input[name="budget-category"][value="${budget.category}"]`).checked = true;
+    document.getElementById("budget-amount").value = budget.amount;
+    document.getElementById("set-period-section").style.display = "none";
+    document.getElementById("set-category-amount-section").style.display = "block";
+    document.getElementById("set-budget-popup").style.display = "flex";
+    document.body.style.overflow = "hidden"; // Disable background scrolling
+}
+
+// Delete budget
+async function deleteBudget(id) {
+    if (!confirm("Sure you want to delete?")) return;
+    await fetch(`${API_URL}/delete_budget/${id}`, { method: "DELETE" });
+    fetchBudgets();
+}
+
+// Show the set budget popup
+document.getElementById("set-budget-btn").addEventListener("click", function() {
+    document.getElementById("set-budget-popup").style.display = "flex";
+    document.body.style.overflow = "hidden"; // Disable background scrolling
+});
+
+// Close the set budget popup
+document.getElementById("close-budget-popup-btn").addEventListener("click", function() {
+    document.getElementById("set-budget-popup").style.display = "none";
+    document.body.style.overflow = "auto"; // Enable background scrolling
+});
+
+// Handle set period button click
+document.getElementById("set-period-btn").addEventListener("click", function() {
+    const year = document.getElementById("year-select").value;
+    const month = document.getElementById("month-select").value;
+    if (!year || !month) {
+        alert("Please select both year and month!");
+        return;
+    }
+    document.getElementById("set-period-section").style.display = "none";
+    document.getElementById("set-category-amount-section").style.display = "block";
+});
+
+// Handle budget form submission
+document.getElementById("budget-form").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const selectedCategoryElement = document.querySelector('input[name="budget-category"]:checked');
+    const category = selectedCategoryElement ? selectedCategoryElement.value : "";
+    const amount = document.getElementById('budget-amount').value;
+    
+    if (!category || !amount) {
+        alert("Please fill in both category and amount!");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/add_budget`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                category: category.split(' ')[0], // Remove emoji from category name if needed
+                amount: parseFloat(amount) 
+            })
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to save budget');
+        }
+
+        alert('Budget saved successfully!');
+        document.getElementById('budget-amount').value = '';
+        document.getElementById("set-budget-popup").style.display = "none"; // Close popup after submission
+        document.body.style.overflow = "auto"; // Enable background scrolling
+        fetchBudgets(); // Refresh budget list
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert(`Error: ${error.message}`);
+    }
+});
+
 // Initialization
 fetchCategories().then(() => {
     fetchExpenses();
     fetchStats();
+    fetchBudgets(); // Fetch budgets on page load
     populateYearSelect();
+    displayRandomMessage(); // Display message immediately on page load
 });
 
 // Handle month/year form submission with credentials included
