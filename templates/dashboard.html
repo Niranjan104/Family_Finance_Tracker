@@ -85,7 +85,7 @@
     <div id="add-expense-popup" class="popup">
       <div class="popup-content">
         <button id="close-popup-btn" class="close-btn">X</button>
-        <h2>Add Expense</h2>
+        <h2 style="text-align: center; flex: 1;">Add Expense</h2>
         <form id="expense-form">
           <input type="hidden" id="expense-id" name="expense-id" />
           <label>Name: <input type="text" id="name" name="name" required /></label>
@@ -139,7 +139,7 @@
   <div id="set-budget-popup" class="popup">
     <div class="popup-content">
       <button id="close-budget-popup-btn" class="close-btn">X</button>
-      <h2>Set Budget</h2>
+      <h2 style="text-align: center; flex: 1;">Set Budget</h2>
       <form id="budget-form">
         <div id="set-period-section">
           <label>Year:
@@ -168,6 +168,7 @@
           <button type="button" id="set-period-btn" class="hover-effect">Set</button>
         </div>
         <div id="set-category-amount-section" style="display: none;">
+          <button id="back-to-period-btn" class="back-btn">←</button>
           <fieldset>
             <legend>Category:</legend>
             <label>

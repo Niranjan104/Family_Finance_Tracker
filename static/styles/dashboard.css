@@ -686,3 +686,20 @@ body.dark-mode .budget-list th {
 body.dark-mode .budget-list tr:hover {
   background: #545454;
 }
+
+.back-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #007bff; /* Blue color */
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

@@ -397,6 +397,8 @@ async function deleteBudget(id) {
 
 // Show the set budget popup
 document.getElementById("set-budget-btn").addEventListener("click", function() {
+    document.getElementById("set-period-section").style.display = "block";
+    document.getElementById("set-category-amount-section").style.display = "none";
     document.getElementById("set-budget-popup").style.display = "flex";
     document.body.style.overflow = "hidden"; // Disable background scrolling
 });
@@ -417,6 +419,12 @@ document.getElementById("set-period-btn").addEventListener("click", function() {
     }
     document.getElementById("set-period-section").style.display = "none";
     document.getElementById("set-category-amount-section").style.display = "block";
+});
+
+// Handle back button click to navigate to set period section
+document.getElementById("back-to-period-btn").addEventListener("click", function() {
+    document.getElementById("set-category-amount-section").style.display = "none";
+    document.getElementById("set-period-section").style.display = "block";
 });
 
 // Handle budget form submission
