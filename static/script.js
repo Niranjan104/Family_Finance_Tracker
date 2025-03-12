@@ -346,11 +346,11 @@ async function fetchBudgets() {
             <td>${budget.category}</td>
             <td>₹${budget.amount}</td>
             <td>
-                <input type="checkbox" ${budget.recurring ? "checked" : ""} onchange="toggleRecurring(${budget.id}, this.checked)">
-            </td>
-            <td>
                 <button class="edit-btn edit" onclick="editBudget(${budget.id})">✏️</button>
                 <button class="delete-btn delete" onclick="deleteBudget(${budget.id})">❌</button>
+            </td>
+            <td>
+                <input type="checkbox" ${budget.recurring ? "checked" : ""} onchange="toggleRecurring(${budget.id}, this.checked)">
             </td>
         `;
         tableBody.appendChild(row);
@@ -417,8 +417,24 @@ document.getElementById("set-period-btn").addEventListener("click", function() {
         alert("Please select both year and month!");
         return;
     }
-    document.getElementById("set-period-section").style.display = "none";
-    document.getElementById("set-category-amount-section").style.display = "block";
+    fetch(`${API_URL}/set_period`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ year: parseInt(year), month: parseInt(month) })
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.error) {
+            alert(result.error);
+        } else {
+            document.getElementById("set-period-section").style.display = "none";
+            document.getElementById("set-category-amount-section").style.display = "block";
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to set period. Please try again.');
+    });
 });
 
 // Handle back button click to navigate to set period section
