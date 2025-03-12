@@ -54,19 +54,6 @@ async function fetchCategories() {
     });
 }
 
-// Show/hide custom category input
-document.getElementById("category").addEventListener("change", function() {
-    let customCategoryLabel = document.getElementById("custom-category-label");
-    let customCategoryInput = document.getElementById("custom-category");
-    if (this.value === "Others") {
-        customCategoryLabel.style.display = "block";
-        customCategoryInput.required = true;
-    } else {
-        customCategoryLabel.style.display = "none";
-        customCategoryInput.required = false;
-    }
-});
-
 // Update file upload label with file name
 document.getElementById("file-upload").addEventListener("change", function() {
     const fileName = this.files[0] ? this.files[0].name : "Upload File";
@@ -167,14 +154,9 @@ document.getElementById("expense-form").addEventListener("submit", async functio
     event.preventDefault();
     let formData = new FormData(event.target);
 
-    // Handle custom category
+    // Handle category
     let categorySelect = document.getElementById("category");
-    if (categorySelect.value === "Others") {
-        let customCategory = document.getElementById("custom-category").value;
-        formData.set("category", stripEmojis(customCategory));
-    } else {
-        formData.set("category", stripEmojis(categorySelect.value));
-    }
+    formData.set("category", stripEmojis(categorySelect.value));
 
     let expenseId = document.getElementById("expense-id").value;
     let url = `${API_URL}/add_expense`;
@@ -191,7 +173,6 @@ document.getElementById("expense-form").addEventListener("submit", async functio
     fetchExpenses();
     fetchStats();
     event.target.reset();
-    document.getElementById("custom-category-label").style.display = "none";
     document.getElementById("expense-id").value = "";
     document.getElementById("file-upload-label").textContent = "Upload File";
     document.getElementById("add-expense-popup").style.display = "none"; // Close popup after submission
@@ -244,13 +225,6 @@ async function fetchExpenseDetails(id) {
     document.getElementById("amount").value = expense.amount;
     document.getElementById("description").value = expense.description;
     document.getElementById("file-upload").value = "";
-    if (expense.category === "Others" || !DEFAULT_CATEGORIES.includes(expense.category)) {
-        document.getElementById("custom-category-label").style.display = "block";
-        document.getElementById("custom-category").value = expense.category;
-        document.getElementById("category").value = "Others";
-    } else {
-        document.getElementById("custom-category-label").style.display = "none";
-    }
 }
 
 // Edit expense
@@ -429,6 +403,7 @@ document.getElementById("set-period-btn").addEventListener("click", function() {
         } else {
             document.getElementById("set-period-section").style.display = "none";
             document.getElementById("set-category-amount-section").style.display = "block";
+            alert("Period set successfully! You can now set the budget category and amount."); // Display success message
         }
     })
     .catch(error => {
@@ -447,33 +422,65 @@ document.getElementById("back-to-period-btn").addEventListener("click", function
 // Handle budget form submission
 document.getElementById("budget-form").addEventListener("submit", async function(e) {
     e.preventDefault();
+    console.log("Budget form submitted");
+
     const selectedCategoryElement = document.querySelector('input[name="budget-category"]:checked');
     const category = selectedCategoryElement ? selectedCategoryElement.value : "";
     const amount = document.getElementById('budget-amount').value;
     const budgetId = document.getElementById('budget-id').value; // Hidden input for budget ID
+    const year = document.getElementById("year-select").value;
+    const month = document.getElementById("month-select").value;
 
-    if (!category || !amount) {
-        alert("Please fill in both category and amount!");
+    console.log("Category:", category);
+    console.log("Amount:", amount);
+    console.log("Budget ID:", budgetId);
+    console.log("Year:", year);
+    console.log("Month:", month);
+
+    if (!category || !amount || !year || !month) {
+        alert("Please fill in all fields!");
+        return;
+    }
+
+    // Check if period is set
+    if (!year || !month) {
+        alert("Please set the period (year and month) first!");
         return;
     }
 
     try {
         const url = budgetId ? `${API_URL}/edit_budget/${budgetId}` : `${API_URL}/add_budget`;
         const method = budgetId ? 'PUT' : 'POST';
-        console.log(`Submitting to URL: ${url} with method: ${method}`); // Debug statement
+
+        // Create data object
+        const data = {
+            category: category,
+            amount: parseFloat(amount),
+            year: parseInt(year),
+            month: parseInt(month)
+        };
+
+        console.log("Submitting to URL:", url);
+        console.log("Method:", method);
+        console.log("Data:", data);
+
         const response = await fetch(url, {
             method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                category: category.split(' ')[0], // Remove emoji from category name if needed
-                amount: parseFloat(amount) 
-            })
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
         });
 
+        console.log("Raw response:", response);
+
         const result = await response.json();
-        console.log(`Response: ${JSON.stringify(result)}`); // Debug statement
+
+        console.log("Parsed result:", result);
         
         if (!response.ok) {
+            console.error("Server error:", result);
+            alert(`Server error: ${result.error || 'Failed to save budget'}`); // Display server error
             throw new Error(result.error || 'Failed to save budget');
         }
 
@@ -481,28 +488,9 @@ document.getElementById("budget-form").addEventListener("submit", async function
         document.getElementById('budget-amount').value = '';
         document.getElementById("set-budget-popup").style.display = "none"; // Close popup after submission
         document.body.style.overflow = "auto"; // Enable background scrolling
+        document.getElementById('budget-id').value = ''; // Clear budget ID after saving
 
-        if (budgetId) {
-            // Update the existing row
-            let row = document.querySelector(`tr[data-id='${budgetId}']`);
-            if (row) {
-                row.innerHTML = `
-                    <td>${document.getElementById("year-select").value}</td>
-                    <td>${document.getElementById("month-select").value}</td>
-                    <td>${category}</td>
-                    <td>₹${amount}</td>
-                    <td>
-                        <button class="edit-btn edit" onclick="editBudget(${budgetId})">✏️</button>
-                        <button class="delete-btn delete" onclick="deleteBudget(${budgetId})">❌</button>
-                    </td>
-                    <td>
-                        <input type="checkbox" ${result.recurring ? "checked" : ""} onchange="toggleRecurring(${budgetId}, this.checked)">
-                    </td>
-                `;
-            }
-        } else {
-            fetchBudgets(); // Refresh budget list
-        }
+        fetchBudgets(); // Refresh budget list
         
     } catch (error) {
         console.error('Error:', error);

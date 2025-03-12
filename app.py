@@ -434,13 +434,13 @@ def add_expense():
         return jsonify({"message": "Unauthorized"}), 401
 
     user = session['user_id']
-    role=session['role']
+    role = session['role']
     if user:
-        if role=="family_member":
+        if role == "family_member":
             user = User.query.get(session['user_id'])
-            user_id=user.approved_by
+            user_id = user.approved_by
         else:
-            user_id=user
+            user_id = user
 
     data = request.form.to_dict()
     name = data.get("name")
@@ -456,12 +456,6 @@ def add_expense():
         amount = float(amount)
     except ValueError:
         return jsonify({"message": "Invalid amount!"}), 400
-
-    # Handle "Others" category input
-    if category_name == "Others":
-        category_name = data.get("custom-category")
-        if not category_name:
-            return jsonify({"message": "Custom category name is required!"}), 400
 
     # Remove emojis for internal storage
     category_stripped = strip_emojis(category_name)
@@ -583,10 +577,7 @@ def edit_expense(expense_id):
     except ValueError:
         return jsonify({"message": "Invalid amount!"}), 400
     expense.description = data.get("description", expense.description)
-    if category_name == "Others":
-        category_name = data.get("custom-category")
-        if not category_name:
-            return jsonify({"message": "Custom category name is required!"}), 400
+    
     category = Category.query.filter_by(name=strip_emojis(category_name)).first()
     if not category:
         category_desc = data.get("category-desc", "")
