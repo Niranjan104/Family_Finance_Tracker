@@ -256,6 +256,8 @@ async function fetchExpenseDetails(id) {
 // Edit expense
 async function editExpense(id) {
     await fetchExpenseDetails(id);
+    document.getElementById("add-expense-popup").style.display = "flex"; // Open the popup
+    document.body.style.overflow = "hidden"; // Disable background scrolling
     document.getElementById("expense-form").scrollIntoView({ behavior: "smooth" });
 }
 
