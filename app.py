@@ -681,6 +681,7 @@ def set_period():
 def add_budget():
     try:
         data = request.get_json()
+        print(f"Received data for adding budget: {data}")  # Debug statement
         if not data or 'category' not in data or 'amount' not in data:
             return jsonify({'error': 'Missing category or amount'}), 400
         
@@ -713,12 +714,15 @@ def add_budget():
         db.session.add(new_budget)
         db.session.commit()
         
+        print(f"Budget added successfully: {new_budget}")  # Debug statement
         return jsonify({'message': 'Budget saved successfully'}), 200
 
     except ValueError as ve:
+        print(f"ValueError: {ve}")  # Debug statement
         return jsonify({'error': f'Invalid data format: {str(ve)}'}), 400
     except Exception as e:
         db.session.rollback()
+        print(f"Exception: {e}")  # Debug statement
         return jsonify({'error': str(e)}), 500
 
 @app.route("/get_budgets")
@@ -780,7 +784,44 @@ def get_budget(budget_id):
         "recurring": budget.recurring
     })
 
-# TEAM 2 -------------------------------------- ENDS HERE --------------------------------------------------------------------
+@app.route('/edit_budget/<int:budget_id>', methods=['PUT'])
+def edit_budget(budget_id):
+    try:
+        data = request.get_json()
+        print(f"Received data for editing budget: {data}")  # Debug statement
+        if not data or 'category' not in data or 'amount' not in data:
+            return jsonify({'error': 'Missing category or amount'}), 400
+
+        budget = Budget.query.get(budget_id)
+        if not budget:
+            return jsonify({'error': 'Budget not found'}), 404
+
+        # Process category
+        category_name = strip_emojis(data['category'].split(' ')[0])  # Remove emoji and any trailing space
+        amount = float(data['amount'])
+
+        # Find or create category
+        category = Category.query.filter_by(name=category_name).first()
+        if not category:
+            category = Category(name=category_name)
+            db.session.add(category)
+            db.session.commit()
+
+        # Update budget entry
+        budget.category_id = category.category_id
+        budget.amount = amount
+        db.session.commit()
+
+        print(f"Budget updated successfully: {budget}")  # Debug statement
+        return jsonify({'message': 'Budget updated successfully', 'recurring': budget.recurring}), 200
+
+    except ValueError as ve:
+        print(f"ValueError: {ve}")  # Debug statement
+        return jsonify({'error': f'Invalid data format: {str(ve)}'}), 400
+    except Exception as e:
+        db.session.rollback()
+        print(f"Exception: {e}")  # Debug statement
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/logout')
 def logout():

@@ -379,7 +379,7 @@ async function editBudget(id) {
     }
     let budget = await response.json();
     document.getElementById("year-select").value = budget.year;
-    document.getElementById("month-select").value = budget.month;
+    document.getElementById("month-select").value = budget.month.toString().padStart(2, '0'); // Ensure month is in two-digit format
     document.querySelector(`input[name="budget-category"][value="${budget.category}"]`).checked = true;
     document.getElementById("budget-amount").value = budget.amount;
     document.getElementById("set-period-section").style.display = "none";
@@ -438,7 +438,8 @@ document.getElementById("set-period-btn").addEventListener("click", function() {
 });
 
 // Handle back button click to navigate to set period section
-document.getElementById("back-to-period-btn").addEventListener("click", function() {
+document.getElementById("back-to-period-btn").addEventListener("click", function(event) {
+    event.preventDefault(); // Prevent any default form submission behavior
     document.getElementById("set-category-amount-section").style.display = "none";
     document.getElementById("set-period-section").style.display = "block";
 });
@@ -449,18 +450,20 @@ document.getElementById("budget-form").addEventListener("submit", async function
     const selectedCategoryElement = document.querySelector('input[name="budget-category"]:checked');
     const category = selectedCategoryElement ? selectedCategoryElement.value : "";
     const amount = document.getElementById('budget-amount').value;
-    
+    const budgetId = document.getElementById('budget-id').value; // Hidden input for budget ID
+
     if (!category || !amount) {
         alert("Please fill in both category and amount!");
         return;
     }
 
     try {
-        const response = await fetch(`${API_URL}/add_budget`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-            },
+        const url = budgetId ? `${API_URL}/edit_budget/${budgetId}` : `${API_URL}/add_budget`;
+        const method = budgetId ? 'PUT' : 'POST';
+        console.log(`Submitting to URL: ${url} with method: ${method}`); // Debug statement
+        const response = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 category: category.split(' ')[0], // Remove emoji from category name if needed
                 amount: parseFloat(amount) 
@@ -468,6 +471,7 @@ document.getElementById("budget-form").addEventListener("submit", async function
         });
 
         const result = await response.json();
+        console.log(`Response: ${JSON.stringify(result)}`); // Debug statement
         
         if (!response.ok) {
             throw new Error(result.error || 'Failed to save budget');
@@ -477,7 +481,28 @@ document.getElementById("budget-form").addEventListener("submit", async function
         document.getElementById('budget-amount').value = '';
         document.getElementById("set-budget-popup").style.display = "none"; // Close popup after submission
         document.body.style.overflow = "auto"; // Enable background scrolling
-        fetchBudgets(); // Refresh budget list
+
+        if (budgetId) {
+            // Update the existing row
+            let row = document.querySelector(`tr[data-id='${budgetId}']`);
+            if (row) {
+                row.innerHTML = `
+                    <td>${document.getElementById("year-select").value}</td>
+                    <td>${document.getElementById("month-select").value}</td>
+                    <td>${category}</td>
+                    <td>₹${amount}</td>
+                    <td>
+                        <button class="edit-btn edit" onclick="editBudget(${budgetId})">✏️</button>
+                        <button class="delete-btn delete" onclick="deleteBudget(${budgetId})">❌</button>
+                    </td>
+                    <td>
+                        <input type="checkbox" ${result.recurring ? "checked" : ""} onchange="toggleRecurring(${budgetId}, this.checked)">
+                    </td>
+                `;
+            }
+        } else {
+            fetchBudgets(); // Refresh budget list
+        }
         
     } catch (error) {
         console.error('Error:', error);
