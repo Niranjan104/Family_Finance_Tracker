@@ -248,29 +248,42 @@ def admin_dashboard():
 @app.route('/verify', methods=['GET', 'POST'])
 @login_required
 def verify():
+    if session.get('verified'):
+        return redirect(url_for('dashboard'))
+    
     if request.method == 'POST':
         entered_otp = ''.join([request.form.get(f'otp{i}') for i in range(1, 7)])
         actual_otp = session.get('otp')
 
         if entered_otp == actual_otp:
             session.pop('otp', None)
-            role = session.get('role')
-
-            if role == "super_user":
-                return redirect(url_for('super_user_dashboard'))
-            elif role == "family_member":
-                user_id = session.get('user_id')
-                user = User.query.get(user_id)
-
-                if user:
-                    if user.privilege == "view":
-                        return redirect(url_for('view_dash'))
-                    elif user.privilege == "edit":
-                        return redirect(url_for('dashboard'))
+            session['verified'] = True
+            return redirect(url_for('dashboard'))
 
         flash("Invalid OTP, Please Try Again!")
 
     return render_template('verification.html')
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    if not session.get('verified'):
+        return redirect(url_for('verify'))
+
+    role = session.get('role')
+    user = User.query.get(session.get('user_id'))
+    
+    if role == "super_user":
+        return render_template("dashboard_edit.html", is_super_user=True)  # Pass flag to template
+    elif role == "family_member" and user:
+        if user.status == "approved":
+            if user.privilege == "view":
+                return render_template("dashboard_view.html")
+            elif user.privilege == "edit":
+                return render_template("dashboard_edit.html")
+        else:
+            flash("Your account is pending approval.", "warning")
+            return redirect(url_for("login"))
 
 
 @app.route("/update_approved_by", methods=["POST"])
@@ -324,21 +337,28 @@ def create_subaccount():
         return redirect(url_for("login"))
 
     # Get the form data
-    username = request.form.get("username")  # Get the username from the form
+    username = request.form.get("username")
     email = request.form.get("email")
     password = request.form.get("password")
     phone_number = request.form.get("phone_number")
+    privilege = request.form.get("privilege", "view")  # Default to view if not specified
+
+    # Check if email already exists
+    existing_email = User.query.filter_by(email=email).first()
+    if existing_email:
+        flash("Email already exists. Please use a different email.", "error")
+        return redirect(url_for("super_user_dashboard"))
+
+    # Check if username already exists
+    existing_user = User.query.filter_by(username=username).first()
+    if existing_user:
+        flash("Username already exists. Please choose a different username.", "error")
+        return redirect(url_for("super_user_dashboard"))
 
     # Fetch the superuser's details
     superuser = User.query.get(session["user_id"])
     if not superuser:
         flash("Superuser not found.", "error")
-        return redirect(url_for("super_user_dashboard"))
-
-    # Check if the username already exists
-    existing_user = User.query.filter_by(username=username).first()
-    if existing_user:
-        flash("Username already exists. Please choose a different username.", "error")
         return redirect(url_for("super_user_dashboard"))
 
     # Create the family member account
@@ -351,15 +371,15 @@ def create_subaccount():
         password=hashed_password,
         phone=phone_number,
         role="family_member",
-        privilege="view",
-        approved_by=session["user_id"]
+        privilege=privilege,
+        status="pending",  # Set initial status as pending
+        approved_by=None  # Will be set when approved
     )
 
-    # Add the new user to the database
     db.session.add(new_user)
     db.session.commit()
 
-    flash("Subaccount created successfully!","success")
+    flash("Subaccount created successfully! Waiting for approval.", "success")
     return redirect(url_for("super_user_dashboard"))
 
 @app.route("/update_approval", methods=["POST"])
@@ -368,18 +388,22 @@ def update_approval():
         return redirect(url_for("login"))
 
     user_id = request.form.get("user_id")
-    action = request.form.get("approve")  # "approve" or "disapprove"
+    action = request.form.get("action")  # "approve" or "disapprove"
+    privilege = request.form.get("privilege")  # "edit" or "view"
 
     user = User.query.get(user_id)
     if not user:
         flash("User not found.", "error")
         return redirect(url_for("super_user_dashboard"))
 
-    if action:
+    if action == "approve":
         user.status = "approved"
-        flash(f"User {user.username} has been approved.", "success")
+        user.approved_by = session["user_id"]
+        user.privilege = privilege if privilege else "view"
+        flash(f"User {user.username} has been approved with {user.privilege} access.", "success")
     else:
         user.status = "pending"
+        user.approved_by = None
         flash(f"User {user.username} has been disapproved.", "warning")
 
     db.session.commit()
@@ -402,27 +426,6 @@ def update_privilege():
 
     return redirect(url_for("super_user_dashboard"))  # Redirect to avoid form resubmission issues
 
-
-@app.route('/dashboard')
-# @login_required
-def dashboard():
-    # if 'user_id' not in session:
-    #     return redirect(url_for('login'))
-
-    # user = User.query.get(session['user_id'])
-    return render_template('dashboard.html')#, username=user.username)
-
-@app.route('/view_dash')
-@login_required
-def view_dash():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    user = User.query.get(session['user_id'])
-
-    return render_template('view_dash.html',username=user.username)
-
-
-# TEAM 2 -------------------------------------- STARTS HERE ---------------------------------------------------
 @app.route("/get_categories")
 def get_categories():
     categories = Category.query.all()
@@ -787,7 +790,7 @@ def delete_budget(budget_id):
 
 @app.route('/logout')
 def logout():
-    session.pop('email', None)
+    session.clear() # Clear all session data
     return redirect(url_for('login'))
 
 

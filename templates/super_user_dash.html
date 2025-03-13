@@ -67,46 +67,50 @@
                 <table id="family-members-table" class="user-table">
                     <thead>
                         <tr>
-                            <th>User Id</th>
                             <th>User Name</th>
                             <th>Email</th>
                             <th>Phone no</th>
-                            <th>Approve/Disapprove</th>
+                            <th>Privilege</th>
+                            <th>Action Taken</th>
                         </tr>
                     </thead>
                     <tbody id="family-members-tbody">
                         {% if family_members %}
                             {% for member in family_members %}
                             <tr>
-                                <td>{{ member.id }}</td>
                                 <td>{{ member.username }}</td>
                                 <td>{{ member.email }}</td>
                                 <td>{{ member.phone }}</td>
+                                <td>
+                                    <form action="{{ url_for('update_privilege') }}" method="POST">
+                                        <input type="hidden" name="user_id" value="{{ member.id }}">
+                                        <select name="new_privilege" class="privilege-dropdown" onchange="this.form.submit()">
+                                            <option value="view" {% if member.privilege == 'view' %}selected{% endif %}>View</option>
+                                            <option value="edit" {% if member.privilege == 'edit' %}selected{% endif %}>Edit</option>
+                                        </select>
+                                    </form>
+                                </td>
                                 <td class="approval-cell">
-                                    <form action="{{ url_for('update_approval') }}" method="POST">
+                                    <form action="{{ url_for('update_approval') }}" method="POST">  <!-- Corrected route name -->
                                         <input type="hidden" name="user_id" value="{{ member.id }}">
                                         <div class="approval-options">
                                             <div class="approval-option">
-                                                <label class="checkbox-container">
-                                                    <input type="radio" name="action" value="approve"
-                                                        {% if member.status == "approved" %}checked{% endif %}
-                                                        onchange="this.form.submit()">
-                                                    <span class="checkmark"></span>
+                                                <input type="checkbox" id="approve-{{ member.id }}" name="approve" 
+                                                       onchange="this.form.submit()"
+                                                       {% if member.status == 'approved' %}checked{% endif %}>
+                                                <label for="approve-{{ member.id }}">
+                                                    {% if member.status == 'pending' %}
+                                                        Disapprove
+                                                    {% else %}
+                                                        Approve
+                                                    {% endif %}
                                                 </label>
-                                                <span>Approve</span>
-                                            </div>
-                                            <div class="approval-option">
-                                                <label class="checkbox-container">
-                                                    <input type="radio" name="action" value="disapprove"
-                                                        {% if member.status == "pending" %}checked{% endif %}
-                                                        onchange="this.form.submit()">
-                                                    <span class="checkmark"></span>
-                                                </label>
-                                                <span>Disapprove</span>
                                             </div>
                                         </div>
                                     </form>
                                 </td>
+                                
+                                
                             </tr>
                             {% endfor %}
                         {% else %}
@@ -125,7 +129,5 @@
         
     </div>
 
-    <!-- <script>
-    </script> -->
 </body>
 </html>

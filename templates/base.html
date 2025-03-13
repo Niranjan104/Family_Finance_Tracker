@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Family Finance Tracker{% endblock %}</title>
+    {% block styles %}{% endblock %}
+</head>
+<body>
+    <!-- HEADER -->
+    <header>
+        <h1 class="small-header">FAMILY FINANCE TRACKER</h1>
+        <!-- Add this where you want the super user management link to appear -->
+        {% if is_super_user %}
+        <div class="nav-item">
+            <a href="{{ url_for('super_user_dashboard') }}" class="nav-link">Manage Family Members</a>
+        </div>
+        {% endif %}
+        <nav>
+            <button id="expense-btn" class="hover-effect">Expense Management</button>
+            <button id="budget-btn" class="hover-effect">Budget & Savings Management</button>
+            <button id="insights-btn" class="hover-effect">Insights Dashboard</button>
+            <span id="user-greeting">Hello, User!</span>
+            <button id="dark-mode-toggle">🌙</button>
+        </nav>
+    </header>
+
+    <!-- RANDOM MESSAGES -->
+    <div id="message-container">
+        <div id="message"></div>
+    </div>
+
+    {% block content %}{% endblock %}
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

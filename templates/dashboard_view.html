@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard View{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='styles/dashboard.css') }}" />
+{% endblock %}
+
+{% block content %}
+<!-- Your dashboard edit specific content here -->
+<!-- STATS SECTION -->
+<section class="stats">
+  <div class="box green" id="total-spent">
+    Total Spent💰
+    <div>₹:<span id="total-spent-value">0</span></div>
+  </div>
+  <div class="box pink" id="expense-count">
+    Expense Count📊
+    <div><span id="expense-count-value">0</span></div>
+  </div>
+  <div class="box blue" id="Last-7day-Spent">
+    Last 7 Days📅
+    <div>₹:<span id="last-7days-spent-value">0</span></div>
+  </div>
+  <div class="box gray" id="highest-category">
+    Top Category🔝
+    <div><span id="highest-category-value">N/A</span></div>
+  </div>
+  <div class="box orange" id="highest-amount">
+    Max Spend🧾
+    <div>₹:<span id="highest-amount-value">0</span></div>
+  </div>
+</section>
+
+<!-- MAIN CONTENT -->
+<section class="main-content">
+  <!-- EXPENSE LIST -->
+  <section class="expense-list">
+    <div class="expense-list-header">
+      <h2 style="text-align: center; flex: 1;">Expense List</h2>
+    </div>
+    <div class="filter">
+      <label>From: <input type="date" id="from-date" class="small-input" name="from-date" /></label>
+      <label>To: <input type="date" id="to-date" class="small-input" name="to-date" /></label>
+      <button id="filter-btn" class="hover-effect">🔍</button>
+      <button id="refresh-btn" class="hover-effect">↻</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Date</th>
+          <th>Category</th>
+          <th>Description</th>
+          <th>Amount(₹)</th>
+          <th>Uploaded File</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for expense in expenses %}
+        <tr>
+            <td>{{ expense.name }}</td>
+            <td>{{ expense.date.strftime('%Y-%m-%d') }}</td>
+            <td>{{ expense.category.name if expense.category else 'Unknown' }}</td>
+            <td>{{ expense.description }}</td>
+            <td>₹{{ "%.2f"|format(expense.amount) }}</td>
+            <td>
+                {% if expense.image_data %}
+                <a href="{{ url_for('get_file', expense_id=expense.id) }}" target="_blank">View File</a>
+                {% else %}
+                No File
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- BUDGET LIST -->
+  <section class="budget-list">
+    <div class="budget-list-header">
+      <h2 style="text-align: center; flex: 1;">Budget List</h2>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>Month</th>
+          <th>Category</th>
+          <th>Budget Amount(₹)</th>
+          <th>Recurring</th>
+        </tr>
+      </thead>
+      <tbody id="budget-table-body">
+        <!-- Data dynamically added here -->
+      </tbody>
+    </table>
+  </section>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+
+{% endblock %}
