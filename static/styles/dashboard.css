@@ -216,23 +216,6 @@ body.dark-mode .budget-list {
   transform: scale(1.05);
 }
 
-/* SET BUDGET PERIOD BUTTON */
-#set-budget-period-btn {
-  padding: 10px 20px;
-  background: #002d3e;
-  color: #fff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.1s ease;
-  margin-top: 10px;
-}
-
-#set-budget-period-btn:hover {
-  background: #45a049;
-  transform: scale(1.01);
-}
-
 /* TABLE STYLING */
 table {
   width: 100%;
@@ -497,6 +480,25 @@ body.dark-mode .budget-form-container {
   margin-top: 0;
   text-align: center;
 }
+
+/* SET BUDGET PERIOD BUTTON */
+#set-budget-period-btn {
+  padding: 10px 20px;
+  background: #002d3e;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  margin-top: 10px;
+}
+
+#set-budget-period-btn:hover {
+  background: #45a049;
+  transform: scale(1.01);
+}
+
+
 .prompt {
   color: red;
   margin-bottom: 0.5rem;

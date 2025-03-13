@@ -343,7 +343,11 @@ function handleBudgetFormSubmit(event) {
             showTemporaryAlert(result.message || "Failed to save budget.", "error");
         }
         fetchBudgets();
+        const year = document.getElementById("year-select").value;
+        const month = document.getElementById("month-select").value;
         document.getElementById("budget-form").reset();
+        document.getElementById("year-select").value = year; // Populate year
+        document.getElementById("month-select").value = month; // Populate month
         document.getElementById("set-category-amount-section").style.display = "none";
     });
 }
