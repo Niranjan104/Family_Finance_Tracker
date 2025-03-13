@@ -318,7 +318,10 @@ async function fetchBudgets() {
 }
 
 // Add new budget
-document.getElementById("budget-form").addEventListener("submit", async function(event) {
+document.getElementById("budget-form").removeEventListener("submit", handleBudgetFormSubmit);
+document.getElementById("budget-form").addEventListener("submit", handleBudgetFormSubmit);
+
+function handleBudgetFormSubmit(event) {
     event.preventDefault();
     let formData = new FormData(event.target);
     let budgetId = document.getElementById("budget-id").value;
@@ -328,20 +331,22 @@ document.getElementById("budget-form").addEventListener("submit", async function
         url = `${API_URL}/edit_budget/${budgetId}`;
         method = "PUT";
     }
-    let response = await fetch(url, {
+    fetch(url, {
         method: method,
         body: formData
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.message === "Budget added successfully!" || result.message === "Budget updated successfully!") {
+            showTemporaryAlert(result.message, "success");
+        } else {
+            showTemporaryAlert(result.message || "Failed to save budget.", "error");
+        }
+        fetchBudgets();
+        document.getElementById("budget-form").reset();
+        document.getElementById("set-category-amount-section").style.display = "none";
     });
-    let result = await response.json();
-    if (result.message === "Budget added successfully!" || result.message === "Budget updated successfully!") {
-        showTemporaryAlert(result.message, "success");
-    } else {
-        showTemporaryAlert(result.message || "Failed to save budget.", "error");
-    }
-    fetchBudgets();
-    document.getElementById("budget-form").reset();
-    document.getElementById("set-category-amount-section").style.display = "none";
-});
+}
 
 // Fetch budget details for editing
 async function fetchBudgetDetails(id) {
@@ -363,6 +368,7 @@ async function editBudget(id) {
     await fetchBudgetDetails(id);
     document.getElementById("budget-popup").style.display = "flex"; // Open the popup
     document.body.style.overflow = "hidden"; // Disable background scrolling
+    document.getElementById("set-category-amount-section").style.display = "block"; // Ensure category and amount section is visible
     document.getElementById("budget-form").scrollIntoView({ behavior: "smooth" });
 }
 
@@ -380,6 +386,9 @@ window.addEventListener("load", function() {
 
 // Show the set budget popup
 document.getElementById("set-budget-btn").addEventListener("click", function() {
+    document.getElementById("budget-form").reset(); // Reset the form
+    document.getElementById("budget-id").value = ""; // Clear the budget ID
+    document.getElementById("set-category-amount-section").style.display = "none"; // Hide category and amount section
     document.getElementById("budget-popup").style.display = "flex";
     document.body.style.overflow = "hidden"; // Disable background scrolling
 });
@@ -393,32 +402,6 @@ document.getElementById("close-budget-popup-btn").addEventListener("click", func
 // Handle set budget button click
 document.getElementById("set-budget-period-btn").addEventListener("click", function() {
     document.getElementById("set-category-amount-section").style.display = "block";
-});
-
-// Handle budget form submission
-document.getElementById("budget-form").addEventListener("submit", async function(event) {
-    event.preventDefault();
-    let formData = new FormData(event.target);
-    let budgetId = document.getElementById("budget-id").value;
-    let url = `${API_URL}/add_budget`;
-    let method = "POST";
-    if (budgetId) {
-        url = `${API_URL}/edit_budget/${budgetId}`;
-        method = "PUT";
-    }
-    let response = await fetch(url, {
-        method: method,
-        body: formData
-    });
-    let result = await response.json();
-    if (result.message === "Budget added successfully!" || result.message === "Budget updated successfully!") {
-        showTemporaryAlert(result.message, "success");
-    } else {
-        showTemporaryAlert(result.message || "Failed to save budget.", "error");
-    }
-    fetchBudgets();
-    document.getElementById("budget-form").reset();
-    document.getElementById("set-category-amount-section").style.display = "none";
 });
 
 // Refresh budget form
