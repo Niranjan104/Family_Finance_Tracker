@@ -56,23 +56,8 @@
           <th>Uploaded File</th>
         </tr>
       </thead>
-      <tbody>
-        {% for expense in expenses %}
-        <tr>
-            <td>{{ expense.name }}</td>
-            <td>{{ expense.date.strftime('%Y-%m-%d') }}</td>
-            <td>{{ expense.category.name if expense.category else 'Unknown' }}</td>
-            <td>{{ expense.description }}</td>
-            <td>₹{{ "%.2f"|format(expense.amount) }}</td>
-            <td>
-                {% if expense.image_data %}
-                <a href="{{ url_for('get_file', expense_id=expense.id) }}" target="_blank">View File</a>
-                {% else %}
-                No File
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
+      <tbody id="expense-table-body">
+        <!-- Data dynamically added here -->
       </tbody>
     </table>
   </section>
@@ -102,5 +87,5 @@
 {% endblock %}
 
 {% block scripts %}
-
+<script src="{{ url_for('static', filename='dashboard_view.js') }}" defer></script>
 {% endblock %}
