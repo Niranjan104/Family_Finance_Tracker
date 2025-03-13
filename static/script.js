@@ -327,10 +327,13 @@ function handleBudgetFormSubmit(event) {
     let budgetId = document.getElementById("budget-id").value;
     let url = `${API_URL}/add_budget`;
     let method = "POST";
-    if (budgetId) {
+    let isEditing = !!budgetId; // Check if editing
+
+    if (isEditing) {
         url = `${API_URL}/edit_budget/${budgetId}`;
         method = "PUT";
     }
+
     fetch(url, {
         method: method,
         body: formData
@@ -343,37 +346,72 @@ function handleBudgetFormSubmit(event) {
             showTemporaryAlert(result.message || "Failed to save budget.", "error");
         }
         fetchBudgets();
+
+        // If editing, close the popup after submitting
+        if (isEditing) {
+            document.getElementById("budget-popup").style.display = "none";
+            document.body.style.overflow = "auto"; // Enable background scrolling
+        }
+
+        // Reset form fields
         const year = document.getElementById("year-select").value;
         const month = document.getElementById("month-select").value;
         document.getElementById("budget-form").reset();
-        document.getElementById("year-select").value = year; // Populate year
-        document.getElementById("month-select").value = month; // Populate month
+        document.getElementById("year-select").value = year; // Keep selected year
+        document.getElementById("month-select").value = month; // Keep selected month
         document.getElementById("set-category-amount-section").style.display = "none";
     });
 }
 
-// Fetch budget details for editing
+
+// Fetch budget details for editing------------------------->
 async function fetchBudgetDetails(id) {
-    let response = await fetch(`${API_URL}/get_budget/${id}`);
+
+    document.getElementById("budget-form").reset(); // Clear previous form data
+
+    let response = await fetch(`${API_URL}/get_budget/${id}?t=${Date.now()}`);
+    
     if (response.status === 404) {
         alert("Budget not found");
         return;
     }
+
     let budget = await response.json();
+
     document.getElementById("budget-id").value = budget.id;
     document.getElementById("year-select").value = budget.year;
     document.getElementById("month-select").value = budget.month;
-    document.querySelector(`input[name="budget-category"][value="${budget.category}"]`).checked = true;
+
+    // Ensure category selection does not break
+    document.querySelectorAll('input[name="budget-category"]').forEach(input => input.checked = false);
+    let categoryInput = document.querySelector(`input[name="budget-category"][value="${budget.category}"]`);
+    if (categoryInput) {
+        categoryInput.checked = true;
+    } else {
+        console.warn("Category not found in radio buttons:", budget.category);
+    }
+
     document.getElementById("budget-amount").value = budget.amount;
 }
 
-// Edit budget
+
+// Edit budget------------------->
 async function editBudget(id) {
+    // Ensure modal is closed before reopening
+    document.getElementById("budget-popup").style.display = "none"; 
+
+    // Delay to force UI update
+    await new Promise(resolve => setTimeout(resolve, 100)); 
+
+    // Fetch budget details
     await fetchBudgetDetails(id);
-    document.getElementById("budget-popup").style.display = "flex"; // Open the popup
+
+    // Ensure popup opens
+    document.getElementById("budget-popup").style.display = "flex";
     document.body.style.overflow = "hidden"; // Disable background scrolling
-    document.getElementById("set-category-amount-section").style.display = "block"; // Ensure category and amount section is visible
-    document.getElementById("budget-form").scrollIntoView({ behavior: "smooth" });
+    document.getElementById("set-category-amount-section").style.display = "block"; // Ensure fields are visible
+    document.getElementById("budget-form").scrollIntoView({ behavior: "smooth" }); // Scroll to form
+
 }
 
 // Delete budget

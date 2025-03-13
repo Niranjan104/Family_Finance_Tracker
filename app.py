@@ -737,6 +737,7 @@ def get_budget(budget_id):
         "recurring": budget.recurring
     })
 
+# Edit Budget --------->
 @app.route("/edit_budget/<int:budget_id>", methods=["PUT"])
 def edit_budget(budget_id):
     if 'user_id' not in session:
@@ -748,6 +749,9 @@ def edit_budget(budget_id):
         return jsonify({"message": "Budget not found"}), 404
 
     data = request.form.to_dict()
+    print("Editing Budget ID:", budget_id)  # DEBUGGING REMOVE IT DURING DEPLOYMENT
+    print("Received Data:", data)  # DEBUGGING REMOVE IT DURING DEPLOYMENT
+
     budget.year = data.get("year", budget.year)
     budget.month = data.get("month", budget.month)
     category_name = data.get("budget-category", budget.category.name)
@@ -765,6 +769,8 @@ def edit_budget(budget_id):
     db.session.commit()
     return jsonify({"message": "Budget updated successfully!"})
 
+
+# Delete budget--------->
 @app.route("/delete_budget/<int:budget_id>", methods=["DELETE"])
 def delete_budget(budget_id):
     if 'user_id' not in session:
