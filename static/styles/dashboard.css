@@ -161,9 +161,12 @@ body.dark-mode .expense-list {
   background: #5cca60;
   box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
 }
+
+/* FILTER BUTTONS */
 .filter #refresh-btn {
   background: #FF9800;
 }
+
 .filter #refresh-btn:hover {
   background: #ffae34;
   box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
@@ -211,6 +214,23 @@ body.dark-mode .budget-list {
 #set-budget-btn:hover {
   background: #45a049;
   transform: scale(1.05);
+}
+
+/* SET BUDGET PERIOD BUTTON */
+#set-budget-period-btn {
+  padding: 10px 20px;
+  background: #002d3e;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  margin-top: 10px;
+}
+
+#set-budget-period-btn:hover {
+  background: #45a049;
+  transform: scale(1.01);
 }
 
 /* TABLE STYLING */

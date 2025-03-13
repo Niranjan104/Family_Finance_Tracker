@@ -404,12 +404,6 @@ document.getElementById("set-budget-period-btn").addEventListener("click", funct
     document.getElementById("set-category-amount-section").style.display = "block";
 });
 
-// Refresh budget form
-document.getElementById("refresh-budget-btn").addEventListener("click", function() {
-    document.getElementById("budget-form").reset();
-    document.getElementById("set-category-amount-section").style.display = "none";
-});
-
 // Initialization
 fetchExpenses();
 fetchStats();
