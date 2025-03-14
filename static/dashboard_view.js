@@ -24,14 +24,15 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeDateFilters() {
-    // Set default date range to current month
+    // Set default date range to last 7 days
     const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
     
     const fromDateInput = document.getElementById('from-date');
     const toDateInput = document.getElementById('to-date');
     
-    fromDateInput.valueAsDate = firstDay;
+    fromDateInput.valueAsDate = sevenDaysAgo;
     toDateInput.valueAsDate = today;
 }
 
@@ -95,7 +96,7 @@ function displayExpenses(expenses) {
         // Create file link if available
         let fileLink = 'No file';
         if (expense.image_url) {
-            fileLink = `<a href="${expense.image_url}" target="_blank">View File</a>`;
+            fileLink = getFileLink(expense.image_url, expense.file_type);
         }
         
         row.innerHTML = `
@@ -109,6 +110,16 @@ function displayExpenses(expenses) {
         
         tableBody.appendChild(row);
     });
+}
+
+// Add this function to handle file links
+function getFileLink(url, fileType) {
+    const imageTypes = ["image/jpeg", "image/png"];
+    if (imageTypes.includes(fileType)) {
+        return `<a href="#" onclick="showImagePopup('${url}'); return false;">🖼️</a>`;
+    } else {
+        return `<a href="${url}" target="_blank">📄</a>`;
+    }
 }
 
 // Fetch and display budgets
@@ -154,7 +165,7 @@ function displayBudgets(budgets) {
         `;
         return;
     }
-    
+
     const monthNames = ["January", "February", "March", "April", "May", "June",
                       "July", "August", "September", "October", "November", "December"];
 
@@ -171,4 +182,61 @@ function displayBudgets(budgets) {
     });
 }
 
-// Update event listeners to include budget reloading
+// Fetch and update stats
+async function fetchStats() {
+    let response = await fetch(`${API_URL}/get_stats`);
+    let stats = await response.json();
+    document.getElementById("total-spent-value").textContent = stats.total_spent.toFixed(2);
+    document.getElementById("expense-count-value").textContent = stats.expense_count;
+    document.getElementById("last-7days-spent-value").textContent = stats.last_7days_spent.toFixed(2);
+    document.getElementById("highest-category-value").textContent = stats.highest_category;
+    document.getElementById("highest-amount-value").textContent = stats.highest_amount.toFixed(2);
+}
+
+// Update stats based on filtered expenses
+async function updateStats(fromDate, toDate) {
+    let url = `${API_URL}/get_stats`;
+    if (fromDate && toDate) {
+        url += `?from_date=${fromDate}&to_date=${toDate}`;
+    }
+    let response = await fetch(url);
+    let stats = await response.json();
+    document.getElementById("total-spent-value").textContent = stats.total_spent.toFixed(2);
+    document.getElementById("expense-count-value").textContent = stats.expense_count;
+    document.getElementById("last-7days-spent-value").textContent = stats.last_7days_spent.toFixed(2);
+    document.getElementById("highest-category-value").textContent = stats.highest_category;
+    document.getElementById("highest-amount-value").textContent = stats.highest_amount.toFixed(2);
+}
+
+fetchStats();
+
+function openPdfInNewTab(url) {
+    fetch(url)
+        .then(response => response.blob())
+        .then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            window.open(blobUrl, '_blank');
+        })
+        .catch(error => console.error('Error opening PDF:', error));
+}
+
+// Show image in a popup
+function showImagePopup(imageUrl) {
+    let popup = document.createElement("div");
+    popup.classList.add("image-popup");
+    popup.innerHTML = `
+        <div class="popup-content">
+            <span class="close-btn" onclick="closeImagePopup()">&times;</span>
+            <img src="${imageUrl}" />
+        </div>
+    `;
+    document.body.appendChild(popup);
+}
+
+// Close image popup
+function closeImagePopup() {
+    let popup = document.querySelector(".image-popup");
+    if (popup) {
+        popup.remove();
+    }
+}

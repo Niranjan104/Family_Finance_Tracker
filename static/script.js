@@ -44,6 +44,11 @@ async function fetchExpenses(fromDate = "", toDate = "") {
     let tableBody = document.getElementById("expense-table-body");
     tableBody.innerHTML = "";
 
+    if (!expenses || expenses.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="6" class="empty-table-message">No expenses found</td></tr>`;
+        return;
+    }
+
     expenses.forEach(exp => {
         let row = document.createElement("tr");
         row.setAttribute("data-id", exp.id);
@@ -69,13 +74,9 @@ async function fetchExpenses(fromDate = "", toDate = "") {
 function getFileLink(url, fileType) {
     const imageTypes = ["image/jpeg", "image/png"];
     if (imageTypes.includes(fileType)) {
-        return `<img src="${url}" class="thumbnail" onclick="showImagePopup('${url}')" />`;
-    } else if (fileType === "application/pdf") {
-        return `<a href="${url}" target="_blank">👀📄</a>`;
-    } else if (fileType === "application/msword" || fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-        return `<a href="${url}" target="_blank">📥📄</a>`;
+        return `<a href="#" onclick="showImagePopup('${url}'); return false;">🖼️</a>`;
     } else {
-        return `<a href="${url}" target="_blank">View File</a>`;
+        return `<a href="${url}" target="_blank">📄</a>`;
     }
 }
 
@@ -193,7 +194,7 @@ async function fetchExpenseDetails(id) {
     document.getElementById("expense-id").value = expense.id;
     document.getElementById("name").value = expense.name;
     document.getElementById("category").value = expense.category;
-    document.getElementById("category-desc").value = expense.category_desc;
+    document.getElementById("category-desc").value = expense.category_desc; // Ensure this line is present
     document.getElementById("date").value = expense.date;
     document.getElementById("amount").value = expense.amount;
     document.getElementById("description").value = expense.description;
@@ -296,6 +297,11 @@ async function fetchBudgets() {
     let budgets = await response.json();
     let tableBody = document.getElementById("budget-table-body");
     tableBody.innerHTML = "";
+
+    if (!budgets || budgets.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="empty-table-message">No budgets configured</td></tr>`;
+        return;
+    }
 
     budgets.forEach(budget => {
         let row = document.createElement("tr");
@@ -465,3 +471,23 @@ function showTemporaryAlert(message, type = 'info') {
 }
 
 setInterval(displayRandomMessage, 3000);
+
+
+function initializeDateFilters() {
+    // Set default date range to last 7 days
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
+    
+    const fromDateInput = document.getElementById('from-date');
+    const toDateInput = document.getElementById('to-date');
+    
+    fromDateInput.valueAsDate = sevenDaysAgo;
+    toDateInput.valueAsDate = today;
+}
+
+// Call initializeDateFilters on page load
+window.addEventListener("load", function() {
+    populateYearSelect();
+    initializeDateFilters(); // Initialize date filters to last 7 days
+});

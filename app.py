@@ -274,13 +274,13 @@ def dashboard():
     user = User.query.get(session.get('user_id'))
     
     if role == "super_user":
-        return render_template("dashboard.html", is_super_user=True)  # Pass flag to template
+        return render_template("dashboard_edit.html", is_super_user=True)  # Pass flag to template
     elif role == "family_member" and user:
         if user.status == "approved":
             if user.privilege == "view":
-                return render_template("dashboard.html")
+                return render_template("dashboard_view.html")
             elif user.privilege == "edit":
-                return render_template("dashboard.html")
+                return render_template("dashboard_edit.html")
         else:
             flash("Your account is pending approval.", "warning")
             return redirect(url_for("login"))
