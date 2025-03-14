@@ -1,6 +1,11 @@
 import matplotlib
+matplotlib.use('Agg')  # Use a non-interactive backend
 import matplotlib.pyplot as plt
 import pandas as pd
+import io
+import base64
+from datetime import datetime
+from models import db, Expense, Category, Budget, User
 
 def generate_monthly_expenses_plot():
     # Query to get monthly expenses
@@ -8,6 +13,9 @@ def generate_monthly_expenses_plot():
         db.func.strftime('%Y-%m', Expense.date).label('month'),
         db.func.sum(Expense.amount).label('total_expense')
     ).group_by('month').order_by('month').all()
+
+    # Check if data is retrieved
+    print("Monthly Expenses Data:", monthly_expenses)  # Debugging line
 
     # Extract data for plotting
     months = [row.month for row in monthly_expenses]
@@ -29,7 +37,9 @@ def generate_monthly_expenses_plot():
     plt.close()
 
     # Return the plot as a base64-encoded string
-    return base64.b64encode(img.getvalue()).decode()
+    encoded_string = base64.b64encode(img.getvalue()).decode()
+    print("Encoded Monthly Expenses Plot:", encoded_string)  # Debugging line
+    return encoded_string
 
 def generate_category_expenses_plot(year, month):
     # Query to get expenses by category for a specific month and year
