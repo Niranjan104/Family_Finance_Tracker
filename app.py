@@ -436,6 +436,16 @@ def add_expense():
     if 'user_id' not in session:
         return jsonify({"message": "Unauthorized"}), 401
 
+    # Consolidated user context logic
+    user_id = session['user_id']
+    role = session['role']
+    
+    if role == "family_member":
+        user = User.query.get(user_id)
+        user_id = user.approved_by
+        if not user_id:
+            return jsonify({"message": "Not linked to any family"}), 400
+
     user = session['user_id']
     role = session['role']
     if user:
@@ -508,19 +518,18 @@ def get_expenses():
     if 'user_id' not in session:
         return jsonify({"message": "Unauthorized"}), 401
 
-    user = session['user_id']
-    role=session['role']
-    if user:
-        if role=="family_member":
-            user = User.query.get(session['user_id'])
-            user_id=user.approved_by
-        else:
-            user_id=user
+    # Consolidated user context logic
+    user_id = session['user_id']
+    role = session['role']
     
+    if role == "family_member":
+        user = User.query.get(user_id)
+        user_id = user.approved_by
+        if not user_id:
+            return jsonify({"message": "Not linked to any family"}), 400
 
     from_date = request.args.get("from_date")
     to_date = request.args.get("to_date")
-    
     query = Expense.query.filter_by(user_id=user_id)
     if from_date:
         query = query.filter(Expense.date >= from_date)
@@ -567,7 +576,17 @@ def edit_expense(expense_id):
     if 'user_id' not in session:
         return jsonify({"message": "Unauthorized"}), 401
 
+    # Consolidated user context logic
     user_id = session['user_id']
+    role = session['role']
+    
+    if role == "family_member":
+        user = User.query.get(user_id)
+        user_id = user.approved_by
+        if not user_id:
+            return jsonify({"message": "Not linked to any family"}), 400
+
+    # Update query to use the resolved user_id
     expense = Expense.query.filter_by(id=expense_id, user_id=user_id).first()
     if not expense:
         return jsonify({"message": "Expense not found"}), 404
@@ -605,7 +624,16 @@ def delete_expense(expense_id):
     if 'user_id' not in session:
         return jsonify({"message": "Unauthorized"}), 401
 
+    # Consolidated user context logic
     user_id = session['user_id']
+    role = session['role']
+    
+    if role == "family_member":
+        user = User.query.get(user_id)
+        user_id = user.approved_by
+        if not user_id:
+            return jsonify({"message": "Not linked to any family"}), 400
+
     expense = Expense.query.filter_by(id=expense_id, user_id=user_id).first()
     if not expense:
         return jsonify({"message": "Expense not found"}), 404
@@ -698,6 +726,16 @@ def add_budget():
     if 'user_id' not in session:
         return jsonify({"message": "Unauthorized"}), 401
 
+    # Consolidated user context logic
+    user_id = session['user_id']
+    role = session['role']
+    
+    if role == "family_member":
+        user = User.query.get(user_id)
+        user_id = user.approved_by
+        if not user_id:
+            return jsonify({"message": "Not linked to any family"}), 400
+
     user_id = session['user_id']
     data = request.form.to_dict()
     year = data.get("year")
@@ -737,7 +775,19 @@ def get_budgets():
     if 'user_id' not in session:
         return jsonify({"message": "Unauthorized"}), 401
 
+    # Consolidated user context logic
     user_id = session['user_id']
+    role = session['role']
+    
+    if role == "family_member":
+        user = User.query.get(user_id)
+        if user.privilege not in ['view', 'edit']:  # Add privilege check
+            return jsonify({"message": "Insufficient privileges"}), 403
+        user_id = user.approved_by
+        if not user_id:
+            return jsonify({"message": "Not linked to any family"}), 400
+
+    # Rest of the function remains unchanged
     budgets = Budget.query.filter_by(user_id=user_id).all()
     return jsonify([{
         "id": budget.budget_id,
@@ -753,6 +803,13 @@ def get_budget(budget_id):
     budget = Budget.query.get(budget_id)
     if not budget:
         return jsonify({"message": "Budget not found"}), 404
+        
+    # Add privilege check for family members
+    if session.get('role') == "family_member":
+        user = User.query.get(session['user_id'])
+        if user.privilege not in ['view', 'edit']:
+            return jsonify({"message": "Insufficient privileges"}), 403
+
     return jsonify({
         "id": budget.budget_id,
         "year": budget.year,
