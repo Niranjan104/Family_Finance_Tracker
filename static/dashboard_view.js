@@ -35,12 +35,28 @@ function initializeDateFilters() {
     toDateInput.valueAsDate = today;
 }
 
+// Add this function to handle dashboard stats
+function loadDashboardStats() {
+    fetch(`${API_URL}/get_stats`, { credentials: 'include' })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            // Update your stats DOM elements here
+            console.log('Dashboard stats loaded:', data);
+        })
+        .catch(error => console.error('Error loading stats:', error));
+}
+
+// Update all fetch calls to include credentials
 function loadExpenseData() {
     const fromDate = document.getElementById('from-date').value;
     const toDate = document.getElementById('to-date').value;
     
-    // Use the existing get_expenses endpoint
-    fetch(`/get_expenses?from_date=${fromDate}&to_date=${toDate}`)
+    fetch(`${API_URL}/get_expenses?from_date=${fromDate}&to_date=${toDate}`, { 
+        credentials: 'include' 
+    })
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -97,28 +113,45 @@ function displayExpenses(expenses) {
 
 // Fetch and display budgets
 
+const API_URL = window.location.origin;
+
+// Update budget loading to match script.js pattern
 function loadBudgetData() {
-    fetch('/get_budgets')
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => displayBudgets(data))
-        .catch(error => {
-            console.error('Error fetching budget data:', error);
-            const tableBody = document.getElementById('budget-table-body');
-            tableBody.innerHTML = `<tr><td colspan="5" class="empty-table-message">Failed to load budgets. Please try again later.</td></tr>`;
-        });
+    fetch(`${API_URL}/get_budgets`, { 
+        credentials: 'include',
+        headers: {'Cache-Control': 'no-cache'} // Match script.js cache handling
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
+    .then(data => {
+        // Handle empty state first like script.js does
+        if (data && data.length > 0) {
+            displayBudgets(data);
+        } else {
+            displayBudgets([]); // Explicit empty array handling
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching budget data:', error);
+        const tableBody = document.getElementById('budget-table-body');
+        tableBody.innerHTML = `<tr><td colspan="5" class="empty-table-message">No budgets configured</td></tr>`;
+    });
 }
 
 function displayBudgets(budgets) {
     const tableBody = document.getElementById('budget-table-body');
     tableBody.innerHTML = '';
     
-    if (budgets.length === 0) {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td colspan="5" class="empty-table-message">No budgets found</td>`;
-        tableBody.appendChild(row);
+    if (!budgets || budgets.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="empty-table-message">
+                    No budgets found. <a href="/dashboard_edit" class="link">Create one?</a>
+                </td>
+            </tr>
+        `;
         return;
     }
     
@@ -130,7 +163,7 @@ function displayBudgets(budgets) {
         row.innerHTML = `
             <td>${budget.year}</td>
             <td>${monthNames[budget.month - 1]}</td>
-            <td>${budget.category}</td>
+            <td>${budget.category}</td> <!-- Must match backend response field name -->
             <td>₹${parseFloat(budget.amount).toFixed(2)}</td>
             <td>${budget.recurring ? 'Yes' : 'No'}</td>
         `;

@@ -274,13 +274,13 @@ def dashboard():
     user = User.query.get(session.get('user_id'))
     
     if role == "super_user":
-        return render_template("dashboard_edit.html", is_super_user=True)  # Pass flag to template
+        return render_template("dashboard.html", is_super_user=True)  # Pass flag to template
     elif role == "family_member" and user:
         if user.status == "approved":
             if user.privilege == "view":
-                return render_template("dashboard_view.html")
+                return render_template("dashboard.html")
             elif user.privilege == "edit":
-                return render_template("dashboard_edit.html")
+                return render_template("dashboard.html")
         else:
             flash("Your account is pending approval.", "warning")
             return redirect(url_for("login"))
@@ -625,16 +625,37 @@ def get_stats():
     if 'user_id' not in session:
         return jsonify({"message": "Unauthorized"}), 401
 
+    # Get the correct user context
     user_id = session['user_id']
+    role = session['role']
+    
+    if role == "family_member":
+        user = User.query.get(user_id)
+        user_id = user.approved_by  # Use super user's ID for family members
+        if not user_id:  # Handle unlinked family members
+            return jsonify({"message": "Not linked to any family"}), 400
+    else:
+        user_id = user_id  # Use current user's ID directly for super users
+
+    # Get filter parameters
     from_date = request.args.get("from_date")
     to_date = request.args.get("to_date")
 
+    # Base query
     query = Expense.query.filter_by(user_id=user_id)
-    if from_date:
-        query = query.filter(Expense.date >= from_date)
-    if to_date:
-        query = query.filter(Expense.date <= to_date)
+    
+    # Date filtering
+    try:
+        if from_date:
+            from_date = datetime.strptime(from_date, "%Y-%m-%d").date()
+            query = query.filter(Expense.date >= from_date)
+        if to_date:
+            to_date = datetime.strptime(to_date, "%Y-%m-%d").date()
+            query = query.filter(Expense.date <= to_date)
+    except ValueError:
+        return jsonify({"message": "Invalid date format! Use YYYY-MM-DD"}), 400
 
+    # Rest of the calculations remain the same
     total_spent = query.with_entities(db.func.sum(Expense.amount)).scalar() or 0
     expense_count = query.with_entities(db.func.count(Expense.id)).scalar() or 0
     last_7days_spent = query.with_entities(db.func.sum(Expense.amount)).filter(
@@ -645,6 +666,7 @@ def get_stats():
     ).join(Category).group_by(Category.name).order_by(db.func.sum(Expense.amount).desc()).first()
     highest_amount = query.with_entities(db.func.max(Expense.amount)).scalar() or 0
     highest_category_name = attach_emojis(highest_category[0]) if highest_category else "Empty!😶"
+    
     return jsonify({
         "total_spent": float(total_spent),
         "expense_count": expense_count,
