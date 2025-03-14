@@ -9,6 +9,7 @@ from models import db, Expense, Category, Budget, User
 from io import BytesIO
 import random, string, os,re
 
+import graphs
 
 app = Flask(__name__)
 app.secret_key = "unifiedfamilyfinancetracker"
