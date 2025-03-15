@@ -271,28 +271,76 @@ def dashboard():
     if not session.get('verified'):
         return redirect(url_for('verify'))
 
-    role = session.get('role')
-    user = User.query.get(session.get('user_id'))
-    
-    current_year = datetime.now().year
-    current_month = datetime.now().month
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
 
+    user = User.query.get(session['user_id'])
+    today = datetime.today()
+    default_year = today.year
+    default_month = today.month
+
+    all_users = []  
+    if user.role == "super_user":
+        all_users.append(user.username)  
+        family_members = User.query.filter(User.approved_by == user.id).order_by(User.id).all()
+        all_users.extend([member.username for member in family_members]) 
+    elif user.role == "family_member":
+        superuser = User.query.get(user.approved_by)
+        if superuser:
+            all_users.append(superuser.username)  
+        all_users.append(user.username)
+
+    default_user= all_users[0] if all_users else None
     monthly_plot = generate_monthly_expenses_plot(user_id=user.id)
-    category_plot = generate_category_expenses_plot(year=current_year, month=current_month, user_id=user.id)
-    pie_chart = generate_pie_chart(user_id=user.id, month=current_month, year=current_year)
-    bar_chart = generate_bar_chart(user_id=user.id, month=current_month, year=current_year)
-    stacked_bar_chart = generate_stacked_bar_chart(user_id=user.id, month=current_month, year=current_year)
-    line_chart = generate_line_chart(year=current_year, user_id=user.id)
+    category_plot = generate_category_expenses_plot(default_year, default_month,user_id=user.id)
+    pie_chart = generate_pie_chart(user_id=user.id, month=default_month, year=default_year)
+    bar_chart = generate_bar_chart(user_id=user.id, month=default_month, year=default_year)
+    stacked_bar_chart = generate_stacked_bar_chart(user_id=user.id,month=default_month, year=default_year)
+    line_chart = generate_line_chart(year=default_year,user_id=user.id)
+    
 
-    if role == "super_user":
-        return render_template("dashboard_edit.html", is_super_user=True, monthly_plot=monthly_plot, category_plot=category_plot, pie_chart=pie_chart, bar_chart=bar_chart, stacked_bar_chart=stacked_bar_chart, line_chart=line_chart, current_year=current_year, default_year=current_year, default_month=current_month)
-    elif role == "family_member" and user:
+    if user.role == "super_user":
+        return render_template("dashboard_edit.html", is_super_user=True,
+                                    username=user.username,
+                                    users=all_users,
+                                    default_user=default_user,  
+                                    monthly_plot=monthly_plot,
+                                    category_plot=category_plot,                      
+                                    pie_chart=pie_chart,
+                                    bar_chart=bar_chart,
+                                    stacked_bar_chart=stacked_bar_chart,
+                                    line_chart=line_chart,
+                                    default_year=default_year,
+                                    default_month=default_month)
+
+    elif user.role == "family_member" and user:
         if user.status == "approved":
             if user.privilege == "view":
-                return render_template("dashboard_view.html", monthly_plot=monthly_plot, category_plot=category_plot, pie_chart=pie_chart, bar_chart=bar_chart, stacked_bar_chart=stacked_bar_chart, line_chart=line_chart, current_year=current_year, default_year=current_year, default_month=current_month)
+                return render_template("dashboard_view.html",username=user.username,
+                                    users=all_users,
+                                    default_user=default_user,  
+                                    monthly_plot=monthly_plot,
+                                    category_plot=category_plot,                      
+                                    pie_chart=pie_chart,
+                                    bar_chart=bar_chart,
+                                    stacked_bar_chart=stacked_bar_chart,
+                                    line_chart=line_chart,
+                                    default_year=default_year,
+                                    default_month=default_month)
+
             elif user.privilege == "edit":
-                return render_template("dashboard_edit.html", monthly_plot=monthly_plot, category_plot=category_plot, pie_chart=pie_chart, bar_chart=bar_chart, stacked_bar_chart=stacked_bar_chart, line_chart=line_chart, current_year=current_year, default_year=current_year, default_month=current_month)
-        else:
+                return render_template("dashboard_edit.html",username=user.username,
+                                    users=all_users,
+                                    default_user=default_user,  
+                                    monthly_plot=monthly_plot,
+                                    category_plot=category_plot,                      
+                                    pie_chart=pie_chart,
+                                    bar_chart=bar_chart,
+                                    stacked_bar_chart=stacked_bar_chart,
+                                    line_chart=line_chart,
+                                    default_year=default_year,
+                                    default_month=default_month)
+                                    
             flash("Your account is pending approval.", "warning")
             return redirect(url_for("login"))
 

@@ -99,7 +99,7 @@ h1 {
 
 .user-table th:nth-child(2),
 .user-table td:nth-child(2) {
-    width: 20%; /* Email */
+    width: 25%; /* Email */
 }
 
 .user-table th:nth-child(3),
@@ -114,12 +114,12 @@ h1 {
 
 .user-table th:nth-child(5),
 .user-table td:nth-child(5) {
-    width: 15%; /* Role */
+    width: 10%; /* Role */
 }
 
 .user-table th:nth-child(6),
 .user-table td:nth-child(6) {
-    width: 15%; /* Status */
+    width: 10%; /* Status */
 }
 
 .user-table th:nth-child(7),

@@ -1,14 +1,17 @@
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
+from models import db, Expense, Category, Budget, User
+from sqlalchemy.orm import Session
+from sqlalchemy import func, and_, or_
+from datetime import datetime, timedelta,timezone
+from io import BytesIO
+import base64
 import matplotlib
-matplotlib.use('Agg')  # Use a non-interactive backend
 import matplotlib.pyplot as plt
 import pandas as pd
+import random, string, os,re, calendar
 import io
-import base64
-from datetime import datetime
-import calendar
-from sqlalchemy import func
-from flask import session
-from models import db, Expense, Category, Budget, User
+
+matplotlib.use('Agg')
 
 def generate_monthly_expenses_plot(user_id=None):
     # Initialize the base query
