@@ -34,13 +34,14 @@ document.getElementById("file-upload").addEventListener("change", function() {
 });
 
 // Fetch and display expenses
-async function fetchExpenses(fromDate = "", toDate = "") {
-    let url = `${API_URL}/get_expenses`;
+async function fetchExpenses(fromDate = "", toDate = "", page = 1) {
+    let url = `${API_URL}/get_expenses?page=${page}`;
     if (fromDate && toDate) {
-        url += `?from_date=${fromDate}&to_date=${toDate}`;
+        url += `&from_date=${fromDate}&to_date=${toDate}`;
     }
     let response = await fetch(url);
-    let expenses = await response.json();
+    let data = await response.json();
+    let expenses = data.expenses;
     let tableBody = document.getElementById("expense-table-body");
     tableBody.innerHTML = "";
 
@@ -68,7 +69,16 @@ async function fetchExpenses(fromDate = "", toDate = "") {
         `;
         tableBody.appendChild(row);
     });
-    updateStats(fromDate, toDate);
+
+    // Add pagination controls
+    let paginationControls = document.getElementById("pagination-controls");
+    paginationControls.innerHTML = `
+        <button onclick="fetchExpenses('${fromDate}', '${toDate}', 1)">First</button>
+        <button onclick="fetchExpenses('${fromDate}', '${toDate}', ${data.current_page - 1})" ${data.current_page === 1 ? 'disabled' : ''}>Previous</button>
+        <span>Page ${data.current_page} of ${data.total_pages}</span>
+        <button onclick="fetchExpenses('${fromDate}', '${toDate}', ${data.current_page + 1})" ${data.current_page === data.total_pages ? 'disabled' : ''}>Next</button>
+        <button onclick="fetchExpenses('${fromDate}', '${toDate}', ${data.total_pages})">Last</button>
+    `;
 }
 
 function getFileLink(url, fileType) {
@@ -292,14 +302,16 @@ async function toggleRecurring(id, isRecurring) {
 }
 
 // Fetch and display budgets
-async function fetchBudgets() {
-    let response = await fetch(`${API_URL}/get_budgets`);
-    let budgets = await response.json();
+async function fetchBudgets(page = 1) {
+    let url = `${API_URL}/get_budgets?page=${page}`;
+    let response = await fetch(url);
+    let data = await response.json();
+    let budgets = data.budgets;
     let tableBody = document.getElementById("budget-table-body");
     tableBody.innerHTML = "";
 
     if (!budgets || budgets.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="5" class="empty-table-message">No budgets configured</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="6" class="empty-table-message">No budgets found</td></tr>`;
         return;
     }
 
@@ -315,12 +327,22 @@ async function fetchBudgets() {
                 <button class="edit-btn edit" onclick="editBudget(${budget.id})">✏️</button>
                 <button class="delete-btn delete" onclick="deleteBudget(${budget.id})">❌</button>
             </td>
-            <td>
+             <td>
                 <input type="checkbox" ${budget.recurring ? "checked" : ""} onclick="toggleRecurring(${budget.id}, this.checked)" />
             </td>
         `;
         tableBody.appendChild(row);
     });
+
+    // Add pagination controls
+    let paginationControls = document.getElementById("budget-pagination-controls");
+    paginationControls.innerHTML = `
+        <button onclick="fetchBudgets(1)">First</button>
+        <button onclick="fetchBudgets(${data.current_page - 1})" ${data.current_page === 1 ? 'disabled' : ''}>Previous</button>
+        <span>Page ${data.current_page} of ${data.total_pages}</span>
+        <button onclick="fetchBudgets(${data.current_page + 1})" ${data.current_page === data.total_pages ? 'disabled' : ''}>Next</button>
+        <button onclick="fetchBudgets(${data.total_pages})">Last</button>
+    `;
 }
 
 // Add new budget

@@ -589,22 +589,30 @@ def get_expenses():
 
     from_date = request.args.get("from_date")
     to_date = request.args.get("to_date")
+    page = request.args.get("page", 1, type=int)
+    per_page = 10
+
     query = Expense.query.filter_by(user_id=user_id)
     if from_date:
         query = query.filter(Expense.date >= from_date)
     if to_date:
         query = query.filter(Expense.date <= to_date)
-    expenses = query.order_by(Expense.date.desc()).all()
-    return jsonify([{
-        "id": exp.id,
-        "name": exp.name,
-        "category": attach_emojis(exp.category.name) if exp.category else "Unknown",
-        "date": exp.date.strftime("%Y-%m-%d"),
-        "amount": exp.amount,
-        "description": exp.description,
-        "image_url": f"/get_file/{exp.id}" if exp.image_data else None,
-        "file_type": exp.file_type
-    } for exp in expenses])
+
+    expenses = query.order_by(Expense.date.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    return jsonify({
+        "expenses": [{
+            "id": exp.id,
+            "name": exp.name,
+            "category": attach_emojis(exp.category.name) if exp.category else "Unknown",
+            "date": exp.date.strftime("%Y-%m-%d"),
+            "amount": exp.amount,
+            "description": exp.description,
+            "image_url": f"/get_file/{exp.id}" if exp.image_data else None,
+            "file_type": exp.file_type
+        } for exp in expenses.items],
+        "total_pages": expenses.pages,
+        "current_page": expenses.page
+    })
 
 @app.route("/get_expense/<int:expense_id>")
 def get_expense(expense_id):
@@ -834,28 +842,33 @@ def get_budgets():
     if 'user_id' not in session:
         return jsonify({"message": "Unauthorized"}), 401
 
-    # Consolidated user context logic
     user_id = session['user_id']
     role = session['role']
     
     if role == "family_member":
         user = User.query.get(user_id)
-        if user.privilege not in ['view', 'edit']:  # Add privilege check
+        if user.privilege not in ['view', 'edit']:
             return jsonify({"message": "Insufficient privileges"}), 403
         user_id = user.approved_by
         if not user_id:
             return jsonify({"message": "Not linked to any family"}), 400
 
-    # Rest of the function remains unchanged
-    budgets = Budget.query.filter_by(user_id=user_id).all()
-    return jsonify([{
-        "id": budget.budget_id,
-        "year": budget.year,
-        "month": budget.month,
-        "category": attach_emojis(budget.category.name) if budget.category else "Unknown",
-        "amount": budget.amount,
-        "recurring": budget.recurring
-    } for budget in budgets])
+    page = request.args.get("page", 1, type=int)
+    per_page = 10
+
+    budgets = Budget.query.filter_by(user_id=user_id).paginate(page=page, per_page=per_page, error_out=False)
+    return jsonify({
+        "budgets": [{
+            "id": budget.budget_id,
+            "year": budget.year,
+            "month": budget.month,
+            "category": attach_emojis(budget.category.name) if budget.category else "Unknown",
+            "amount": budget.amount,
+            "recurring": budget.recurring
+        } for budget in budgets.items],
+        "total_pages": budgets.pages,
+        "current_page": budgets.page
+    })
 
 @app.route("/get_budget/<int:budget_id>")
 def get_budget(budget_id):

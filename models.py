@@ -18,6 +18,10 @@ class User(db.Model):
     status = db.Column(db.String(20), default="pending")
     created_on = db.Column(db.DateTime, default=db.func.current_timestamp())
 
+    #Relationship
+    expenses = db.relationship('Expense', backref='user', lazy=True)
+    budgets = db.relationship('Budget', backref='user', lazy=True)
+
 class Category(db.Model):
     __tablename__ = 'category'
     category_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -31,7 +35,7 @@ class Category(db.Model):
 class Expense(db.Model):
     __tablename__ = 'expense'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id= db.Column(db.Integer,nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.category_id'), nullable=False)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
