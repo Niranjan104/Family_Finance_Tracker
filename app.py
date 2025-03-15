@@ -9,7 +9,7 @@ from models import db, Expense, Category, Budget, User
 from io import BytesIO
 import random, string, os,re
 
-import graphs
+from graphs import * 
 
 app = Flask(__name__)
 app.secret_key = "unifiedfamilyfinancetracker"
@@ -277,12 +277,12 @@ def dashboard():
     current_year = datetime.now().year
     current_month = datetime.now().month
 
-    monthly_plot = graphs.generate_monthly_expenses_plot(user_id=user.id)
-    category_plot = graphs.generate_category_expenses_plot(year=current_year, month=current_month, user_id=user.id)
-    pie_chart = graphs.generate_pie_chart(user_id=user.id, month=current_month, year=current_year)
-    bar_chart = graphs.generate_bar_chart(user_id=user.id, month=current_month, year=current_year)
-    stacked_bar_chart = graphs.generate_stacked_bar_chart(user_id=user.id, month=current_month, year=current_year)
-    line_chart = graphs.generate_line_chart(year=current_year, user_id=user.id)
+    monthly_plot = generate_monthly_expenses_plot(user_id=user.id)
+    category_plot = generate_category_expenses_plot(year=current_year, month=current_month, user_id=user.id)
+    pie_chart = generate_pie_chart(user_id=user.id, month=current_month, year=current_year)
+    bar_chart = generate_bar_chart(user_id=user.id, month=current_month, year=current_year)
+    stacked_bar_chart = generate_stacked_bar_chart(user_id=user.id, month=current_month, year=current_year)
+    line_chart = generate_line_chart(year=current_year, user_id=user.id)
 
     if role == "super_user":
         return render_template("dashboard_edit.html", is_super_user=True, monthly_plot=monthly_plot, category_plot=category_plot, pie_chart=pie_chart, bar_chart=bar_chart, stacked_bar_chart=stacked_bar_chart, line_chart=line_chart, current_year=current_year, default_year=current_year, default_month=current_month)
@@ -882,6 +882,40 @@ def delete_budget(budget_id):
 def logout():
     session.clear() # Clear all session data
     return redirect(url_for('login'))
+
+
+
+# TEAM 4 (Graph)-------------------------- STARTS HERE(and add code related to it below this line) ---->
+
+@app.route('/plot/category_data/<int:year>/<int:month>')
+def get_category_plot(year, month):
+    user_id = session.get('user_id')
+    category_plot = generate_category_expenses_plot(month=month, year=year,user_id=user_id)
+    return jsonify({'category_plot': category_plot})
+
+@app.route('/plot/pie_chart/<int:year>/<int:month>')
+def get_pie_chart(year, month):
+    user_id = session.get('user_id')
+    pie_chart = generate_pie_chart(user_id=user_id, month=month, year=year)
+    return jsonify({'pie_chart': pie_chart})
+
+@app.route('/plot/bar_chart/<int:year>/<int:month>')
+def get_bar_chart(year, month):
+    user_id = session.get('user_id')
+    bar_chart = generate_bar_chart(user_id=user_id, month=month, year=year)
+    return jsonify({'bar_chart': bar_chart})
+
+@app.route('/plot/stacked_bar_chart/<int:year>/<int:month>')
+def get_stacked_bar_chart(year, month):
+    user_id = session.get('user_id')
+    stacked_bar_chart = generate_stacked_bar_chart(user_id=user_id, month=month, year=year)
+    return jsonify({'stacked_bar_chart': stacked_bar_chart})
+
+@app.route('/plot/line_chart/<int:year>')
+def get_line_chart(year):
+    user_id = session.get('user_id')
+    line_chart = generate_line_chart(user_id=user_id,year=year)
+    return jsonify({'line_chart': line_chart})
 
 
 with app.app_context():

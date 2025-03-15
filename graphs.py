@@ -6,7 +6,8 @@ import io
 import base64
 from datetime import datetime
 import calendar
-from sqlalchemy import func  # Add this import statement
+from sqlalchemy import func
+from flask import session
 from models import db, Expense, Category, Budget, User
 
 def generate_monthly_expenses_plot(user_id=None):
@@ -18,6 +19,11 @@ def generate_monthly_expenses_plot(user_id=None):
 
     # Filter by user_id if provided
     if user_id:
+        user = User.query.get(session['user_id'])
+        if user.role == "family_member":
+            user_id = user.approved_by  # Use the super_user's ID
+        else:
+            user_id = user.id 
         query = query.filter(Expense.user_id == user_id)
 
     # Execute the query
@@ -57,6 +63,11 @@ def generate_category_expenses_plot(year, month,user_id=None,):
 
     # Filter by user_id if provided
     if user_id:
+        user = User.query.get(session['user_id'])
+        if user.role == "family_member":
+            user_id = user.approved_by  # Use the super_user's ID
+        else:
+            user_id = user.id 
         query = query.filter(Expense.user_id == user_id)
 
     # Execute the query
@@ -101,6 +112,11 @@ def generate_pie_chart(user_id=None, month=None, year=None):
 
     # Filter by user_id if provided
     if user_id:
+        user = User.query.get(session['user_id'])
+        if user.role == "family_member":
+            user_id = user.approved_by  # Use the super_user's ID
+        else:
+            user_id = user.id 
         budget_query = budget_query.filter(Budget.user_id == user_id)
 
     budget_data = budget_query.group_by(Category.name).all()
@@ -117,6 +133,11 @@ def generate_pie_chart(user_id=None, month=None, year=None):
 
     # Filter by user_id if provided
     if user_id:
+        user = User.query.get(session['user_id'])
+        if user.role == "family_member":
+            user_id = user.approved_by  # Use the super_user's ID
+        else:
+            user_id = user.id 
         expense_query = expense_query.filter(Expense.user_id == user_id)
 
     expense_data = expense_query.group_by(Category.name).all()
@@ -172,6 +193,11 @@ def generate_bar_chart(user_id=None, month=None, year=None):
 
     # Filter by user_id if provided
     if user_id:
+        user = User.query.get(session['user_id'])
+        if user.role == "family_member":
+            user_id = user.approved_by  # Use the super_user's ID
+        else:
+            user_id = user.id 
         query = query.filter(Budget.user_id == user_id).filter(Expense.user_id == user_id)
 
     # Group by category and execute the query
@@ -237,6 +263,11 @@ def generate_stacked_bar_chart(user_id=None, month=None, year=None):
 
     # Filter by user_id if provided
     if user_id:
+        user = User.query.get(session['user_id'])
+        if user.role == "family_member":
+            user_id = user.approved_by  # Use the super_user's ID
+        else:
+            user_id = user.id 
         query = query.filter(Expense.user_id == user_id)
 
     # Group by username and category, then execute the query
@@ -289,6 +320,11 @@ def generate_line_chart(year=None, user_id=None):
 
     # Filter by user_id if provided
     if user_id:
+        user = User.query.get(session['user_id'])
+        if user.role == "family_member":
+            user_id = user.approved_by  # Use the super_user's ID
+        else:
+            user_id = user.id 
         query = query.filter(Budget.user_id == user_id).filter(Expense.user_id == user_id)
 
     # Group by month and execute the query
