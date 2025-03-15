@@ -274,21 +274,24 @@ def dashboard():
     role = session.get('role')
     user = User.query.get(session.get('user_id'))
     
-    monthly_plot = graphs.generate_monthly_expenses_plot()
-    category_plot = graphs.generate_category_expenses_plot(year=datetime.now().year, month=datetime.now().month)
-    pie_chart = graphs.generate_pie_chart(user=user.id, month=datetime.now().month, year=datetime.now().year)
-    bar_chart = graphs.generate_bar_chart(user=user.id, month=datetime.now().month, year=datetime.now().year)
-    stacked_bar_chart = graphs.generate_stacked_bar_chart(month=datetime.now().month, year=datetime.now().year)
-    line_chart = graphs.generate_line_chart(year=datetime.now().year)
+    current_year = datetime.now().year
+    current_month = datetime.now().month
+
+    monthly_plot = graphs.generate_monthly_expenses_plot(user_id=user.id)
+    category_plot = graphs.generate_category_expenses_plot(year=current_year, month=current_month, user_id=user.id)
+    pie_chart = graphs.generate_pie_chart(user_id=user.id, month=current_month, year=current_year)
+    bar_chart = graphs.generate_bar_chart(user_id=user.id, month=current_month, year=current_year)
+    stacked_bar_chart = graphs.generate_stacked_bar_chart(user_id=user.id, month=current_month, year=current_year)
+    line_chart = graphs.generate_line_chart(year=current_year, user_id=user.id)
 
     if role == "super_user":
-        return render_template("dashboard_edit.html", is_super_user=True, monthly_plot=monthly_plot, category_plot=category_plot, pie_chart=pie_chart, bar_chart=bar_chart, stacked_bar_chart=stacked_bar_chart, line_chart=line_chart)
+        return render_template("dashboard_edit.html", is_super_user=True, monthly_plot=monthly_plot, category_plot=category_plot, pie_chart=pie_chart, bar_chart=bar_chart, stacked_bar_chart=stacked_bar_chart, line_chart=line_chart, current_year=current_year, default_year=current_year, default_month=current_month)
     elif role == "family_member" and user:
         if user.status == "approved":
             if user.privilege == "view":
-                return render_template("dashboard_view.html", monthly_plot=monthly_plot, category_plot=category_plot, pie_chart=pie_chart, bar_chart=bar_chart, stacked_bar_chart=stacked_bar_chart, line_chart=line_chart)
+                return render_template("dashboard_view.html", monthly_plot=monthly_plot, category_plot=category_plot, pie_chart=pie_chart, bar_chart=bar_chart, stacked_bar_chart=stacked_bar_chart, line_chart=line_chart, current_year=current_year, default_year=current_year, default_month=current_month)
             elif user.privilege == "edit":
-                return render_template("dashboard_edit.html", monthly_plot=monthly_plot, category_plot=category_plot, pie_chart=pie_chart, bar_chart=bar_chart, stacked_bar_chart=stacked_bar_chart, line_chart=line_chart)
+                return render_template("dashboard_edit.html", monthly_plot=monthly_plot, category_plot=category_plot, pie_chart=pie_chart, bar_chart=bar_chart, stacked_bar_chart=stacked_bar_chart, line_chart=line_chart, current_year=current_year, default_year=current_year, default_month=current_month)
         else:
             flash("Your account is pending approval.", "warning")
             return redirect(url_for("login"))

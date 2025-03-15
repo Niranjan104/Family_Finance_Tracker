@@ -427,11 +427,6 @@ async function deleteBudget(id) {
     fetchBudgets();
 }
 
-// Set year select dropdown on load
-window.addEventListener("load", function() {
-    populateYearSelect();
-});
-
 // Show the set budget popup
 document.getElementById("set-budget-btn").addEventListener("click", function() {
     document.getElementById("budget-form").reset(); // Reset the form
