@@ -8,203 +8,205 @@
 
 {% block content %}
 <!-- Your dashboard edit specific content here -->
-<!-- STATS SECTION -->
-<section class="stats">
-  <div class="box green" id="total-spent">
-    Total Spent💰
-    <div>₹:<span id="total-spent-value">0</span></div>
-  </div>
-  <div class="box pink" id="expense-count">
-    Expense Count📊
-    <div><span id="expense-count-value">0</span></div>
-  </div>
-  <div class="box blue" id="Last-7day-Spent">
-    Last 7 Days📅
-    <div>₹:<span id="last-7days-spent-value">0</span></div>
-  </div>
-  <div class="box gray" id="highest-category">
-    Top Category🔝
-    <div><span id="highest-category-value">N/A</span></div>
-  </div>
-  <div class="box orange" id="highest-amount">
-    Max Spend🧾
-    <div>₹:<span id="highest-amount-value">0</span></div>
-  </div>
-</section>
-
-<!-- MAIN CONTENT -->
-<section class="main-content">
-  <!-- EXPENSE LIST -->
-  <section class="expense-list">
-    <div class="expense-list-header">
-      <h2 style="text-align: center; flex: 1;">Expense List</h2>
-      <button id="add-expense-btn" class="hover-effect">Add Expense</button>
-    </div>
-    <div class="filter">
-      <label>From: <input type="date" id="from-date" class="small-input" name="from-date" /></label>
-      <label>To: <input type="date" id="to-date" class="small-input" name="to-date" /></label>
-      <button id="filter-btn" class="hover-effect">🔍</button>
-      <button id="refresh-btn" class="hover-effect">↻</button>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Date</th>
-          <th>Category</th>
-          <th>Description</th>
-          <th>Amount(₹)</th>
-          <th>Edit/Delete</th>
-          <th>Uploaded File</th>
-        </tr>
-      </thead>
-      <tbody id="expense-table-body">
-        <!-- Data dynamically added here -->
-         
-      </tbody>
-    </table>
-    <div id="pagination-controls" class="pagination-controls">
-      <!-- Pagination buttons will be dynamically added here -->
-    </div>
+    <!-- STATS SECTION -->
+    <section class="stats">
+      <div class="box green" id="total-spent">
+          Total Spent💰
+          <div>₹:<span id="total-spent-value">0</span></div>
+      </div>
+      <div class="box pink" id="expense-count">
+          Expense Count📊
+          <div><span id="expense-count-value">0</span></div>
+      </div>
+      <div class="box blue" id="Last-7day-Spent">
+          Last 7 Days📅
+          <div>₹:<span id="last-7days-spent-value">0</span></div>
+      </div>
+      <div class="box gray" id="highest-category">
+          Top Category🔝
+          <div><span id="highest-category-value">N/A</span></div>
+      </div>
+      <div class="box orange" id="highest-amount">
+          Max Spend🧾
+          <div>₹:<span id="highest-amount-value">0</span></div>
+      </div>
   </section>
 
-  <!-- ADD EXPENSE FORM POPUP -->
-  <div id="add-expense-popup" class="popup">
-    <div class="popup-content">
-      <button id="close-popup-btn" class="close-btn">X</button>
-      <h2 style="text-align: center; flex: 1;">Add Expense</h2>
-      <form id="expense-form">
-        <input type="hidden" id="expense-id" name="expense-id" />
-        <label>Name: <input type="text" id="name" name="name" required /></label>
-        <label>
-          Category:
-          <select id="category" name="category" required>
-            <option value="">Select</option>
-            <option value="Food🍕">Food🍕</option>
-            <option value="Transport🚂">Transport🚂</option>
-            <option value="Bills💸">Bills💸</option>
-            <option value="Entertainment🤡">Entertainment🤡</option>
-            <option value="Shopping🛍️">Shopping🛍️</option>
-            <option value="Therapy 🩺">Therapy 🩺</option>
-            <option value="Others">Others</option>
-          </select>
-        </label>
-        <label>
-          Category Description: <input type="text" id="category-desc" name="category-desc" />
-        </label>
-        <label>Date: <input type="date" id="date" name="date" required /></label>
-        <label>Amount(₹): <input type="number" id="amount" name="amount" min="1" required /></label>
-        <label>Description: <textarea id="description" name="description"></textarea></label>
-        <label for="file-upload" id="file-upload-label" class="file-upload-label">Upload File📤</label>
-        <input type="file" id="file-upload" name="file-upload" accept=".jpg,.png,.pdf,.jpeg,.doc,.docx,.xlsx" />
-        <button type="submit" class="hover-effect">SUBMIT</button>
-      </form>
-    </div>
+  <!-- MAIN CONTENT -->
+  <section class="main-content">
+      <!-- EXPENSE LIST -->
+      <section class="expense-list">
+          <div class="expense-list-header">
+              <h2 style="text-align: center; flex: 1;">Expense List</h2>
+              <button id="add-expense-btn" class="hover-effect">Add Expense</button>
+          </div>
+          <div class="filter">
+              <label>From: <input type="date" id="from-date" class="small-input" name="from-date" /></label>
+              <label>To: <input type="date" id="to-date" class="small-input" name="to-date" /></label>
+              <button id="filter-btn" class="hover-effect">🔍</button>
+              <button id="refresh-btn" class="hover-effect">↻</button>
+          </div>
+          <table>
+              <thead>
+                  <tr>
+                      <th>Name</th>
+                      <th>Date</th>
+                      <th>Category</th>
+                      <th>Description</th>
+                      <th>Amount(₹)</th>
+                      <th>Edit/Delete</th>
+                      <th>Uploaded File</th>
+                  </tr>
+              </thead>
+              <tbody id="expense-table-body">
+                  <!-- Data dynamically added here -->
+
+              </tbody>
+          </table>
+          <div id="expense-pagination-controls" class="pagination-controls center">
+            <!-- Pagination buttons will be dynamically added here -->
+        </div>
+      </section>
+
+      <!-- ADD EXPENSE FORM POPUP -->
+      <div id="add-expense-popup" class="popup">
+          <div class="popup-content" style="background-color: lightskyblue;">
+              <button id="close-popup-btn" class="close-btn">X</button>
+              <h2 style="text-align: center; flex: 1;">Add Expense</h2>
+              <form id="expense-form">
+                  <input type="hidden" id="expense-id" name="expense-id" />
+                  <label>Name: <input type="text" id="name" name="name" required /></label>
+                  <label>
+                      Category:
+                      <select id="category" name="category" required>
+                          <option value="">Select</option>
+                          <option value="Food🍕">Food🍕</option>
+                          <option value="Transport🚂">Transport🚂</option>
+                          <option value="Bills💸">Bills💸</option>
+                          <option value="Entertainment🤡">Entertainment🤡</option>
+                          <option value="Shopping🛍️">Shopping🛍️</option>
+                          <option value="Therapy 🩺">Therapy 🩺</option>
+                          <option value="Others">Others</option>
+                      </select>
+                  </label>
+                  <label>
+                      Category Description: <input type="text" id="category-desc" name="category-desc" />
+                  </label>
+                  <label>Date: <input type="date" id="date" name="date" required /></label>
+                  <label>Amount(₹): <input type="number" id="amount" name="amount" min="1" required /></label>
+                  <label>Description: <textarea id="description" name="description"></textarea></label>
+                  <label for="file-upload" id="file-upload-label" class="file-upload-label">Upload File📤</label>
+                  <input type="file" id="file-upload" name="file-upload" accept=".jpg,.png,.pdf,.jpeg,.doc,.docx,.xlsx" />
+                  <button type="submit" class="hover-effect">SUBMIT</button>
+              </form>
+          </div>
+      </div>
+
+      <!-- BUDGET LIST -->
+      <section class="budget-list">
+          <div class="budget-list-header">
+              <h2 style="text-align: center; flex: 1;">Budget List</h2>
+              <button id="set-budget-btn" class="hover-effect">Set Budget</button>
+          </div>
+          <table>
+              <thead>
+                  <tr>
+                      <th>Year</th>
+                      <th>Month</th>
+                      <th>Category</th>
+                      <th>Budget Amount(₹)</th>
+                      <th>Edit/Delete</th>
+                      <th>Recurring</th>
+                  </tr>
+              </thead>
+              <tbody id="budget-table-body">
+                  <!-- Data dynamically added here -->
+                  
+              </tbody>
+          </table>
+        <div id="budget-pagination-controls" class="pagination-controls center">
+            <!-- Pagination buttons will be dynamically added here -->
+        </div>
+      </section>
+  </section>
+
+  <!-- BUDGET FORM POPUP -->
+  <div id="budget-popup" class="popup">
+      <div class="popup-content" style="background-color: lightskyblue;">
+          <button id="close-budget-popup-btn" class="close-btn">X</button>
+          <h2 style="text-align: center; flex: 1;">Set Budget</h2>
+          <form id="budget-form">
+              <input type="hidden" id="budget-id" name="budget-id" />
+              <!-- Set Year and Month Section -->
+              <div id="set-period-section">
+                  <label>Year:
+                      <select id="year-select" name="year" required>
+                          <option value="">Select Year</option>
+                          <!-- Options populated by JavaScript -->
+                      </select>
+                  </label>
+                  <label>Month:
+                      <select id="month-select" name="month" required>
+                          <option value="">Select Month</option>
+                          <option value="1">January</option>
+                          <option value="2">February</option>
+                          <option value="3">March</option>
+                          <option value="4">April</option>
+                          <option value="5">May</option>
+                          <option value="6">June</option>
+                          <option value="7">July</option>
+                          <option value="8">August</option>
+                          <option value="9">September</option>
+                          <option value="10">October</option>
+                          <option value="11">November</option>
+                          <option value="12">December</option>
+                      </select>
+                  </label>
+                  <button type="button" id="set-budget-period-btn" class="hover-effect">Set Period</button>
+              </div>
+              
+              <!-- Set Budget Category and Amount Section -->
+              <div id="set-category-amount-section" style="display: none;">
+                  <fieldset>
+                      <legend>Category:</legend>
+                      <label class="option">
+                          <input type="radio" name="budget-category" value="Food🍕" required>
+                          Food🍕
+                      </label>
+                      <label class="option">
+                          <input type="radio" name="budget-category" value="Transport🚂">
+                          Transport🚂
+                      </label>
+                      <label class="option">
+                          <input type="radio" name="budget-category" value="Bills💸">
+                          Bills💸
+                      </label>
+                      <label class="option">
+                          <input type="radio" name="budget-category" value="Entertainment🤡">
+                          Entertainment🤡
+                      </label>
+                      <label class="option">
+                          <input type="radio" name="budget-category" value="Shopping🛍️">
+                          Shopping🛍️
+                      </label>
+                      <label class="option">
+                          <input type="radio" name="budget-category" value="Therapy 🩺">
+                          Therapy 🩺
+                      </label>
+                      <label class="option">
+                          <input type="radio" name="budget-category" value="Others">
+                          Others
+                      </label>
+                  </fieldset>
+                  <label for="budget-amount">Amount(₹):
+                      <input type="number" id="budget-amount" name="budget-amount" required min="1" />
+                  </label>
+                  <button type="submit" class="hover-effect">Save Budget</button>
+              </div>
+          </form>
+      </div>
   </div>
 
-  <!-- BUDGET LIST -->
-  <section class="budget-list">
-    <div class="budget-list-header">
-      <h2 style="text-align: center; flex: 1;">Budget List</h2>
-      <button id="set-budget-btn" class="hover-effect">Set Budget</button>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Year</th>
-          <th>Month</th>
-          <th>Category</th>
-          <th>Budget Amount(₹)</th>
-          <th>Edit/Delete</th>
-          <th>Recurring</th>
-        </tr>
-      </thead>
-      <tbody id="budget-table-body">
-        <!-- Data dynamically added here -->
-      </tbody>
-    </table>
-    <div id="budget-pagination-controls" class="pagination-controls">
-      <!-- Pagination buttons will be dynamically added here -->
-    </div>
-  </section>
-</section>
-
-<!-- BUDGET FORM POPUP -->
-<div id="budget-popup" class="popup">
-<div class="popup-content">
-  <button id="close-budget-popup-btn" class="close-btn">X</button>
-  <h2 style="text-align: center; flex: 1;">Set Budget</h2>
-  <form id="budget-form">
-    <input type="hidden" id="budget-id" name="budget-id" />
-    <!-- Set Year and Month Section -->
-    <div id="set-period-section">
-      <label>Year:
-        <select id="year-select" name="year" required>
-          <option value="">Select Year</option>
-          <!-- Options populated by JavaScript -->
-        </select>
-      </label>
-      <label>Month:
-        <select id="month-select" name="month" required>
-          <option value="">Select Month</option>
-          <option value="1">January</option>
-          <option value="2">February</option>
-          <option value="3">March</option>
-          <option value="4">April</option>
-          <option value="5">May</option>
-          <option value="6">June</option>
-          <option value="7">July</option>
-          <option value="8">August</option>
-          <option value="9">September</option>
-          <option value="10">October</option>
-          <option value="11">November</option>
-          <option value="12">December</option>
-        </select>
-      </label>
-      <button type="button" id="set-budget-period-btn" class="hover-effect">Set Period</button>
-    </div>
-    
-    <!-- Set Budget Category and Amount Section -->
-    <div id="set-category-amount-section" style="display: none;">
-      <fieldset>
-        <legend>Category:</legend>
-        <label class="option">
-          <input type="radio" name="budget-category" value="Food🍕" required>
-          Food🍕
-        </label>
-        <label class="option">
-          <input type="radio" name="budget-category" value="Transport🚂">
-          Transport🚂
-        </label>
-        <label class="option">
-          <input type="radio" name="budget-category" value="Bills💸">
-          Bills💸
-        </label>
-        <label class="option">
-          <input type="radio" name="budget-category" value="Entertainment🤡">
-          Entertainment🤡
-        </label>
-        <label class="option">
-          <input type="radio" name="budget-category" value="Shopping🛍️">
-          Shopping🛍️
-        </label>
-        <label class="option">
-          <input type="radio" name="budget-category" value="Therapy 🩺">
-          Therapy 🩺
-        </label>
-        <label class="option">
-          <input type="radio" name="budget-category" value="Others">
-          Others
-        </label>
-      </fieldset>
-      <label for="budget-amount">Amount(₹):
-        <input type="number" id="budget-amount" name="budget-amount" required min="1" />
-      </label>
-      <button type="submit" class="hover-effect">Save Budget</button>
-    </div>
-  </form>
-</div>
-</div>
 {% endblock %}
 
 {% block graphs %}

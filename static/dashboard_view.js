@@ -1,61 +1,13 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize date filters with current month
-    initializeDateFilters();
-    
-    // Load initial data
     loadExpenseData();
     loadBudgetData();
-    loadDashboardStats();
-    
-    // Set up event listeners
-    document.getElementById('filter-btn').addEventListener('click', function() {
-        loadExpenseData();
-        loadBudgetData();  // Add budget reload
-        loadDashboardStats();
-    });
-    
-    document.getElementById('refresh-btn').addEventListener('click', function() {
-        document.getElementById('from-date').value = '';
-        document.getElementById('to-date').value = '';
-        loadExpenseData();
-        loadBudgetData();  // Add budget reload
-        loadDashboardStats();
-    });
 });
 
-function initializeDateFilters() {
-    // Set default date range to last 7 days
-    const today = new Date();
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(today.getDate() - 7);
-    
-    const fromDateInput = document.getElementById('from-date');
-    const toDateInput = document.getElementById('to-date');
-    
-    fromDateInput.valueAsDate = sevenDaysAgo;
-    toDateInput.valueAsDate = today;
-}
-
-// Add this function to handle dashboard stats
-function loadDashboardStats() {
-    fetch(`${API_URL}/get_stats`, { credentials: 'include' })
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
-            // Update your stats DOM elements here
-            console.log('Dashboard stats loaded:', data);
-        })
-        .catch(error => console.error('Error loading stats:', error));
-}
-
-// Update all fetch calls to include credentials
-function loadExpenseData() {
+function loadExpenseData(page = 1) {
     const fromDate = document.getElementById('from-date').value;
     const toDate = document.getElementById('to-date').value;
     
-    fetch(`${API_URL}/get_expenses?from_date=${fromDate}&to_date=${toDate}`, { 
+    fetch(`${API_URL}/get_expenses?from_date=${fromDate}&to_date=${toDate}&page=${page}`, { 
         credentials: 'include' 
     })
         .then(response => {
@@ -65,14 +17,56 @@ function loadExpenseData() {
             return response.json();
         })
         .then(data => {
-            displayExpenses(data);
+            displayExpenses(data.expenses);
+            updateExpensePagination(data.current_page, data.total_pages);
         })
         .catch(error => {
             console.error('Error fetching expense data:', error);
-            // Show error message in the table
             const tableBody = document.getElementById('expense-table-body');
             tableBody.innerHTML = `<tr><td colspan="6" class="empty-table-message">Failed to load expenses. Please try again later.</td></tr>`;
         });
+}
+
+function loadBudgetData(page = 1) {
+    fetch(`${API_URL}/get_budgets?page=${page}`, { 
+        credentials: 'include',
+        headers: {'Cache-Control': 'no-cache'}
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
+    .then(data => {
+        displayBudgets(data.budgets);
+        updateBudgetPagination(data.current_page, data.total_pages);
+    })
+    .catch(error => {
+        console.error('Error fetching budget data:', error);
+        const tableBody = document.getElementById('budget-table-body');
+        tableBody.innerHTML = `<tr><td colspan="5" class="empty-table-message">No budgets configured</td></tr>`;
+    });
+}
+
+function updateExpensePagination(currentPage, totalPages) {
+    const paginationControls = document.getElementById("expense-pagination-controls");
+    paginationControls.innerHTML = `
+        <button onclick="loadExpenseData(1)">First</button>
+        <button onclick="loadExpenseData(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+        <span>Page ${currentPage} of ${totalPages}</span>
+        <button onclick="loadExpenseData(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+        <button onclick="loadExpenseData(${totalPages})">Last</button>
+    `;
+}
+
+function updateBudgetPagination(currentPage, totalPages) {
+    const paginationControls = document.getElementById("budget-pagination-controls");
+    paginationControls.innerHTML = `
+        <button onclick="loadBudgetData(1)">First</button>
+        <button onclick="loadBudgetData(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+        <span>Page ${currentPage} of ${totalPages}</span>
+        <button onclick="loadBudgetData(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+        <button onclick="loadBudgetData(${totalPages})">Last</button>
+    `;
 }
 
 function displayExpenses(expenses) {

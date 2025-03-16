@@ -278,6 +278,7 @@ def dashboard():
     today = datetime.today()
     default_year = today.year
     default_month = today.month
+    current_year = today.year  # Add this line
 
     all_users = []  
     if user.role == "super_user":
@@ -290,57 +291,59 @@ def dashboard():
             all_users.append(superuser.username)  
         all_users.append(user.username)
 
-    default_user= all_users[0] if all_users else None
+    default_user = all_users[0] if all_users else None
     monthly_plot = generate_monthly_expenses_plot(user_id=user.id)
-    category_plot = generate_category_expenses_plot(default_year, default_month,user_id=user.id)
+    category_plot = generate_category_expenses_plot(default_year, default_month, user_id=user.id)
     pie_chart = generate_pie_chart(user_id=user.id, month=default_month, year=default_year)
     bar_chart = generate_bar_chart(user_id=user.id, month=default_month, year=default_year)
-    stacked_bar_chart = generate_stacked_bar_chart(user_id=user.id,month=default_month, year=default_year)
-    line_chart = generate_line_chart(year=default_year,user_id=user.id)
-    
+    stacked_bar_chart = generate_stacked_bar_chart(user_id=user.id, month=default_month, year=default_year)
+    line_chart = generate_line_chart(year=default_year, user_id=user.id)
 
     if user.role == "super_user":
         return render_template("dashboard_edit.html", is_super_user=True,
-                                    username=user.username,
-                                    users=all_users,
-                                    default_user=default_user,  
-                                    monthly_plot=monthly_plot,
-                                    category_plot=category_plot,                      
-                                    pie_chart=pie_chart,
-                                    bar_chart=bar_chart,
-                                    stacked_bar_chart=stacked_bar_chart,
-                                    line_chart=line_chart,
-                                    default_year=default_year,
-                                    default_month=default_month)
+                               username=user.username,
+                               users=all_users,
+                               default_user=default_user,
+                               monthly_plot=monthly_plot,
+                               category_plot=category_plot,
+                               pie_chart=pie_chart,
+                               bar_chart=bar_chart,
+                               stacked_bar_chart=stacked_bar_chart,
+                               line_chart=line_chart,
+                               default_year=default_year,
+                               default_month=default_month,
+                               current_year=current_year)  # Pass current_year
 
     elif user.role == "family_member" and user:
         if user.status == "approved":
             if user.privilege == "view":
-                return render_template("dashboard_view.html",username=user.username,
-                                    users=all_users,
-                                    default_user=default_user,  
-                                    monthly_plot=monthly_plot,
-                                    category_plot=category_plot,                      
-                                    pie_chart=pie_chart,
-                                    bar_chart=bar_chart,
-                                    stacked_bar_chart=stacked_bar_chart,
-                                    line_chart=line_chart,
-                                    default_year=default_year,
-                                    default_month=default_month)
+                return render_template("dashboard_view.html", username=user.username,
+                                       users=all_users,
+                                       default_user=default_user,
+                                       monthly_plot=monthly_plot,
+                                       category_plot=category_plot,
+                                       pie_chart=pie_chart,
+                                       bar_chart=bar_chart,
+                                       stacked_bar_chart=stacked_bar_chart,
+                                       line_chart=line_chart,
+                                       default_year=default_year,
+                                       default_month=default_month,
+                                       current_year=current_year)  # Pass current_year
 
             elif user.privilege == "edit":
-                return render_template("dashboard_edit.html",username=user.username,
-                                    users=all_users,
-                                    default_user=default_user,  
-                                    monthly_plot=monthly_plot,
-                                    category_plot=category_plot,                      
-                                    pie_chart=pie_chart,
-                                    bar_chart=bar_chart,
-                                    stacked_bar_chart=stacked_bar_chart,
-                                    line_chart=line_chart,
-                                    default_year=default_year,
-                                    default_month=default_month)
-                                    
+                return render_template("dashboard_edit.html", username=user.username,
+                                       users=all_users,
+                                       default_user=default_user,
+                                       monthly_plot=monthly_plot,
+                                       category_plot=category_plot,
+                                       pie_chart=pie_chart,
+                                       bar_chart=bar_chart,
+                                       stacked_bar_chart=stacked_bar_chart,
+                                       line_chart=line_chart,
+                                       default_year=default_year,
+                                       default_month=default_month,
+                                       current_year=current_year)  # Pass current_year
+
             flash("Your account is pending approval.", "warning")
             return redirect(url_for("login"))
 

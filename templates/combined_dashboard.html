@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Edit</title>
+    <link rel="stylesheet" href="static/styles/dashboard.css" />
+</head>
+<body>
+    <!-- HEADER -->
+    <header>
+        <h1 class="small-header">FAMILY FINANCE TRACKER</h1>
+        <nav>
+            <button id="expense-btn" class="hover-effect">Expense Management</button>
+            <button id="budget-btn" class="hover-effect">Budget & Savings Management</button>
+            <button id="insights-btn" class="hover-effect">Insights Dashboard</button>
+            <span id="user-greeting">Hello, User!</span>
+            <button id="dark-mode-toggle">🌙</button>
+        </nav>
+    </header>
+
+    <!-- RANDOM MESSAGES -->
+    <div id="message-container">
+        <div id="message"></div>
+    </div>
+
+    <!-- STATS SECTION -->
+    <section class="stats">
+        <div class="box green" id="total-spent">
+            Total Spent💰
+            <div>₹:<span id="total-spent-value">0</span></div>
+        </div>
+        <div class="box pink" id="expense-count">
+            Expense Count📊
+            <div><span id="expense-count-value">0</span></div>
+        </div>
+        <div class="box blue" id="Last-7day-Spent">
+            Last 7 Days📅
+            <div>₹:<span id="last-7days-spent-value">0</span></div>
+        </div>
+        <div class="box gray" id="highest-category">
+            Top Category🔝
+            <div><span id="highest-category-value">N/A</span></div>
+        </div>
+        <div class="box orange" id="highest-amount">
+            Max Spend🧾
+            <div>₹:<span id="highest-amount-value">0</span></div>
+        </div>
+    </section>
+
+    <!-- MAIN CONTENT -->
+    <section class="main-content">
+        <!-- EXPENSE LIST -->
+        <section class="expense-list">
+            <div class="expense-list-header">
+                <h2 style="text-align: center; flex: 1;">Expense List</h2>
+                <button id="add-expense-btn" class="hover-effect">Add Expense</button>
+            </div>
+            <div class="filter">
+                <label>From: <input type="date" id="from-date" class="small-input" name="from-date" /></label>
+                <label>To: <input type="date" id="to-date" class="small-input" name="to-date" /></label>
+                <button id="filter-btn" class="hover-effect">🔍</button>
+                <button id="refresh-btn" class="hover-effect">↻</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Amount(₹)</th>
+                        <th>Edit/Delete</th>
+                        <th>Uploaded File</th>
+                    </tr>
+                </thead>
+                <tbody id="expense-table-body">
+                    <!-- Data dynamically added here -->
+                    <tr>
+                        <td>Sample Expense</td>
+                        <td>2023-10-01</td>
+                        <td>Food🍕</td>
+                        <td>Lunch at restaurant</td>
+                        <td>500</td>
+                        <td>
+                            <button class="edit">Edit</button>
+                            <button class="delete">Delete</button>
+                        </td>
+                        <td>None</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- ADD EXPENSE FORM POPUP -->
+        <div id="add-expense-popup" class="popup">
+            <div class="popup-content">
+                <button id="close-popup-btn" class="close-btn">X</button>
+                <h2 style="text-align: center; flex: 1;">Add Expense</h2>
+                <form id="expense-form">
+                    <input type="hidden" id="expense-id" name="expense-id" />
+                    <label>Name: <input type="text" id="name" name="name" required /></label>
+                    <label>
+                        Category:
+                        <select id="category" name="category" required>
+                            <option value="">Select</option>
+                            <option value="Food🍕">Food🍕</option>
+                            <option value="Transport🚂">Transport🚂</option>
+                            <option value="Bills💸">Bills💸</option>
+                            <option value="Entertainment🤡">Entertainment🤡</option>
+                            <option value="Shopping🛍️">Shopping🛍️</option>
+                            <option value="Therapy 🩺">Therapy 🩺</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </label>
+                    <label>
+                        Category Description: <input type="text" id="category-desc" name="category-desc" />
+                    </label>
+                    <label>Date: <input type="date" id="date" name="date" required /></label>
+                    <label>Amount(₹): <input type="number" id="amount" name="amount" min="1" required /></label>
+                    <label>Description: <textarea id="description" name="description"></textarea></label>
+                    <label for="file-upload" id="file-upload-label" class="file-upload-label">Upload File📤</label>
+                    <input type="file" id="file-upload" name="file-upload" accept=".jpg,.png,.pdf,.jpeg,.doc,.docx,.xlsx" />
+                    <button type="submit" class="hover-effect">SUBMIT</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- BUDGET LIST -->
+        <section class="budget-list">
+            <div class="budget-list-header">
+                <h2 style="text-align: center; flex: 1;">Budget List</h2>
+                <button id="set-budget-btn" class="hover-effect">Set Budget</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Month</th>
+                        <th>Category</th>
+                        <th>Budget Amount(₹)</th>
+                        <th>Edit/Delete</th>
+                        <th>Recurring</th>
+                    </tr>
+                </thead>
+                <tbody id="budget-table-body">
+                    <!-- Data dynamically added here -->
+                    <tr>
+                        <td>2023</td>
+                        <td>October</td>
+                        <td>Food🍕</td>
+                        <td>10000</td>
+                        <td>
+                            <button class="edit">Edit</button>
+                            <button class="delete">Delete</button>
+                        </td>
+                        <td>No</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </section>
+
+    <!-- BUDGET FORM POPUP -->
+    <div id="budget-popup" class="popup">
+        <div class="popup-content">
+            <button id="close-budget-popup-btn" class="close-btn">X</button>
+            <h2 style="text-align: center; flex: 1;">Set Budget</h2>
+            <form id="budget-form">
+                <input type="hidden" id="budget-id" name="budget-id" />
+                <!-- Set Year and Month Section -->
+                <div id="set-period-section">
+                    <label>Year:
+                        <select id="year-select" name="year" required>
+                            <option value="">Select Year</option>
+                            <!-- Options populated by JavaScript -->
+                        </select>
+                    </label>
+                    <label>Month:
+                        <select id="month-select" name="month" required>
+                            <option value="">Select Month</option>
+                            <option value="1">January</option>
+                            <option value="2">February</option>
+                            <option value="3">March</option>
+                            <option value="4">April</option>
+                            <option value="5">May</option>
+                            <option value="6">June</option>
+                            <option value="7">July</option>
+                            <option value="8">August</option>
+                            <option value="9">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </label>
+                    <button type="button" id="set-budget-period-btn" class="hover-effect">Set Period</button>
+                </div>
+                
+                <!-- Set Budget Category and Amount Section -->
+                <div id="set-category-amount-section" style="display: none;">
+                    <fieldset>
+                        <legend>Category:</legend>
+                        <label class="option">
+                            <input type="radio" name="budget-category" value="Food🍕" required>
+                            Food🍕
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="budget-category" value="Transport🚂">
+                            Transport🚂
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="budget-category" value="Bills💸">
+                            Bills💸
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="budget-category" value="Entertainment🤡">
+                            Entertainment🤡
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="budget-category" value="Shopping🛍️">
+                            Shopping🛍️
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="budget-category" value="Therapy 🩺">
+                            Therapy 🩺
+                        </label>
+                        <label class="option">
+                            <input type="radio" name="budget-category" value="Others">
+                            Others
+                        </label>
+                    </fieldset>
+                    <label for="budget-amount">Amount(₹):
+                        <input type="number" id="budget-amount" name="budget-amount" required min="1" />
+                    </label>
+                    <button type="submit" class="hover-effect">Save Budget</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- GRAPHS SECTION -->
+    <div class="container">
+        <h1>My Expenses</h1>
+        
+        <div class="chart-container">
+            <div class="graph">
+                <h3>Monthly Expenses</h3>
+                <img style="margin-top: 40px;" src="data:image/png;base64,{{ monthly_plot }}" alt="Monthly Expenses Graph">
+            </div>
+            
+            <div class="graph">
+                <h3>Filter Expenses by Category</h3>
+                <div class="filter-container">
+                    <select id="year" onchange="updateCategoryPlot()">
+                        <!-- Year options populated by JavaScript -->
+                    </select>
+
+                    <select id="month" onchange="updateCategoryPlot()">
+                        <!-- Month options populated by JavaScript -->
+                    </select>
+                </div>
+                <img id="categoryChart" src="data:image/png;base64,{{ category_plot }}" alt="Category-wise Expenses Graph">
+            </div>
+        </div>
+        <div class="container2">
+            <h1>Family Expenses</h1>
+            <div class="filter-container">
+                <select id="pieUser">
+                    <!-- User options populated by JavaScript -->
+                </select>
+            
+                <select id="pieYear">
+                    <!-- Year options populated by JavaScript -->
+                </select>
+            
+                <select id="pieMonth">
+                    <!-- Month options populated by JavaScript -->
+                </select>
+            
+                <button onclick="updateCharts()">Apply Filters</button>
+            </div>
+            <div class="chart-container2">
+                <div class="graph">
+                    <h3>Budget vs Expenses</h3>          
+                    <img id="pieChart" src="data:image/png;base64,{{ pie_chart }}" alt="Budget vs Expenses Pie Chart">
+                </div>
+                <div class="graph">
+                    <h3>Spending Progress by Category</h3>
+                    <img id="barChart" src="data:image/png;base64,{{ bar_chart }}" alt="Spending Progress Chart">
+                </div>
+                <div class="graph">
+                    <h3>Family Member's Expenses By Category</h3>
+                    <img id="stackedBarChart" src="data:image/png;base64,{{ stacked_bar_chart }}" alt="Stacked Bar Chart">
+                </div>                             
+                <div class="graph">
+                    <h3>Budget vs. Expense (Line Chart)</h3>
+                    <img id="lineChart" src="data:image/png;base64,{{ line_chart }}" alt="Budget vs. Expense Line Chart">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="static/script.js" defer></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1; // Months are zero-indexed
+
+        console.log("Current Year:", currentYear);
+        console.log("Current Month:", currentMonth);
+
+        // Populate year dropdown
+        const yearDropdown = document.getElementById("year");
+        if (yearDropdown) {
+            for (let year = currentYear - 5; year <= currentYear + 5; year++) {
+                const option = document.createElement("option");
+                option.value = year;
+                option.textContent = year;
+                if (year === currentYear) {
+                    option.selected = true; // Set current year as default
+                }
+                yearDropdown.appendChild(option);
+            }
+        } else {
+            console.error("Year dropdown element not found!");
+        }
+
+        // Populate month dropdown
+        const monthDropdown = document.getElementById("month");
+        if (monthDropdown) {
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            monthNames.forEach((monthName, index) => {
+                const option = document.createElement("option");
+                option.value = index + 1;
+                option.textContent = monthName;
+                if (index + 1 === currentMonth) {
+                    option.selected = true; // Set current month as default
+                }
+                monthDropdown.appendChild(option);
+            });
+        } else {
+            console.error("Month dropdown element not found!");
+        }
+
+        updateCategoryPlot();  // Load default category plot when page loads
+        updateCharts();  // Load default charts when page loads
+    });
+
+    function updateCategoryPlot() {
+        const year = document.getElementById("year").value;
+        const month = document.getElementById("month").value;
+
+        fetch(`/plot/category_data/${year}/${month}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.no_data) {
+                    alert("Insufficient data available for the selected month and year.");
+                } else {
+                    document.getElementById("categoryChart").src = "data:image/png;base64," + data.category_plot;
+                }
+            })
+            .catch(error => console.error("Error updating chart:", error));
+    }
+
+    async function updateLineChart() {
+        const year = document.getElementById("pieYear").value;  // Get selected year
+
+        try {
+            const response = await fetch(`/plot/line_chart/${year}`);
+            const data = await response.json();
+            document.getElementById("lineChart").src = "data:image/png;base64," + data.line_chart;
+        } catch (error) {
+            console.error("Error updating line chart:", error);
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        updateCharts();  // Load default charts when page loads
+    });
+
+    async function updateCharts() {
+        const user = document.getElementById("pieUser").value;
+        const year = document.getElementById("pieYear").value;
+        const month = document.getElementById("pieMonth").value;
+
+        try {
+            let noData = false;
+
+            // Update Pie Chart
+            const pieResponse = await fetch(`/plot/pie_chart/${year}/${month}?user=${encodeURIComponent(user)}`);
+            const pieData = await pieResponse.json();
+            if (pieData.no_data) noData = true;
+            else document.getElementById("pieChart").src = "data:image/png;base64," + pieData.pie_chart;
+
+            // Update Bar Chart
+            const barResponse = await fetch(`/plot/bar_chart/${year}/${month}?user=${encodeURIComponent(user)}`);
+            const barData = await barResponse.json();
+            if (barData.no_data) noData = true;
+            else document.getElementById("barChart").src = "data:image/png;base64," + barData.bar_chart;
+
+            // Update Stacked Bar Chart
+            const stackedResponse = await fetch(`/plot/stacked_bar_chart/${year}/${month}`);
+            const stackedData = await stackedResponse.json();
+            if (stackedData.no_data) noData = true;
+            else document.getElementById("stackedBarChart").src = "data:image/png;base64," + stackedData.stacked_bar_chart;
+
+            // Update Line Chart
+            await updateLineChart();  // Add this function call
+
+            if (noData) {
+                alert("Insufficient data available for the selected month and year.");
+            }
+
+        } catch (error) {
+            console.error("Error updating charts:", error);
+        }
+    }
+    function loadExpenses(page) {
+        fetch(`/dashboard_view?expense_page=${page}`)
+        .then(response => response.text())
+        .then(data => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data, 'text/html');
+            const newTableBody = doc.getElementById('expense-table-body').innerHTML;
+            document.getElementById('expense-table-body').innerHTML = newTableBody;
+
+            const newPagination = doc.querySelector('.pagination').innerHTML;
+            document.querySelector('.pagination').innerHTML = newPagination;
+        })
+        .catch(error => console.error('Error loading expenses:', error));
+    }
+    </script>
+</body>
+</html>

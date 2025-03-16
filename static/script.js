@@ -70,12 +70,12 @@ async function fetchExpenses(fromDate = "", toDate = "", page = 1) {
         tableBody.appendChild(row);
     });
 
-    // Add pagination controls
-    let paginationControls = document.getElementById("pagination-controls");
+    // ADD PAGINATION CONTROLS
+    let paginationControls = document.getElementById("expense-pagination-controls");
     paginationControls.innerHTML = `
         <button onclick="fetchExpenses('${fromDate}', '${toDate}', 1)">First</button>
-        <button onclick="fetchExpenses('${fromDate}', '${toDate}', ${data.current_page - 1})" ${data.current_page === 1 ? 'disabled' : ''}>Previous</button>
-        <span>Page ${data.current_page} of ${data.total_pages}</span>
+        <button onclick="fetchExpenses('${fromDate}', '${toDate}', ${data.current_page - 1})" ${data.current_page === 1 ? 'disabled' : ''}>Prev</button>
+        <span>Page ${data.current_page} / ${data.total_pages}</span>
         <button onclick="fetchExpenses('${fromDate}', '${toDate}', ${data.current_page + 1})" ${data.current_page === data.total_pages ? 'disabled' : ''}>Next</button>
         <button onclick="fetchExpenses('${fromDate}', '${toDate}', ${data.total_pages})">Last</button>
     `;
@@ -338,8 +338,8 @@ async function fetchBudgets(page = 1) {
     let paginationControls = document.getElementById("budget-pagination-controls");
     paginationControls.innerHTML = `
         <button onclick="fetchBudgets(1)">First</button>
-        <button onclick="fetchBudgets(${data.current_page - 1})" ${data.current_page === 1 ? 'disabled' : ''}>Previous</button>
-        <span>Page ${data.current_page} of ${data.total_pages}</span>
+        <button onclick="fetchBudgets(${data.current_page - 1})" ${data.current_page === 1 ? 'disabled' : ''}>Prev</button>
+        <span>Page ${data.current_page} / ${data.total_pages}</span>
         <button onclick="fetchBudgets(${data.current_page + 1})" ${data.current_page === data.total_pages ? 'disabled' : ''}>Next</button>
         <button onclick="fetchBudgets(${data.total_pages})">Last</button>
     `;
