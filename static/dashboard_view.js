@@ -1,112 +1,73 @@
-document.addEventListener('DOMContentLoaded', function() {
-    loadExpenseData();
-    loadBudgetData();
+const API_URL = window.location.origin;
+
+const messages = [
+    "💸 Counting your regrets… I mean, transactions… 💸",
+    "🏦 Asking your bank if it’s okay to proceed… 📞",
+];
+
+function displayRandomMessage() {
+    const messageContainer = document.getElementById("message");
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    messageContainer.textContent = randomMessage;
+    messageContainer.style.textAlign = "center"; // Center the message
+}
+
+// Function to fetch and display expenses (READ only)
+async function fetchExpenses(fromDate = "", toDate = "", page = 1) {
+    let url = `${API_URL}/get_expenses?page=${page}`;
+    if (fromDate && toDate) {
+        url += `&from_date=${fromDate}&to_date=${toDate}`;
+    }
+
+    try {
+        let response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch expenses");
+
+        let data = await response.json();
+        let expenses = data.expenses;
+        let tableBody = document.getElementById("expense-table-body");
+        tableBody.innerHTML = "";
+
+        if (!expenses || expenses.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="empty-table-message">No expenses found</td></tr>';
+            return;
+        }
+
+        expenses.forEach(exp => {
+            let row = document.createElement("tr");
+            row.setAttribute("data-id", exp.id);
+
+            row.innerHTML = `
+                <td>${exp.name}</td>
+                <td>${exp.date}</td>
+                <td>${exp.category}</td>
+                <td>${exp.description || ""}</td>
+                <td>₹${exp.amount}</td>
+                <td>${exp.image_url ? getFileLink(exp.image_url, exp.file_type) : "No file"}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        // Pagination controls
+        let paginationControls = document.getElementById("expense-pagination-controls");
+        paginationControls.innerHTML = `
+            <button onclick="fetchExpenses('${fromDate}', '${toDate}', 1)" ${data.current_page === 1 ? 'disabled' : ''}>First</button>
+            <button onclick="fetchExpenses('${fromDate}', '${toDate}', ${data.current_page - 1})" ${data.current_page === 1 ? 'disabled' : ''}>Prev</button>
+            <span>Page ${data.current_page} / ${data.total_pages}</span>
+            <button onclick="fetchExpenses('${fromDate}', '${toDate}', ${data.current_page + 1})" ${data.current_page === data.total_pages ? 'disabled' : ''}>Next</button>
+            <button onclick="fetchExpenses('${fromDate}', '${toDate}', ${data.total_pages})" ${data.current_page === data.total_pages ? 'disabled' : ''}>Last</button>
+        `;
+
+    } catch (error) {
+        console.error("Error fetching expenses:", error);
+    }
+}
+
+// Call fetchExpenses when the page loads
+document.addEventListener("DOMContentLoaded", function() {
+    fetchExpenses();
 });
 
-function loadExpenseData(page = 1) {
-    const fromDate = document.getElementById('from-date').value;
-    const toDate = document.getElementById('to-date').value;
-    
-    fetch(`${API_URL}/get_expenses?from_date=${fromDate}&to_date=${toDate}&page=${page}`, { 
-        credentials: 'include' 
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            displayExpenses(data.expenses);
-            updateExpensePagination(data.current_page, data.total_pages);
-        })
-        .catch(error => {
-            console.error('Error fetching expense data:', error);
-            const tableBody = document.getElementById('expense-table-body');
-            tableBody.innerHTML = `<tr><td colspan="6" class="empty-table-message">Failed to load expenses. Please try again later.</td></tr>`;
-        });
-}
-
-function loadBudgetData(page = 1) {
-    fetch(`${API_URL}/get_budgets?page=${page}`, { 
-        credentials: 'include',
-        headers: {'Cache-Control': 'no-cache'}
-    })
-    .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-    })
-    .then(data => {
-        displayBudgets(data.budgets);
-        updateBudgetPagination(data.current_page, data.total_pages);
-    })
-    .catch(error => {
-        console.error('Error fetching budget data:', error);
-        const tableBody = document.getElementById('budget-table-body');
-        tableBody.innerHTML = `<tr><td colspan="5" class="empty-table-message">No budgets configured</td></tr>`;
-    });
-}
-
-function updateExpensePagination(currentPage, totalPages) {
-    const paginationControls = document.getElementById("expense-pagination-controls");
-    paginationControls.innerHTML = `
-        <button onclick="loadExpenseData(1)">First</button>
-        <button onclick="loadExpenseData(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
-        <span>Page ${currentPage} of ${totalPages}</span>
-        <button onclick="loadExpenseData(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
-        <button onclick="loadExpenseData(${totalPages})">Last</button>
-    `;
-}
-
-function updateBudgetPagination(currentPage, totalPages) {
-    const paginationControls = document.getElementById("budget-pagination-controls");
-    paginationControls.innerHTML = `
-        <button onclick="loadBudgetData(1)">First</button>
-        <button onclick="loadBudgetData(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
-        <span>Page ${currentPage} of ${totalPages}</span>
-        <button onclick="loadBudgetData(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
-        <button onclick="loadBudgetData(${totalPages})">Last</button>
-    `;
-}
-
-function displayExpenses(expenses) {
-    const tableBody = document.getElementById('expense-table-body');
-    tableBody.innerHTML = '';
-    
-    if (expenses.length === 0) {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td colspan="6" class="empty-table-message">No expenses found</td>`;
-        tableBody.appendChild(row);
-        return;
-    }
-    
-    expenses.forEach(expense => {
-        const row = document.createElement('tr');
-        
-        // Format the date
-        const expenseDate = new Date(expense.date);
-        const formattedDate = expenseDate.toLocaleDateString();
-        
-        // Create file link if available
-        let fileLink = 'No file';
-        if (expense.image_url) {
-            fileLink = getFileLink(expense.image_url, expense.file_type);
-        }
-        
-        row.innerHTML = `
-            <td>${expense.name}</td>
-            <td>${formattedDate}</td>
-            <td>${expense.category}</td>
-            <td>${expense.description || 'N/A'}</td>
-            <td>₹${parseFloat(expense.amount).toFixed(2)}</td>
-            <td>${fileLink}</td>
-        `;
-        
-        tableBody.appendChild(row);
-    });
-}
-
-// Add this function to handle file links
 function getFileLink(url, fileType) {
     const imageTypes = ["image/jpeg", "image/png"];
     if (imageTypes.includes(fileType)) {
@@ -116,64 +77,99 @@ function getFileLink(url, fileType) {
     }
 }
 
-// Fetch and display budgets
-
-const API_URL = window.location.origin;
-
-// Update budget loading to match script.js pattern
-function loadBudgetData() {
-    fetch(`${API_URL}/get_budgets`, { 
-        credentials: 'include',
-        headers: {'Cache-Control': 'no-cache'} // Match script.js cache handling
-    })
-    .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-    })
-    .then(data => {
-        // Handle empty state first like script.js does
-        if (data && data.length > 0) {
-            displayBudgets(data);
-        } else {
-            displayBudgets([]); // Explicit empty array handling
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching budget data:', error);
-        const tableBody = document.getElementById('budget-table-body');
-        tableBody.innerHTML = `<tr><td colspan="5" class="empty-table-message">No budgets configured</td></tr>`;
-    });
+// Image popup functionality
+function showImagePopup(imageUrl) {
+    let popup = document.createElement("div");
+    popup.classList.add("image-popup");
+    popup.innerHTML = `
+        <div class="popup-content">
+            <span class="close-btn" onclick="closeImagePopup()">&times;</span>
+            <img src="${imageUrl}" />
+        </div>
+    `;
+    document.body.appendChild(popup);
 }
 
-function displayBudgets(budgets) {
-    const tableBody = document.getElementById('budget-table-body');
-    tableBody.innerHTML = '';
-    
-    if (!budgets || budgets.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="5" class="empty-table-message">
-                    No budgets found. <a href="/dashboard_edit" class="link">Create one?</a>
-                </td>
-            </tr>
-        `;
+function closeImagePopup() {
+    let popup = document.querySelector(".image-popup");
+    if (popup) {
+        popup.remove();
+    }
+}
+
+// Filter expenses by date
+document.getElementById("filter-btn").addEventListener("click", function() {
+    const fromDate = document.getElementById("from-date").value;
+    const toDate = document.getElementById("to-date").value;
+    if (!fromDate || !toDate) {
+        const alertBox = document.createElement("div");
+        alertBox.textContent = "😯Please fill out both date fields😅 ";
+        alertBox.style.position = "fixed";
+        alertBox.style.top = "5px";
+        alertBox.style.left = "50%";
+        alertBox.style.transform = "translateX(-50%)";
+        alertBox.style.backgroundColor = "#f44336";
+        alertBox.style.color = "#fff";
+        alertBox.style.padding = "20px";
+        alertBox.style.borderRadius = "20px";
+        alertBox.style.boxShadow = "3px 3px 10px rgba(0, 0, 0, 0.1)";
+        document.body.appendChild(alertBox);
+        setTimeout(() => { document.body.removeChild(alertBox); }, 2000);
         return;
     }
+    fetchExpenses(fromDate, toDate);
+});
 
-    const monthNames = ["January", "February", "March", "April", "May", "June",
-                      "July", "August", "September", "October", "November", "December"];
+// Refresh expense list
+document.getElementById("refresh-btn").addEventListener("click", function() {
+    document.getElementById("from-date").value = "";
+    document.getElementById("to-date").value = "";
+    fetchExpenses();
+    fetchStats();
+});
 
-    budgets.forEach(budget => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${budget.year}</td>
-            <td>${monthNames[budget.month - 1]}</td>
-            <td>${budget.category}</td> <!-- Must match backend response field name -->
-            <td>₹${parseFloat(budget.amount).toFixed(2)}</td>
-            <td>${budget.recurring ? 'Yes' : 'No'}</td>
+// Fetch and display budgets (READ only)
+async function fetchBudgets(page = 1) {
+    let url = `${API_URL}/get_budgets?page=${page}`;
+    try {
+        let response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch budgets");
+
+        let data = await response.json();
+        let budgets = data.budgets;
+        let tableBody = document.getElementById("budget-table-body");
+        tableBody.innerHTML = "";
+
+        if (!budgets || budgets.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="5" class="empty-table-message">No budgets found</td></tr>';
+            return;
+        }
+
+        budgets.forEach(budget => {
+            let row = document.createElement("tr");
+            row.setAttribute("data-id", budget.id);
+            row.innerHTML = `
+                <td>${budget.year}</td>
+                <td>${budget.month}</td>
+                <td>${budget.category}</td>
+                <td>₹${budget.amount}</td>
+                <td>${budget.recurring ? "Yes" : "No"}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        // Add pagination controls
+        let paginationControls = document.getElementById("budget-pagination-controls");
+        paginationControls.innerHTML = `
+            <button onclick="fetchBudgets(1)" ${data.current_page === 1 ? 'disabled' : ''}>First</button>
+            <button onclick="fetchBudgets(${data.current_page - 1})" ${data.current_page === 1 ? 'disabled' : ''}>Prev</button>
+            <span>Page ${data.current_page} / ${data.total_pages}</span>
+            <button onclick="fetchBudgets(${data.current_page + 1})" ${data.current_page === data.total_pages ? 'disabled' : ''}>Next</button>
+            <button onclick="fetchBudgets(${data.total_pages})" ${data.current_page === data.total_pages ? 'disabled' : ''}>Last</button>
         `;
-        tableBody.appendChild(row);
-    });
+    } catch (error) {
+        console.error("Error fetching budgets:", error);
+    }
 }
 
 // Fetch and update stats
@@ -187,50 +183,26 @@ async function fetchStats() {
     document.getElementById("highest-amount-value").textContent = stats.highest_amount.toFixed(2);
 }
 
-// Update stats based on filtered expenses
-async function updateStats(fromDate, toDate) {
-    let url = `${API_URL}/get_stats`;
-    if (fromDate && toDate) {
-        url += `?from_date=${fromDate}&to_date=${toDate}`;
-    }
-    let response = await fetch(url);
-    let stats = await response.json();
-    document.getElementById("total-spent-value").textContent = stats.total_spent.toFixed(2);
-    document.getElementById("expense-count-value").textContent = stats.expense_count;
-    document.getElementById("last-7days-spent-value").textContent = stats.last_7days_spent.toFixed(2);
-    document.getElementById("highest-category-value").textContent = stats.highest_category;
-    document.getElementById("highest-amount-value").textContent = stats.highest_amount.toFixed(2);
+// Initialize filters
+function initializeDateFilters() {
+    const today = new Date();
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
+    
+    const fromDateInput = document.getElementById('from-date');
+    const toDateInput = document.getElementById('to-date');
+    
+    fromDateInput.valueAsDate = sevenDaysAgo;
+    toDateInput.valueAsDate = today;
 }
 
-fetchStats();
+// Initialize on page load
+window.addEventListener("load", function() {
+    initializeDateFilters();
+    fetchExpenses();
+    fetchStats();
+    fetchBudgets();
+    displayRandomMessage();
+});
 
-function openPdfInNewTab(url) {
-    fetch(url)
-        .then(response => response.blob())
-        .then(blob => {
-            const blobUrl = URL.createObjectURL(blob);
-            window.open(blobUrl, '_blank');
-        })
-        .catch(error => console.error('Error opening PDF:', error));
-}
-
-// Show image in a popup
-function showImagePopup(imageUrl) {
-    let popup = document.createElement("div");
-    popup.classList.add("image-popup");
-    popup.innerHTML = `
-        <div class="popup-content">
-            <span class="close-btn" onclick="closeImagePopup()">&times;</span>
-            <img src="${imageUrl}" />
-        </div>
-    `;
-    document.body.appendChild(popup);
-}
-
-// Close image popup
-function closeImagePopup() {
-    let popup = document.querySelector(".image-popup");
-    if (popup) {
-        popup.remove();
-    }
-}
+setInterval(displayRandomMessage, 3000);

@@ -551,23 +551,30 @@ body.dark-mode .file-upload-label:hover {
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1000;
 }
+
 .popup-content {
   position: relative;
-  background: #4481f3;
-  padding: 20px;
-  border-radius: 10px;
+  background: #fff;
+  padding: 60px;  /* Much larger padding */
+  border-radius: 15px;
+  margin: 40px;   /* Added significant margin */
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
 }
+
 .popup-content img {
-  max-width: 100%;
-  max-height: 80vh;
+  max-width: 90vw;  /* Reduced from 90vw to give more space */
+  max-height: 90vh; /* Reduced from 90vh to give more space */
+  transform: none !important;
+  transition: none !important;
+  display: block;
+  margin: 30px auto; /* Added margin around image */
 }
-.close-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 24px;
-  cursor: pointer;
+
+.popup-content img:hover {
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 /* SET MONTH & YEAR SECTION */
