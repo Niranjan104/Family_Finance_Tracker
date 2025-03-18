@@ -32,39 +32,6 @@ app.config['MAIL_USERNAME'] = 'thariqali142@gmail.com'
 app.config['MAIL_PASSWORD'] = 'vheo bjfy yppk tyiu'  # Use App Password
 mail = Mail(app)
 
-# Function to strip emojis from a string
-def strip_emojis(text):
-    emoji_pattern = re.compile(
-        "[" 
-        "\U0001F600-\U0001F64F"  # emoticons
-        "\U0001F300-\U0001F5FF"  # symbols & pictographs
-        "\U0001F680-\U0001F6FF"  # transport & map symbols
-        "\U0001F700-\U0001F77F"  # alchemical symbols
-        "\U0001F780-\U0001F7FF"  # Geometric Shapes Extended
-        "\U0001F800-\U0001F8FF"  # Supplemental Arrows-C
-        "\U0001F900-\U0001F9FF"  # Supplemental Symbols and Pictographs
-        "\U0001FA00-\U0001FA6F"  # Chess Symbols
-        "\U0001FA70-\U0001FAFF"  # Symbols and Pictographs Extended-A
-        "\U00002600-\U000026FF"  # Miscellaneous Symbols
-        "\U00002700-\U000027BF"  # Dingbats
-        "]+", flags=re.UNICODE)
-    return emoji_pattern.sub(r'', text)
-
-def attach_emojis(category_name):
-    emoji_map = {
-        "Food": "🍕",
-        "Transport": "🚂",
-        "Bills": "💸",
-        "Entertainment": "🤡",
-        "Shopping": "🛍️",
-        "Therapy": "🩺",
-        "Others": ""
-    }
-    for key, emoji in emoji_map.items():
-        if key in category_name:
-            return f"{category_name}{emoji}"
-    return category_name
-
 # Function to generate OTP
 def generate_otp():
     return ''.join(random.choices(string.digits, k=6))  # 6-digit OTP
@@ -275,6 +242,9 @@ def dashboard():
         return redirect(url_for('login'))
 
     user = User.query.get(session['user_id'])
+    if not user:  # Check if user is None
+        return redirect(url_for('login'))
+
     today = datetime.today()
     default_year = today.year
     default_month = today.month
@@ -532,12 +502,10 @@ def add_expense():
     except ValueError:
         return jsonify({"message": "Invalid amount!"}), 400
 
-    # Remove emojis for internal storage
-    category_stripped = strip_emojis(category_name)
-    category = Category.query.filter_by(name=category_stripped).first()
+    category = Category.query.filter_by(name=category_name).first()
     if not category:
         category_desc = data.get("category-desc", "")
-        category = Category(name=category_stripped, category_desc=category_desc)
+        category = Category(name=category_name, category_desc=category_desc)
         db.session.add(category)
         db.session.commit()
 
@@ -606,7 +574,7 @@ def get_expenses():
         "expenses": [{
             "id": exp.id,
             "name": exp.name,
-            "category": attach_emojis(exp.category.name) if exp.category else "Unknown",
+            "category": exp.category.name if exp.category else "Unknown",
             "date": exp.date.strftime("%Y-%m-%d"),
             "amount": exp.amount,
             "description": exp.description,
@@ -625,7 +593,7 @@ def get_expense(expense_id):
     return jsonify({
         "id": expense.id,
         "name": expense.name,
-        "category": attach_emojis(expense.category.name) if expense.category else "Unknown",
+        "category": expense.category.name if expense.category else "Unknown",
         "category_desc": expense.category.category_desc if expense.category else "",
         "date": expense.date.strftime("%Y-%m-%d"),
         "amount": expense.amount,
@@ -670,10 +638,10 @@ def edit_expense(expense_id):
         return jsonify({"message": "Invalid amount!"}), 400
     expense.description = data.get("description", expense.description)
     
-    category = Category.query.filter_by(name=strip_emojis(category_name)).first()
+    category = Category.query.filter_by(name=category_name).first()
     if not category:
         category_desc = data.get("category-desc", "")
-        category = Category(name=strip_emojis(category_name), category_desc=category_desc)
+        category = Category(name=category_name, category_desc=category_desc)
         db.session.add(category)
         db.session.commit()
     expense.category_id = category.category_id
@@ -763,7 +731,7 @@ def get_stats():
         Category.name, db.func.sum(Expense.amount)
     ).join(Category).group_by(Category.name).order_by(db.func.sum(Expense.amount).desc()).first()
     highest_amount = query.with_entities(db.func.max(Expense.amount)).scalar() or 0
-    highest_category_name = attach_emojis(highest_category[0]) if highest_category else "Empty!😶"
+    highest_category_name = highest_category[0] if highest_category else "Empty!😶"
     
     return jsonify({
         "total_spent": float(total_spent),
@@ -821,10 +789,9 @@ def add_budget():
     except ValueError:
         return jsonify({"message": "Invalid amount!"}), 400
 
-    category_stripped = strip_emojis(category_name)
-    category = Category.query.filter_by(name=category_stripped).first()
+    category = Category.query.filter_by(name=category_name).first()
     if not category:
-        category = Category(name=category_stripped)
+        category = Category(name=category_name)
         db.session.add(category)
         db.session.commit()
 
@@ -870,7 +837,7 @@ def get_budgets():
             "id": budget.budget_id,
             "year": budget.year,
             "month": budget.month,
-            "category": attach_emojis(budget.category.name) if budget.category else "Unknown",
+            "category": budget.category.name if budget.category else "Unknown",
             "amount": budget.amount,
             "recurring": budget.recurring
         } for budget in budgets.items],
@@ -894,7 +861,7 @@ def get_budget(budget_id):
         "id": budget.budget_id,
         "year": budget.year,
         "month": budget.month,
-        "category": attach_emojis(budget.category.name) if budget.category else "Unknown",
+        "category": budget.category.name if budget.category else "Unknown",
         "amount": budget.amount,
         "recurring": budget.recurring
     })
@@ -922,9 +889,9 @@ def edit_budget(budget_id):
     except ValueError:
         return jsonify({"message": "Invalid amount!"}), 400
 
-    category = Category.query.filter_by(name=strip_emojis(category_name)).first()
+    category = Category.query.filter_by(name=category_name).first()
     if not category:
-        category = Category(name=strip_emojis(category_name))
+        category = Category(name=category_name)
         db.session.add(category)
         db.session.commit()
 
