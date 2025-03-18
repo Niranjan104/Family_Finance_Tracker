@@ -240,6 +240,7 @@ document.getElementById("filter-btn").addEventListener("click", function() {
         return;
     }
     fetchExpenses(fromDate, toDate);
+    updateStats(fromDate, toDate); // Ensure stats are also updated
 });
 
 // Refresh expense list

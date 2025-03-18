@@ -828,6 +828,11 @@ def add_budget():
         db.session.add(category)
         db.session.commit()
 
+    # Check if budget already exists for the given year, month, and category
+    existing_budget = Budget.query.filter_by(user_id=user_id, year=year, month=month, category_id=category.category_id).first()
+    if existing_budget:
+        return jsonify({"message": "Budget already set for this year, month, and category!"}), 400
+
     new_budget = Budget(
         user_id=user_id,
         category_id=category.category_id,
@@ -909,11 +914,11 @@ def edit_budget(budget_id):
     print("Editing Budget ID:", budget_id)  # DEBUGGING REMOVE IT DURING DEPLOYMENT
     print("Received Data:", data)  # DEBUGGING REMOVE IT DURING DEPLOYMENT
 
-    budget.year = data.get("year", budget.year)
-    budget.month = data.get("month", budget.month)
+    year = data.get("year", budget.year)
+    month = data.get("month", budget.month)
     category_name = data.get("budget-category", budget.category.name)
     try:
-        budget.amount = float(data.get("budget-amount", budget.amount))
+        amount = float(data.get("budget-amount", budget.amount))
     except ValueError:
         return jsonify({"message": "Invalid amount!"}), 400
 
@@ -922,6 +927,15 @@ def edit_budget(budget_id):
         category = Category(name=strip_emojis(category_name))
         db.session.add(category)
         db.session.commit()
+
+    # Check if budget already exists for the given year, month, and category
+    existing_budget = Budget.query.filter_by(user_id=user_id, year=year, month=month, category_id=category.category_id).first()
+    if existing_budget and existing_budget.budget_id != budget_id:
+        return jsonify({"message": "Budget already set for this year, month, and category!"}), 400
+
+    budget.year = year
+    budget.month = month
+    budget.amount = amount
     budget.category_id = category.category_id
     db.session.commit()
     return jsonify({"message": "Budget updated successfully!"})
