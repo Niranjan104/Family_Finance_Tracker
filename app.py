@@ -10,6 +10,7 @@ from io import BytesIO
 import random, string, os,re
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from threading import Thread
 
 from graphs import * 
 
@@ -518,9 +519,9 @@ def check_budget_status(user_id, category_id):
         
         # Send alerts based on threshold
         if budget_percentage >= 100:
-            send_budget_alert(recipients, category_name, budget.amount, total_spent, budget_percentage, True)
+            send_budget_alert_async(recipients, category_name, budget.amount, total_spent, budget_percentage, True)
         elif budget_percentage >= 90:
-            send_budget_alert(recipients, category_name, budget.amount, total_spent, budget_percentage, False)
+            send_budget_alert_async(recipients, category_name, budget.amount, total_spent, budget_percentage, False)
             
     except Exception as e:
         print(f"Error in check_budget_status: {str(e)}")
@@ -582,6 +583,16 @@ Family Finance Tracker Team
     except Exception as e:
         print(f"Error sending budget alert: {str(e)}")
 
+def send_budget_alert_async(recipients, category_name, budget_amount, total_spent, percentage, is_exceeded):
+    def send_async():
+        with app.app_context():
+            try:
+                send_budget_alert(recipients, category_name, budget_amount, total_spent, percentage, is_exceeded)
+            except Exception as e:
+                print(f"Error sending async budget alert: {str(e)}")
+    
+    Thread(target=send_async).start()
+
 # CODE TO CHECK THE BUDGET STATUS AND SEND ALERTS ENDS HERE NOW------------------------->
 
 
@@ -612,63 +623,60 @@ def add_expense():
             user_id = user
 
     data = request.form.to_dict()
-    name = data.get("name")
-    category_name = data.get("category")  # Category name comes with emoji already
-    date_str = data.get("date")
-    amount = data.get("amount")
-    description = data.get("description", "")
-
-    if not name or not category_name or not date_str or not amount:
+    
+    # Validate all data first before any database operations
+    if not all([data.get("name"), data.get("category"), data.get("date"), data.get("amount")]):
         return jsonify({"message": "Missing required fields!"}), 400
 
     try:
-        amount = float(amount)
-    except ValueError:
-        return jsonify({"message": "Invalid amount!"}), 400
+        amount = float(data.get("amount"))
+        date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
+    except (ValueError, TypeError):
+        return jsonify({"message": "Invalid amount or date format!"}), 400
 
-    category = Category.query.filter_by(name=category_name).first()
-    if not category:
-        category_desc = data.get("category-desc", "")
-        category = Category(name=category_name, category_desc=category_desc)
-        db.session.add(category)
-        db.session.commit()
-
+    # Get or create category in a single transaction
     try:
-        date = datetime.strptime(date_str, "%Y-%m-%d").date()
-    except ValueError:
-        return jsonify({"message": "Invalid date format!"}), 400
+        with db.session.begin_nested():
+            category = Category.query.filter_by(name=data.get("category")).first()
+            if not category:
+                category = Category(name=data.get("category"), category_desc=data.get("category-desc", ""))
+                db.session.add(category)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Database error: {str(e)}"}), 500
 
+    # Create expense object
+    new_expense = Expense(
+        user_id=user_id,
+        name=data.get("name"),
+        category_id=category.category_id,
+        date=date,
+        amount=amount,
+        description=data.get("description", "")
+    )
+
+    # Handle file upload if present
     file = request.files.get("file-upload")
-    
     if file and file.filename:
-        file_data = file.read()
-        file_type = file.mimetype
-        new_expense = Expense(
-            user_id=user_id,
-            name=name,
-            category_id=category.category_id,
-            date=date,
-            amount=amount,
-            description=description,
-            image_data=file_data,
-            file_type=file_type
-        )
-    else:
-        new_expense = Expense(
-            user_id=user_id,
-            name=name,
-            category_id=category.category_id,
-            date=date,
-            amount=amount,
-            description=description
-        )
-    db.session.add(new_expense)
-    db.session.commit()
+        try:
+            file_data = file.read()
+            new_expense.image_data = file_data
+            new_expense.file_type = file.mimetype
+        except Exception as e:
+            return jsonify({"message": f"File upload error: {str(e)}"}), 500
 
-    # After successfully adding the expense, check budget status------------------------->
-    check_budget_status(user_id, category.category_id)
-    
-    return jsonify({"message": "Expense added successfully!"})
+    # Save expense in a single transaction
+    try:
+        db.session.add(new_expense)
+        db.session.commit()
+        
+        # Start budget check in background
+        Thread(target=lambda: check_budget_status(user_id, category.category_id)).start()
+        
+        return jsonify({"message": "Expense added successfully!"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Database error: {str(e)}"}), 500
 
 @app.route("/get_expenses")
 def get_expenses():
