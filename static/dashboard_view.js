@@ -102,23 +102,24 @@ document.getElementById("filter-btn").addEventListener("click", function() {
     const fromDate = document.getElementById("from-date").value;
     const toDate = document.getElementById("to-date").value;
     if (!fromDate || !toDate) {
-        const alertBox = document.createElement("div");
-        alertBox.textContent = "😯Please fill out both date fields😅 ";
-        alertBox.style.position = "fixed";
-        alertBox.style.top = "5px";
-        alertBox.style.left = "50%";
-        alertBox.style.transform = "translateX(-50%)";
-        alertBox.style.backgroundColor = "#f44336";
-        alertBox.style.color = "#fff";
-        alertBox.style.padding = "20px";
-        alertBox.style.borderRadius = "20px";
-        alertBox.style.boxShadow = "3px 3px 10px rgba(0, 0, 0, 0.1)";
-        document.body.appendChild(alertBox);
-        setTimeout(() => { document.body.removeChild(alertBox); }, 2000);
+        showTemporaryAlert("Please fill out both date fields", "error");
         return;
     }
     fetchExpenses(fromDate, toDate);
+    updateStats(fromDate, toDate);
 });
+
+// Helper function to show temporary alerts (if not already defined)
+function showTemporaryAlert(message, type = 'info') {
+    const alertBox = document.createElement('div');
+    alertBox.className = `alert ${type}`;
+    alertBox.textContent = message;
+    document.body.appendChild(alertBox);
+    setTimeout(() => {
+        alertBox.classList.add('fade-out');
+        setTimeout(() => document.body.removeChild(alertBox), 300);
+    }, 3000);
+}
 
 // Refresh expense list
 document.getElementById("refresh-btn").addEventListener("click", function() {
