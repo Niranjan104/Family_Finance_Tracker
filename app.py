@@ -489,7 +489,7 @@ def add_expense():
 
     data = request.form.to_dict()
     name = data.get("name")
-    category_name = data.get("category")
+    category_name = data.get("category")  # Category name comes with emoji already
     date_str = data.get("date")
     amount = data.get("amount")
     description = data.get("description", "")
@@ -631,7 +631,7 @@ def edit_expense(expense_id):
 
     data = request.form.to_dict()
     expense.name = data.get("name", expense.name)
-    category_name = data.get("category", expense.category.name)
+    category_name = data.get("category", expense.category.name)  # Use category name directly
     try:
         expense.amount = float(data.get("amount", expense.amount))
     except ValueError:
@@ -731,7 +731,9 @@ def get_stats():
         Category.name, db.func.sum(Expense.amount)
     ).join(Category).group_by(Category.name).order_by(db.func.sum(Expense.amount).desc()).first()
     highest_amount = query.with_entities(db.func.max(Expense.amount)).scalar() or 0
-    highest_category_name = highest_category[0] if highest_category else "Empty!😶"
+    # Using decimal Unicode instead of hex
+    empty_face = chr(128566)  # Decimal Unicode for 😶
+    highest_category_name = highest_category[0] if highest_category else f"Empty!{empty_face}"
     
     return jsonify({
         "total_spent": float(total_spent),
@@ -778,7 +780,7 @@ def add_budget():
     data = request.form.to_dict()
     year = data.get("year")
     month = data.get("month")
-    category_name = data.get("budget-category")
+    category_name = data.get("budget-category")  # Remove conversion
     amount = data.get("budget-amount")
 
     if not year or not month or not category_name or not amount:
@@ -883,7 +885,7 @@ def edit_budget(budget_id):
 
     year = data.get("year", budget.year)
     month = data.get("month", budget.month)
-    category_name = data.get("budget-category", budget.category.name)
+    category_name = data.get("budget-category", budget.category.name)  # Remove conversion
     try:
         amount = float(data.get("budget-amount", budget.amount))
     except ValueError:

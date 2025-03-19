@@ -1,8 +1,8 @@
 const API_URL = window.location.origin;
 
 const messages = [
-    "💸 Counting your regrets… I mean, transactions… 💸",
-    "🏦 Asking your bank if it’s okay to proceed… 📞",
+    `${String.fromCodePoint(128184)} Counting your regrets... I mean, transactions... ${String.fromCodePoint(128184)}`,
+    `${String.fromCodePoint(127974)} Asking your bank if it's okay to proceed... ${String.fromCodePoint(128222)}`
 ];
 
 function displayRandomMessage() {
@@ -69,9 +69,9 @@ async function fetchExpenses(fromDate = "", toDate = "", page = 1) {
 function getFileLink(url, fileType) {
     const imageTypes = ["image/jpeg", "image/png"];
     if (imageTypes.includes(fileType)) {
-        return `<a href="#" onclick="showImagePopup('${url}'); return false;">🖼️</a>`;
+        return `<a href="#" onclick="showImagePopup('${url}'); return false;">${String.fromCodePoint(128444)}</a>`;
     } else {
-        return `<a href="${url}" target="_blank">📄</a>`;
+        return `<a href="${url}" target="_blank">${String.fromCodePoint(128196)}</a>`;
     }
 }
 
@@ -168,7 +168,8 @@ async function uploadImage(id, file) {
 
 // Delete expense
 async function deleteExpense(id) {
-    if (!confirm("😃Sure you want to Delete?")) return;
+    const smileFace = String.fromCodePoint(128515); // Decimal Unicode for 😃
+    if (!confirm(`${smileFace}Sure you want to Delete?`)) return;
     await fetch(`${API_URL}/delete_expense/${id}`, { method: "DELETE" });
     fetchExpenses();
     setTimeout(fetchStats, 500);
