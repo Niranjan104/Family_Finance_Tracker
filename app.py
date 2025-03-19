@@ -32,6 +32,7 @@ app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'thariqali142@gmail.com'
 app.config['MAIL_PASSWORD'] = 'vheo bjfy yppk tyiu'  # Use App Password
+app.config['MAIL_DEFAULT_SENDER'] = 'thariqali142@gmail.com'  # Add this line
 mail = Mail(app)
 
 # Function to generate OTP
@@ -460,6 +461,132 @@ def get_categories():
     categories = Category.query.all()
     return jsonify([{"name": cat.name, "description": cat.category_desc} for cat in categories])
 
+# CODE TO CHECK THE BUDGET STATUS AND SEND ALERTS------------------------->
+
+def check_budget_status(user_id, category_id):
+    try:
+        # Get current month and year
+        today = datetime.now()
+        current_month = today.month
+        current_year = today.year
+        
+        # Find the budget for this category and month/year
+        budget = Budget.query.filter_by(
+            user_id=user_id,
+            category_id=category_id,
+            month=current_month,
+            year=current_year
+        ).first()
+        
+        if not budget:
+            print(f"No budget found for category {category_id}")
+            return
+        
+        # Calculate total expenses for this category in the current month
+        start_date = datetime(current_year, current_month, 1).date()
+        if current_month == 12:
+            end_date = datetime(current_year + 1, 1, 1).date()
+        else:
+            end_date = datetime(current_year, current_month + 1, 1).date()
+        
+        expenses = Expense.query.filter_by(
+            user_id=user_id,
+            category_id=category_id
+        ).filter(
+            Expense.date >= start_date,
+            Expense.date < end_date
+        ).all()
+        
+        total_spent = sum(expense.amount for expense in expenses)
+        category = Category.query.get(category_id)
+        category_name = category.name if category else "Unknown Category"
+        
+        # Calculate percentage of budget used
+        budget_percentage = (float(total_spent) / float(budget.amount)) * 100
+        
+        # Get all family members who should receive alerts
+        family_members = User.query.filter_by(approved_by=user_id).all()
+        main_user = User.query.get(user_id)
+        recipients = []
+        
+        if main_user and main_user.email:
+            recipients.append(main_user.email)
+            
+        for member in family_members:
+            if member.privilege in ['view', 'edit'] and member.email:
+                recipients.append(member.email)
+        
+        # Send alerts based on threshold
+        if budget_percentage >= 100:
+            send_budget_alert(recipients, category_name, budget.amount, total_spent, budget_percentage, True)
+        elif budget_percentage >= 90:
+            send_budget_alert(recipients, category_name, budget.amount, total_spent, budget_percentage, False)
+            
+    except Exception as e:
+        print(f"Error in check_budget_status: {str(e)}")
+
+def send_budget_alert(recipients, category_name, budget_amount, total_spent, percentage, is_exceeded):
+    try:
+        current_month = datetime.now().strftime('%B')
+        current_year = datetime.now().year
+        
+        if is_exceeded:
+            subject = f"ALERT: Budget Exceeded for {category_name}"
+            message = f"""
+⚠️ BUDGET ALERT: Your family's spending has exceeded the budget limit!
+
+📊 Category: {category_name}
+📅 Month: {current_month} {current_year}
+💰 Budget Amount: ₹{float(budget_amount):.2f}
+💵 Current Spending: ₹{float(total_spent):.2f}
+📈 Percentage Used: {percentage:.1f}%
+
+🚨 Action Required:
+- Review your family's expenses
+- Consider adjusting spending habits
+- Discuss with family members
+- Plan for the remaining days
+
+Best regards,
+Family Finance Tracker Team
+"""
+        else:
+            subject = f"WARNING: Approaching Budget Limit for {category_name}"
+            message = f"""
+⚠️ BUDGET WARNING: Your family is approaching the budget limit!
+
+📊 Category: {category_name}
+📅 Month: {current_month} {current_year}
+💰 Budget Amount: ₹{float(budget_amount):.2f}
+💵 Current Spending: ₹{float(total_spent):.2f}
+📈 Percentage Used: {percentage:.1f}%
+
+💡 Recommendations:
+- Monitor expenses closely
+- Review upcoming expenses
+- Consider limiting discretionary spending
+- Plan remaining budget carefully
+
+Best regards,
+Family Finance Tracker Team
+"""
+        
+        msg = Message(
+            subject=subject,
+            sender=app.config['MAIL_DEFAULT_SENDER'],  # Add sender here
+            recipients=recipients,
+            body=message
+        )
+        mail.send(msg)
+        
+    except Exception as e:
+        print(f"Error sending budget alert: {str(e)}")
+
+# CODE TO CHECK THE BUDGET STATUS AND SEND ALERTS ENDS HERE NOW------------------------->
+
+
+
+# Update add_expense route to check budget after adding expense
 @app.route("/add_expense", methods=["POST"])
 def add_expense():
     if 'user_id' not in session:
@@ -538,6 +665,9 @@ def add_expense():
     db.session.add(new_expense)
     db.session.commit()
 
+    # After successfully adding the expense, check budget status------------------------->
+    check_budget_status(user_id, category.category_id)
+    
     return jsonify({"message": "Expense added successfully!"})
 
 @app.route("/get_expenses")
@@ -626,9 +756,12 @@ def edit_expense(expense_id):
     if not expense:
         return jsonify({"message": "Expense not found"}), 404
 
+    # Store old category_id to check both old and new categories
+    old_category_id = expense.category_id
+
     data = request.form.to_dict()
     expense.name = data.get("name", expense.name)
-    category_name = data.get("category", expense.category.name)  # Use category name directly
+    category_name = data.get("category", expense.category.name)
     try:
         expense.amount = float(data.get("amount", expense.amount))
     except ValueError:
@@ -651,7 +784,14 @@ def edit_expense(expense_id):
         file_data = file.read()
         expense.image_data = file_data
         expense.file_type = file.mimetype
+    
     db.session.commit()
+
+    # Check budget status for both old and new categories-------------------------------->
+    check_budget_status(user_id, old_category_id)
+    if old_category_id != expense.category_id:
+        check_budget_status(user_id, expense.category_id)
+
     return jsonify({"message": "Expense updated successfully!"})
 
 @app.route("/delete_expense/<int:expense_id>", methods=["DELETE"])
