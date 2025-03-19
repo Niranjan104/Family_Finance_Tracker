@@ -8,6 +8,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, Expense, Category, Budget, User
 from io import BytesIO
 import random, string, os,re
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 from graphs import * 
 
@@ -335,7 +337,6 @@ def update_approved_by():
         user.status = "approved"
         flash(f"User {user.username} has been approved.", "success")
     else:
-        user.approved_by = None
         user.status = "pending"
 
         # **Check if the user is a super user**
@@ -420,22 +421,18 @@ def update_approval():
         return redirect(url_for("login"))
 
     user_id = request.form.get("user_id")
-    action = request.form.get("action")  # "approve" or "disapprove"
-    privilege = request.form.get("privilege")  # "edit" or "view"
+    action = request.form.get("approve")  # "approve" or "disapprove"
 
     user = User.query.get(user_id)
     if not user:
         flash("User not found.", "error")
         return redirect(url_for("super_user_dashboard"))
 
-    if action == "approve":
+    if action:
         user.status = "approved"
-        user.approved_by = session["user_id"]
-        user.privilege = privilege if privilege else "view"
-        flash(f"User {user.username} has been approved with {user.privilege} access.", "success")
+        flash(f"User {user.username} has been approved.", "success")
     else:
         user.status = "pending"
-        user.approved_by = None
         flash(f"User {user.username} has been disapproved.", "warning")
 
     db.session.commit()
@@ -743,6 +740,54 @@ def get_stats():
         "highest_amount": float(highest_amount)
     })
 
+def create_recurring_budgets():
+    with app.app_context():
+        # Get current year and month
+        now = datetime.now()
+        current_year = now.year
+        current_month = now.month
+        
+        # Calculate next month and year
+        next_month = current_month + 1 if current_month < 12 else 1
+        next_year = current_year if current_month < 12 else current_year + 1
+        
+        # Find all recurring budgets
+        recurring_budgets = Budget.query.filter_by(recurring=True).all()
+        
+        for budget in recurring_budgets:
+            # Check if budget already exists for next month
+            existing_budget = Budget.query.filter_by(
+                user_id=budget.user_id,
+                category_id=budget.category_id,
+                year=next_year,
+                month=next_month
+            ).first()
+            
+            if not existing_budget:
+                # Create new budget for next month
+                new_budget = Budget(
+                    user_id=budget.user_id,
+                    category_id=budget.category_id,
+                    amount=budget.amount,
+                    month=next_month,
+                    year=next_year,
+                    recurring=True  # Keep it recurring
+                )
+                db.session.add(new_budget)
+        
+        db.session.commit()
+
+# Initialize the scheduler
+scheduler = BackgroundScheduler()
+scheduler.add_job(
+    func=create_recurring_budgets,
+    trigger=CronTrigger(day=1, hour=0, minute=0),  # Run at 00:00 on the 1st of every month
+    id='create_recurring_budgets',
+    name='Create recurring budgets for next month',
+    replace_existing=True
+)
+scheduler.start()
+
 @app.route("/toggle_recurring/<int:budget_id>", methods=["PUT"])
 def toggle_recurring(budget_id):
     if 'user_id' not in session:
@@ -756,10 +801,35 @@ def toggle_recurring(budget_id):
         return jsonify({"message": "Budget not found"}), 404
 
     budget.recurring = recurring
+    
+    # If turning on recurring, create next month's budget if it doesn't exist
+    if recurring:
+        now = datetime.now()
+        next_month = budget.month + 1 if budget.month < 12 else 1
+        next_year = budget.year if budget.month < 12 else budget.year + 1
+        
+        # Only create next month's budget if we're not already in or past it
+        if (next_year > now.year) or (next_year == now.year and next_month > now.month):
+            existing_budget = Budget.query.filter_by(
+                user_id=budget.user_id,
+                category_id=budget.category_id,
+                year=next_year,
+                month=next_month
+            ).first()
+            
+            if not existing_budget:
+                new_budget = Budget(
+                    user_id=budget.user_id,
+                    category_id=budget.category_id,
+                    amount=budget.amount,
+                    month=next_month,
+                    year=next_year,
+                    recurring=True
+                )
+                db.session.add(new_budget)
+
     db.session.commit()
     return jsonify({"message": "Budget updated successfully!"})
-
-# TEAM 2 (expense & Budget )-------------------------- ENDS HERE(and add code related to it above this line) ----
 
 @app.route("/add_budget", methods=["POST"])
 def add_budget():
@@ -963,6 +1033,18 @@ def get_line_chart(year):
     user_id = session.get('user_id')
     line_chart = generate_line_chart(user_id=user_id,year=year)
     return jsonify({'line_chart': line_chart})
+
+
+
+
+# FOR SAVINGS BUTTON WORKING (TEAM 3+4)-------------------------- STARTS HERE(and add code related to it below this line) ---->
+@app.route('/savings_dashboard')
+@login_required
+def savings_dashboard():
+    if not session.get('verified'):
+        return redirect(url_for('verify'))
+    
+    return "<h1>Savings Dashboard - Coming Soon!</h1>"  # Placeholder for now
 
 
 with app.app_context():

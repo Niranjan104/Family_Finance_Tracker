@@ -63,11 +63,17 @@ header h1 {
 .logout-btn {
   padding: 8px 15px;
   background-color: #f44336;
-  color: white;
+  color: white !important;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   font-weight: bold;
+  text-decoration: none;
+  display: inline-flex;  /* Changed from inline-block to inline-flex */
+  align-items: center;   /* Center vertically */
+  justify-content: center; /* Center horizontally */
+  min-width: 50px;      /* Ensure minimum width for button */
+  text-align: center;   /* Center text */
 }
 
 .logout-btn:hover {

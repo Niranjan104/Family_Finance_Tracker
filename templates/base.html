@@ -14,9 +14,9 @@
             {% if is_super_user %}
                 <a href="{{ url_for('super_user_dashboard') }}" class="super-user-link">Super User <br>Dashboard</a>
             {% endif %}
-            <button id="budget-btn" class="hover-effect" style="color:black"> Savings Management</button>
-            <button id="insights-btn" class="hover-effect" style="color:black">Insights Dashboard</button>
-            <button class="logout-btn">logout</button>
+            <button id="budget-btn" class="hover-effect" style="color:black">Expense & Budget <br>Management</button>
+            <button id="insights-btn" class="hover-effect" style="color:black">Savings Management</button>
+            <a href="{{ url_for('logout') }}" class="logout-btn" onclick="return confirm('Are you sure you want to logout?')">Logout</a>
             <button id="dark-mode-toggle">🌙</button>
         </nav>
     </header>
@@ -86,5 +86,36 @@
     </footer>
 
     {% block scripts %}{% endblock %}
+    
+    <script>
+        // Random messages configuration removed from js file
+        const messages = [
+            `${String.fromCodePoint(128184)} Counting your regrets... I mean, transactions... ${String.fromCodePoint(128184)}`,
+            `${String.fromCodePoint(127974)} Asking your bank if it's okay to proceed... ${String.fromCodePoint(128222)}`
+        ];
+
+        // Function to display random message
+        function displayRandomMessage() {
+            const messageContainer = document.getElementById("message");
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            messageContainer.textContent = randomMessage;
+            messageContainer.style.textAlign = "center";
+        }
+
+        // Call displayRandomMessage when page loads
+        document.addEventListener("DOMContentLoaded", () => {
+            displayRandomMessage();
+            setInterval(displayRandomMessage, 3000);
+
+            // Add click handlers for navigation buttons
+            document.getElementById('budget-btn').addEventListener('click', () => {
+                window.location.href = "{{ url_for('dashboard') }}";
+            });
+
+            document.getElementById('insights-btn').addEventListener('click', () => {
+                window.location.href = "{{ url_for('savings_dashboard') }}";
+            });
+        });
+    </script>
 </body>
 </html>

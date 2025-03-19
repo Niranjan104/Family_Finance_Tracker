@@ -1,17 +1,5 @@
 const API_URL = window.location.origin;
 
-const messages = [
-    `${String.fromCodePoint(128184)} Counting your regrets... I mean, transactions... ${String.fromCodePoint(128184)}`,
-    `${String.fromCodePoint(127974)} Asking your bank if it's okay to proceed... ${String.fromCodePoint(128222)}`
-];
-
-function displayRandomMessage() {
-    const messageContainer = document.getElementById("message");
-    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-    messageContainer.textContent = randomMessage;
-    messageContainer.style.textAlign = "center"; // Center the message
-}
-
 // Function to fetch and display expenses (READ only)
 async function fetchExpenses(fromDate = "", toDate = "", page = 1) {
     let url = `${API_URL}/get_expenses?page=${page}`;
@@ -202,7 +190,5 @@ window.addEventListener("load", function() {
     fetchExpenses();
     fetchStats();
     fetchBudgets();
-    displayRandomMessage();
-});
 
-setInterval(displayRandomMessage, 3000);
+});

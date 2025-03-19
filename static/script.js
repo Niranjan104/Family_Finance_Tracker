@@ -1,16 +1,5 @@
 const API_URL = window.location.origin;
 
-const messages = [
-    `${String.fromCodePoint(128184)} Counting your regrets... I mean, transactions... ${String.fromCodePoint(128184)}`,
-    `${String.fromCodePoint(127974)} Asking your bank if it's okay to proceed... ${String.fromCodePoint(128222)}`
-];
-
-function displayRandomMessage() {
-    const messageContainer = document.getElementById("message");
-    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-    messageContainer.textContent = randomMessage;
-    messageContainer.style.textAlign = "center"; // Center the message
-}
 
 // Update file upload label with file name
 document.getElementById("file-upload").addEventListener("change", function() {
@@ -456,7 +445,6 @@ document.getElementById("set-budget-period-btn").addEventListener("click", funct
 fetchExpenses();
 fetchStats();
 fetchBudgets(); // Fetch budgets on page load
-displayRandomMessage(); // Display message immediately on page load
 
 // Helper function to show temporary alerts
 function showTemporaryAlert(message, type = 'info') {
@@ -470,7 +458,6 @@ function showTemporaryAlert(message, type = 'info') {
     }, 3000);
 }
 
-setInterval(displayRandomMessage, 3000);
 
 
 function initializeDateFilters() {

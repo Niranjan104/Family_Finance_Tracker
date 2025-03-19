@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
+import datetime
 
-db = SQLAlchemy()
+db=SQLAlchemy()
 
 # User Model
 class User(db.Model):
@@ -18,24 +19,18 @@ class User(db.Model):
     status = db.Column(db.String(20), default="pending")
     created_on = db.Column(db.DateTime, default=db.func.current_timestamp())
 
-    #Relationship
-    expenses = db.relationship('Expense', backref='user', lazy=True)
-    budgets = db.relationship('Budget', backref='user', lazy=True)
-
 class Category(db.Model):
     __tablename__ = 'category'
     category_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(255), nullable=False, unique=True)
     category_desc = db.Column(db.String(255), nullable=True)
-
-    #Relationship
     expenses = db.relationship('Expense', backref='category', lazy=True)
     budgets = db.relationship('Budget', backref='category', lazy=True)
 
 class Expense(db.Model):
     __tablename__ = 'expense'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id= db.Column(db.Integer,nullable=True)
     name = db.Column(db.String(255), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.category_id'), nullable=False)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
@@ -47,12 +42,13 @@ class Expense(db.Model):
 
 class Budget(db.Model):
     __tablename__ = 'budget'
+    user_id= db.Column(db.Integer,nullable=True)
     budget_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     category_id = db.Column(db.Integer, db.ForeignKey('category.category_id'), nullable=False)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     month = db.Column(db.Integer, nullable=False)
     year = db.Column(db.Integer, nullable=False)
     recurring = db.Column(db.Boolean, default=False)
     created_on = db.Column(db.DateTime, default=db.func.current_timestamp())
+
 
