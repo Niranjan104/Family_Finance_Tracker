@@ -45,8 +45,8 @@ async function fetchExpenses(fromDate = "", toDate = "", page = 1) {
             <td>${exp.description || ""}</td>
             <td>₹${exp.amount}</td>
             <td>
-                <button class="edit-btn edit" onclick="editExpense(${exp.id})">&#9999;&#65039;</button> <!-- ✏️ Pencil -->
-                <button class="delete-btn delete" onclick="deleteExpense(${exp.id})">&#10060;</button> <!-- ❌ Cross Mark -->
+                <button class="edit-btn edit" onclick="editExpense(${exp.id})">✏️</button>
+                <button class="delete-btn delete" onclick="deleteExpense(${exp.id})">❌</button>
             </td>
             <td>
                 ${exp.image_url ? getFileLink(exp.image_url, exp.file_type) : "No file"}
@@ -205,13 +205,24 @@ async function editExpense(id) {
 document.getElementById("filter-btn").addEventListener("click", function() {
     const fromDate = document.getElementById("from-date").value;
     const toDate = document.getElementById("to-date").value;
-    
     if (!fromDate || !toDate) {
-        showTemporaryAlert("Please fill out both date fields", "error");
+        const alertBox = document.createElement("div");
+        alertBox.textContent = "😯Please fill out both date fields😅 ";
+        alertBox.style.position = "fixed";
+        alertBox.style.top = "5px";
+        alertBox.style.left = "50%";
+        alertBox.style.transform = "translateX(-50%)";
+        alertBox.style.backgroundColor = "#f44336";
+        alertBox.style.color = "#fff";
+        alertBox.style.padding = "20px";
+        alertBox.style.borderRadius = "20px";
+        alertBox.style.boxShadow = "3px 3px 10px rgba(0, 0, 0, 0.1)";
+        document.body.appendChild(alertBox);
+        setTimeout(() => { document.body.removeChild(alertBox); }, 2000);
         return;
     }
     fetchExpenses(fromDate, toDate);
-    updateStats(fromDate, toDate);
+    updateStats(fromDate, toDate); // Ensure stats are also updated
 });
 
 // Refresh expense list
@@ -296,8 +307,8 @@ async function fetchBudgets(page = 1) {
             <td>${budget.category}</td>
             <td>₹${budget.amount}</td>
             <td>
-                <button class="edit-btn edit" onclick="editBudget(${budget.id})">&#9999;&#65039;</button> <!-- ✏️ Pencil -->
-                <button class="delete-btn delete" onclick="deleteBudget(${budget.id})">&#10060;</button> <!-- ❌ Cross Mark -->
+                <button class="edit-btn edit" onclick="editBudget(${budget.id})">✏️</button>
+                <button class="delete-btn delete" onclick="deleteBudget(${budget.id})">❌</button>
             </td>
              <td>
                 <input type="checkbox" ${budget.recurring ? "checked" : ""} onclick="toggleRecurring(${budget.id}, this.checked)" />
