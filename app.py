@@ -249,6 +249,9 @@ def dashboard():
     if not user:  # Check if user is None
         return redirect(url_for('login'))
 
+    # Check and create recurring budgets for this month
+    check_and_create_recurring_budgets(user.id if user.role == "super_user" else user.approved_by)
+
     today = datetime.today()
     default_year = today.year
     default_month = today.month
@@ -880,121 +883,71 @@ def get_stats():
         "highest_amount": float(highest_amount)
     })
 
-def create_recurring_budgets(test_date=None):
-    """Create recurring budgets for the next month"""
-    try:
-        with app.app_context():
-            now = test_date or datetime.now()
-            print(f"[DEBUG] Running recurring budget check at {now}")
-            
-            # Only proceed if it's the last day of the month
-            if now.day == 1:
-                # Get next month's date
-                if now.month == 12:
-                    next_month = 1
-                    next_year = now.year + 1
-                else:
-                    next_month = now.month
-                    next_year = now.year
-                
-                print(f"[DEBUG] Creating budgets for {next_month}/{next_year}")
-                
-                # Find all recurring budgets from current month
-                recurring_budgets = Budget.query.filter_by(recurring=True).all()
-                print(f"[DEBUG] Found {len(recurring_budgets)} recurring budgets")
-                
-                created_count = 0
-                for budget in recurring_budgets:
-                    try:
-                        # Check if budget already exists for next month
-                        existing_budget = Budget.query.filter_by(
-                            user_id=budget.user_id,
-                            category_id=budget.category_id,
-                            year=next_year,
-                            month=next_month
-                        ).first()
-                        
-                        if not existing_budget:
-                            new_budget = Budget(
-                                user_id=budget.user_id,
-                                category_id=budget.category_id,
-                                amount=budget.amount,
-                                month=next_month,
-                                year=next_year,
-                                recurring=True
-                            )
-                            db.session.add(new_budget)
-                            created_count += 1
-                            print(f"[DEBUG] Created budget for user {budget.user_id}, category {budget.category_id}")
-                    except Exception as e:
-                        print(f"[ERROR] Failed to process budget {budget.budget_id}: {str(e)}")
-                        continue
-                
-                db.session.commit()
-                print(f"[DEBUG] Successfully created {created_count} budgets for {next_month}/{next_year}")
-            else:
-                print("[DEBUG] Not the first day of month. Skipping budget creation.")
-                
-    except Exception as e:
-        print(f"[ERROR] Failed to create recurring budgets: {str(e)}")
-        db.session.rollback()
-
-# Initialize the scheduler with precise timing
-scheduler = BackgroundScheduler(
-    daemon=True,
-    job_defaults={
-        'misfire_grace_time': 3600,
-        'coalesce': True,
-        'max_instances': 1
-    },
-    timezone='UTC'
-)
-
-# Schedule to run at midnight (00:00) on the 1st of every month
-scheduler.add_job(
-    func=create_recurring_budgets,
-    trigger=CronTrigger(
-        day='1',
-        hour='0',
-        minute='0',
-        timezone='UTC'
-    ),
-    id='create_recurring_budgets',
-    name='Create recurring budgets for next month',
-    replace_existing=True
-)
-
-# Start scheduler with test functionality
-try:
-    scheduler.start()
-    print("[DEBUG] Scheduler started successfully")
-    
-    # For testing: Run immediately if it's the 1st of the month
-    now = datetime.now()
-    if now.day == 1:
-        print("[DEBUG] Running initial budget creation (1st of month)")
-        create_recurring_budgets(now)
-        
-except Exception as e:
-    print(f"[ERROR] Failed to start scheduler: {str(e)}")
-
 # Modify toggle_recurring route to be simpler
 @app.route("/toggle_recurring/<int:budget_id>", methods=["PUT"])
 def toggle_recurring(budget_id):
-    if 'user_id' not in session:
-        return jsonify({"message": "Unauthorized"}), 401
 
     data = request.get_json()
     recurring = data.get("recurring", False)
 
     budget = Budget.query.get(budget_id)
-    if not budget:
-        return jsonify({"message": "Budget not found"}), 404
-
     budget.recurring = recurring
-    db.session.commit()
-    
+    db.session.commit() 
     return jsonify({"message": "Recurring status updated successfully!"})
+
+def check_and_create_recurring_budgets(user_id):
+    """Check and create recurring budgets for current month if not already created"""
+    try:
+        with app.app_context():
+            now = datetime.now()
+            current_month = now.month
+            current_year = now.year
+            
+            # Get last month's info
+            if current_month == 1:
+                last_month = 12
+                last_year = current_year - 1
+            else:
+                last_month = current_month - 1
+                last_year = current_year
+            
+            # Find recurring budgets from last month
+            recurring_budgets = Budget.query.filter_by(
+                user_id=user_id,
+                recurring=True,
+                month=last_month,
+                year=last_year
+            ).all()
+            
+            created_count = 0
+            for budget in recurring_budgets:
+                # Check if budget already exists for current month
+                existing_budget = Budget.query.filter_by(
+                    user_id=user_id,
+                    category_id=budget.category_id,
+                    month=current_month,
+                    year=current_year
+                ).first()
+                
+                if not existing_budget:
+                    new_budget = Budget(
+                        user_id=user_id,
+                        category_id=budget.category_id,
+                        amount=budget.amount,
+                        month=current_month,
+                        year=current_year,
+                        recurring=True
+                    )
+                    db.session.add(new_budget)
+                    created_count += 1
+            
+            if created_count > 0:
+                db.session.commit()
+                print(f"[DEBUG] Created {created_count} recurring budgets for {current_month}/{current_year}")
+                
+    except Exception as e:
+        print(f"[ERROR] Failed to create recurring budgets: {str(e)}")
+        db.session.rollback()
 
 @app.route("/add_budget", methods=["POST"])
 def add_budget():
