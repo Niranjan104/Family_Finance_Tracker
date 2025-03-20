@@ -468,81 +468,54 @@ def get_categories():
 def check_budget_status(user_id, category_id):
     try:
         with app.app_context():
-            # Get current month and year
-            today = datetime.now()
-            current_month = today.month
-            current_year = today.year
-            
-            print(f"[DEBUG] Checking budget for user {user_id}, category {category_id}")
-            print(f"[DEBUG] Current date: {today}")
-            
-            # Find the budget for this category and month/year
+            # Get budget and expenses in a single query
             budget = Budget.query.filter_by(
                 user_id=user_id,
                 category_id=category_id,
-                month=current_month,
-                year=current_year
+                month=datetime.now().month,
+                year=datetime.now().year
             ).first()
-            
+
             if not budget:
-                print(f"[DEBUG] No budget found for category {category_id}")
                 return
-            
-            print(f"[DEBUG] Found budget: Amount={budget.amount}")
-            
-            # Calculate total expenses for this category in the current month
-            start_date = datetime(current_year, current_month, 1).date()
-            if current_month == 12:
-                end_date = datetime(current_year + 1, 1, 1).date()
-            else:
-                end_date = datetime(current_year, current_month + 1, 1).date()
-            
-            expenses = Expense.query.filter(
+
+            # Calculate expenses with a single query
+            total_spent = db.session.query(
+                db.func.sum(Expense.amount)
+            ).filter(
                 Expense.user_id == user_id,
                 Expense.category_id == category_id,
-                Expense.date >= start_date,
-                Expense.date < end_date
-            ).all()
-            
-            total_spent = sum(expense.amount for expense in expenses)
-            print(f"[DEBUG] Total spent: {total_spent}")
-            
-            category = Category.query.get(category_id)
-            category_name = category.name if category else "Unknown Category"
-            
-            # Calculate percentage of budget used
-            if budget.amount > 0:  # Prevent division by zero
-                budget_percentage = (total_spent / budget.amount) * 100
-                print(f"[DEBUG] Budget percentage: {budget_percentage}%")
-                
-                # Get recipients for alert
-                recipients = []
-                
-                # Add main user
-                main_user = User.query.get(user_id)
-                if main_user and main_user.email:
-                    recipients.append(main_user.email)
-                
-                # Add family members
-                family_members = User.query.filter_by(approved_by=user_id).all()
-                for member in family_members:
-                    if member.email and member.privilege in ['view', 'edit']:
-                        recipients.append(member.email)
-                
-                print(f"[DEBUG] Recipients: {recipients}")
-                
-                # Send alerts based on threshold
-                if budget_percentage >= 100:
-                    print("[DEBUG] Budget exceeded, sending alert")
-                    send_budget_alert(recipients, category_name, budget.amount, total_spent, budget_percentage, True)
-                elif budget_percentage >= 90:
-                    print("[DEBUG] Budget approaching limit, sending warning")
-                    send_budget_alert(recipients, category_name, budget.amount, total_spent, budget_percentage, False)
-                
+                Expense.date >= datetime(budget.year, budget.month, 1),
+                Expense.date < datetime(budget.year + (budget.month == 12), 
+                                     (budget.month % 12) + 1, 1)
+            ).scalar() or 0
+
+            if budget.amount > 0:
+                percentage = (total_spent / budget.amount) * 100
+                if percentage >= 90:  # Only check once for either condition
+                    # Get all recipients in one query
+                    recipients = [email for (email,) in db.session.query(User.email).filter(
+                        db.or_(
+                            User.id == user_id,
+                            db.and_(
+                                User.approved_by == user_id,
+                                User.privilege.in_(['view', 'edit'])
+                            )
+                        )
+                    ).all()]
+                    
+                    if recipients:
+                        send_budget_alert_async(
+                            recipients,
+                            budget.category.name,
+                            budget.amount,
+                            total_spent,
+                            percentage,
+                            percentage >= 100
+                        )
+
     except Exception as e:
-        print(f"[ERROR] Budget check failed: {str(e)}")
-        import traceback
-        print(traceback.format_exc())
+        print(f"Budget check error: {str(e)}")
 
 def send_budget_alert(recipients, category_name, budget_amount, total_spent, percentage, is_exceeded):
     try:
@@ -579,7 +552,7 @@ Family Finance Tracker Team
 📊 Category: {category_name}
 📅 Month: {current_month} {current_year}
 💰 Budget Amount: ₹{float(budget_amount):.2f}
-💵 Current Spending: ₹{float(total_spent):.2f}
+💵 Current Spending: ₹{float(total_spent)::.2f}
 📈 Percentage Used: {percentage:.1f}%
 
 💡 Recommendations:
@@ -627,80 +600,75 @@ def add_expense():
     if 'user_id' not in session:
         return jsonify({"message": "Unauthorized"}), 401
 
-    # Consolidated user context logic
-    user_id = session['user_id']
-    role = session['role']
-    
-    if role == "family_member":
-        user = User.query.get(user_id)
-        user_id = user.approved_by
-        if not user_id:
-            return jsonify({"message": "Not linked to any family"}), 400
-
-    user = session['user_id']
-    role = session['role']
-    if user:
+    try:
+        # Get user context
+        user_id = session['user_id']
+        role = session['role']
         if role == "family_member":
-            user = User.query.get(session['user_id'])
+            user = User.query.get(user_id)
             user_id = user.approved_by
-        else:
-            user_id = user
+            if not user_id:
+                return jsonify({"message": "Not linked to any family"}), 400
 
-    data = request.form.to_dict()
-    
-    # Validate all data first before any database operations
-    if not all([data.get("name"), data.get("category"), data.get("date"), data.get("amount")]):
-        return jsonify({"message": "Missing required fields!"}), 400
+        data = request.form.to_dict()
+        
+        # Quick validation
+        if not all([data.get("name"), data.get("category"), data.get("date"), data.get("amount")]):
+            return jsonify({"message": "Missing required fields!"}), 400
 
-    try:
-        amount = float(data.get("amount"))
-        date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
-    except (ValueError, TypeError):
-        return jsonify({"message": "Invalid amount or date format!"}), 400
+        # Process form data
+        try:
+            amount = float(data.get("amount"))
+            date = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            return jsonify({"message": "Invalid amount or date format!"}), 400
 
-    # Get or create category in a single transaction
-    try:
-        with db.session.begin_nested():
+        # Single database transaction for all operations
+        with db.session.begin():
+            # Get or create category
             category = Category.query.filter_by(name=data.get("category")).first()
             if not category:
-                category = Category(name=data.get("category"), category_desc=data.get("category-desc", ""))
+                category = Category(
+                    name=data.get("category"),
+                    category_desc=data.get("category-desc", "")
+                )
                 db.session.add(category)
+                db.session.flush()
+
+            # Create expense
+            new_expense = Expense(
+                user_id=user_id,
+                name=data.get("name"),
+                category_id=category.category_id,
+                date=date,
+                amount=amount,
+                description=data.get("description", "")
+            )
+
+            # Handle file if present
+            file = request.files.get("file-upload")
+            if file and file.filename:
+                new_expense.image_data = file.read()
+                new_expense.file_type = file.mimetype
+
+            db.session.add(new_expense)
+            db.session.flush()
+
+            # Start budget check in background without waiting
+            Thread(target=check_budget_status, args=(user_id, category.category_id)).start()
+
+        return jsonify({
+            "message": "Expense added successfully!",
+            "status": "success"
+        })
+
     except Exception as e:
         db.session.rollback()
-        return jsonify({"message": f"Database error: {str(e)}"}), 500
-
-    # Create expense object
-    new_expense = Expense(
-        user_id=user_id,
-        name=data.get("name"),
-        category_id=category.category_id,
-        date=date,
-        amount=amount,
-        description=data.get("description", "")
-    )
-
-    # Handle file upload if present
-    file = request.files.get("file-upload")
-    if file and file.filename:
-        try:
-            file_data = file.read()
-            new_expense.image_data = file_data
-            new_expense.file_type = file.mimetype
-        except Exception as e:
-            return jsonify({"message": f"File upload error: {str(e)}"}), 500
-
-    # Save expense in a single transaction
-    try:
-        db.session.add(new_expense)
-        db.session.commit()
-        
-        # Check budget status immediately
-        check_budget_status(user_id, category.category_id)
-        
-        return jsonify({"message": "Expense added successfully!"})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"message": f"Database error: {str(e)}"}), 500
+        print(f"Error adding expense: {str(e)}")
+        return jsonify({
+            "message": "Failed to add expense",
+            "error": str(e)
+        }), 500
 
 @app.route("/get_expenses")
 def get_expenses():
