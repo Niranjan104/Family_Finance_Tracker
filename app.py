@@ -467,73 +467,92 @@ def get_categories():
 
 def check_budget_status(user_id, category_id):
     try:
-        # Get current month and year
-        today = datetime.now()
-        current_month = today.month
-        current_year = today.year
-        
-        # Find the budget for this category and month/year
-        budget = Budget.query.filter_by(
-            user_id=user_id,
-            category_id=category_id,
-            month=current_month,
-            year=current_year
-        ).first()
-        
-        if not budget:
-            print(f"No budget found for category {category_id}")
-            return
-        
-        # Calculate total expenses for this category in the current month
-        start_date = datetime(current_year, current_month, 1).date()
-        if current_month == 12:
-            end_date = datetime(current_year + 1, 1, 1).date()
-        else:
-            end_date = datetime(current_year, current_month + 1, 1).date()
-        
-        expenses = Expense.query.filter_by(
-            user_id=user_id,
-            category_id=category_id
-        ).filter(
-            Expense.date >= start_date,
-            Expense.date < end_date
-        ).all()
-        
-        total_spent = sum(expense.amount for expense in expenses)
-        category = Category.query.get(category_id)
-        category_name = category.name if category else "Unknown Category"
-        
-        # Calculate percentage of budget used
-        budget_percentage = (float(total_spent) / float(budget.amount)) * 100
-        
-        # Get all family members who should receive alerts
-        family_members = User.query.filter_by(approved_by=user_id).all()
-        main_user = User.query.get(user_id)
-        recipients = []
-        
-        if main_user and main_user.email:
-            recipients.append(main_user.email)
+        with app.app_context():
+            # Get current month and year
+            today = datetime.now()
+            current_month = today.month
+            current_year = today.year
             
-        for member in family_members:
-            if member.privilege in ['view', 'edit'] and member.email:
-                recipients.append(member.email)
-        
-        # Send alerts based on threshold
-        if budget_percentage >= 100:
-            send_budget_alert_async(recipients, category_name, budget.amount, total_spent, budget_percentage, True)
-        elif budget_percentage >= 90:
-            send_budget_alert_async(recipients, category_name, budget.amount, total_spent, budget_percentage, False)
+            print(f"[DEBUG] Checking budget for user {user_id}, category {category_id}")
+            print(f"[DEBUG] Current date: {today}")
             
+            # Find the budget for this category and month/year
+            budget = Budget.query.filter_by(
+                user_id=user_id,
+                category_id=category_id,
+                month=current_month,
+                year=current_year
+            ).first()
+            
+            if not budget:
+                print(f"[DEBUG] No budget found for category {category_id}")
+                return
+            
+            print(f"[DEBUG] Found budget: Amount={budget.amount}")
+            
+            # Calculate total expenses for this category in the current month
+            start_date = datetime(current_year, current_month, 1).date()
+            if current_month == 12:
+                end_date = datetime(current_year + 1, 1, 1).date()
+            else:
+                end_date = datetime(current_year, current_month + 1, 1).date()
+            
+            expenses = Expense.query.filter(
+                Expense.user_id == user_id,
+                Expense.category_id == category_id,
+                Expense.date >= start_date,
+                Expense.date < end_date
+            ).all()
+            
+            total_spent = sum(expense.amount for expense in expenses)
+            print(f"[DEBUG] Total spent: {total_spent}")
+            
+            category = Category.query.get(category_id)
+            category_name = category.name if category else "Unknown Category"
+            
+            # Calculate percentage of budget used
+            if budget.amount > 0:  # Prevent division by zero
+                budget_percentage = (total_spent / budget.amount) * 100
+                print(f"[DEBUG] Budget percentage: {budget_percentage}%")
+                
+                # Get recipients for alert
+                recipients = []
+                
+                # Add main user
+                main_user = User.query.get(user_id)
+                if main_user and main_user.email:
+                    recipients.append(main_user.email)
+                
+                # Add family members
+                family_members = User.query.filter_by(approved_by=user_id).all()
+                for member in family_members:
+                    if member.email and member.privilege in ['view', 'edit']:
+                        recipients.append(member.email)
+                
+                print(f"[DEBUG] Recipients: {recipients}")
+                
+                # Send alerts based on threshold
+                if budget_percentage >= 100:
+                    print("[DEBUG] Budget exceeded, sending alert")
+                    send_budget_alert(recipients, category_name, budget.amount, total_spent, budget_percentage, True)
+                elif budget_percentage >= 90:
+                    print("[DEBUG] Budget approaching limit, sending warning")
+                    send_budget_alert(recipients, category_name, budget.amount, total_spent, budget_percentage, False)
+                
     except Exception as e:
-        print(f"Error in check_budget_status: {str(e)}")
+        print(f"[ERROR] Budget check failed: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
 
 def send_budget_alert(recipients, category_name, budget_amount, total_spent, percentage, is_exceeded):
     try:
         current_month = datetime.now().strftime('%B')
         current_year = datetime.now().year
         
+        print(f"[DEBUG] Sending {'alert' if is_exceeded else 'warning'} to {recipients}")
+        
         if is_exceeded:
-            subject = f"ALERT: Budget Exceeded for {category_name}"
+            subject = f"🚨 ALERT: Budget Exceeded for {category_name}"
             message = f"""
 ⚠️ BUDGET ALERT: Your family's spending has exceeded the budget limit!
 
@@ -553,7 +572,7 @@ Best regards,
 Family Finance Tracker Team
 """
         else:
-            subject = f"WARNING: Approaching Budget Limit for {category_name}"
+            subject = f"⚠️ WARNING: Approaching Budget Limit for {category_name}"
             message = f"""
 ⚠️ BUDGET WARNING: Your family is approaching the budget limit!
 
@@ -573,16 +592,20 @@ Best regards,
 Family Finance Tracker Team
 """
         
-        msg = Message(
-            subject=subject,
-            sender=app.config['MAIL_DEFAULT_SENDER'],  # Add sender here
-            recipients=recipients,
-            body=message
-        )
-        mail.send(msg)
-        
+        with app.app_context():
+            msg = Message(
+                subject=subject,
+                recipients=recipients,
+                body=message,
+                sender=app.config['MAIL_DEFAULT_SENDER']
+            )
+            mail.send(msg)
+            print(f"[DEBUG] Alert sent successfully to {recipients}")
+            
     except Exception as e:
-        print(f"Error sending budget alert: {str(e)}")
+        print(f"[ERROR] Failed to send budget alert: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
 
 def send_budget_alert_async(recipients, category_name, budget_amount, total_spent, percentage, is_exceeded):
     def send_async():
@@ -671,8 +694,8 @@ def add_expense():
         db.session.add(new_expense)
         db.session.commit()
         
-        # Start budget check in background
-        Thread(target=lambda: check_budget_status(user_id, category.category_id)).start()
+        # Check budget status immediately
+        check_budget_status(user_id, category.category_id)
         
         return jsonify({"message": "Expense added successfully!"})
     except Exception as e:
@@ -889,54 +912,105 @@ def get_stats():
         "highest_amount": float(highest_amount)
     })
 
-def create_recurring_budgets():
-    with app.app_context():
-        # Get current year and month
-        now = datetime.now()
-        current_year = now.year
-        current_month = now.month
-        
-        # Calculate next month and year
-        next_month = current_month + 1 if current_month < 12 else 1
-        next_year = current_year if current_month < 12 else current_year + 1
-        
-        # Find all recurring budgets
-        recurring_budgets = Budget.query.filter_by(recurring=True).all()
-        
-        for budget in recurring_budgets:
-            # Check if budget already exists for next month
-            existing_budget = Budget.query.filter_by(
-                user_id=budget.user_id,
-                category_id=budget.category_id,
-                year=next_year,
-                month=next_month
-            ).first()
+def create_recurring_budgets(test_date=None):
+    """Create recurring budgets for the next month"""
+    try:
+        with app.app_context():
+            now = test_date or datetime.now()
+            print(f"[DEBUG] Running recurring budget check at {now}")
             
-            if not existing_budget:
-                # Create new budget for next month
-                new_budget = Budget(
-                    user_id=budget.user_id,
-                    category_id=budget.category_id,
-                    amount=budget.amount,
-                    month=next_month,
-                    year=next_year,
-                    recurring=True  # Keep it recurring
-                )
-                db.session.add(new_budget)
-        
-        db.session.commit()
+            # Only proceed if it's the last day of the month
+            if now.day == 1:
+                # Get next month's date
+                if now.month == 12:
+                    next_month = 1
+                    next_year = now.year + 1
+                else:
+                    next_month = now.month
+                    next_year = now.year
+                
+                print(f"[DEBUG] Creating budgets for {next_month}/{next_year}")
+                
+                # Find all recurring budgets from current month
+                recurring_budgets = Budget.query.filter_by(recurring=True).all()
+                print(f"[DEBUG] Found {len(recurring_budgets)} recurring budgets")
+                
+                created_count = 0
+                for budget in recurring_budgets:
+                    try:
+                        # Check if budget already exists for next month
+                        existing_budget = Budget.query.filter_by(
+                            user_id=budget.user_id,
+                            category_id=budget.category_id,
+                            year=next_year,
+                            month=next_month
+                        ).first()
+                        
+                        if not existing_budget:
+                            new_budget = Budget(
+                                user_id=budget.user_id,
+                                category_id=budget.category_id,
+                                amount=budget.amount,
+                                month=next_month,
+                                year=next_year,
+                                recurring=True
+                            )
+                            db.session.add(new_budget)
+                            created_count += 1
+                            print(f"[DEBUG] Created budget for user {budget.user_id}, category {budget.category_id}")
+                    except Exception as e:
+                        print(f"[ERROR] Failed to process budget {budget.budget_id}: {str(e)}")
+                        continue
+                
+                db.session.commit()
+                print(f"[DEBUG] Successfully created {created_count} budgets for {next_month}/{next_year}")
+            else:
+                print("[DEBUG] Not the first day of month. Skipping budget creation.")
+                
+    except Exception as e:
+        print(f"[ERROR] Failed to create recurring budgets: {str(e)}")
+        db.session.rollback()
 
-# Initialize the scheduler
-scheduler = BackgroundScheduler()
+# Initialize the scheduler with precise timing
+scheduler = BackgroundScheduler(
+    daemon=True,
+    job_defaults={
+        'misfire_grace_time': 3600,
+        'coalesce': True,
+        'max_instances': 1
+    },
+    timezone='UTC'
+)
+
+# Schedule to run at midnight (00:00) on the 1st of every month
 scheduler.add_job(
     func=create_recurring_budgets,
-    trigger=CronTrigger(day=1, hour=0, minute=0),  # Run at 00:00 on the 1st of every month
+    trigger=CronTrigger(
+        day='1',
+        hour='0',
+        minute='0',
+        timezone='UTC'
+    ),
     id='create_recurring_budgets',
     name='Create recurring budgets for next month',
     replace_existing=True
 )
-scheduler.start()
 
+# Start scheduler with test functionality
+try:
+    scheduler.start()
+    print("[DEBUG] Scheduler started successfully")
+    
+    # For testing: Run immediately if it's the 1st of the month
+    now = datetime.now()
+    if now.day == 1:
+        print("[DEBUG] Running initial budget creation (1st of month)")
+        create_recurring_budgets(now)
+        
+except Exception as e:
+    print(f"[ERROR] Failed to start scheduler: {str(e)}")
+
+# Modify toggle_recurring route to be simpler
 @app.route("/toggle_recurring/<int:budget_id>", methods=["PUT"])
 def toggle_recurring(budget_id):
     if 'user_id' not in session:
@@ -950,35 +1024,9 @@ def toggle_recurring(budget_id):
         return jsonify({"message": "Budget not found"}), 404
 
     budget.recurring = recurring
-    
-    # If turning on recurring, create next month's budget if it doesn't exist
-    if recurring:
-        now = datetime.now()
-        next_month = budget.month + 1 if budget.month < 12 else 1
-        next_year = budget.year if budget.month < 12 else budget.year + 1
-        
-        # Only create next month's budget if we're not already in or past it
-        if (next_year > now.year) or (next_year == now.year and next_month > now.month):
-            existing_budget = Budget.query.filter_by(
-                user_id=budget.user_id,
-                category_id=budget.category_id,
-                year=next_year,
-                month=next_month
-            ).first()
-            
-            if not existing_budget:
-                new_budget = Budget(
-                    user_id=budget.user_id,
-                    category_id=budget.category_id,
-                    amount=budget.amount,
-                    month=next_month,
-                    year=next_year,
-                    recurring=True
-                )
-                db.session.add(new_budget)
-
     db.session.commit()
-    return jsonify({"message": "Budget updated successfully!"})
+    
+    return jsonify({"message": "Recurring status updated successfully!"})
 
 @app.route("/add_budget", methods=["POST"])
 def add_budget():
