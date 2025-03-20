@@ -339,6 +339,7 @@ def update_approved_by():
         user.status = "approved"
         flash(f"User {user.username} has been approved.", "success")
     else:
+        user.approved_by = None
         user.status = "pending"
 
         # **Check if the user is a super user**
