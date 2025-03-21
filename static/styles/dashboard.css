@@ -211,22 +211,6 @@ body.dark-mode #message {
 }
 
 /* EXPENSE LIST */
-.expense-list {
-  background: #FAFAFA;
-  color: #333;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
-}
-body.dark-mode .expense-list {
-  background: #666565;
-  color: #E0E0E0;
-}
-.expense-list h2 {
-  text-align: center;
-  margin-top: 0;
-}
 .filter {
   text-align: center;
   margin-bottom: 10px;
@@ -308,9 +292,10 @@ body.dark-mode .expense-list {
 }
 
 
-
-/* BUDGET LIST */
-.budget-list {
+/* BUDGET LIST and EXPENSE LIST STYLING */
+.budget-list,
+.expense-list,
+.table-list {
   background: #FAFAFA;
   color: #333;
   padding: 20px;
@@ -318,11 +303,15 @@ body.dark-mode .expense-list {
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
 }
-body.dark-mode .budget-list {
+body.dark-mode .budget-list,
+body.dark-mode .expense-list,
+body.dark-mode .table-list {
   background: #666565;
   color: #E0E0E0;
 }
-.budget-list h2 {
+.budget-list h2,
+.expense-list h2,
+.table-list h2 {
   text-align: center;
   margin-top: 0;
 }
@@ -801,56 +790,6 @@ h1.budget-heading {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-/* Budget List */
-.budget-list {
-  background: #FAFAFA;
-  color: #333;
-  padding: 20px;
-  border-radius: 10px;
-  flex: 3;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
-}
-body.dark-mode .budget-list {
-  background: #666565;
-  color: #E0E0E0;
-}
-.budget-list h2 {
-  text-align: center;
-  margin-top: 0;
-}
-.budget-list table {
-  width: 100%;
-  border-spacing: 0;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
-  margin-top: 10px;
-}
-body.dark-mode .budget-list table {
-  background: #626161;
-}
-.budget-list th, .budget-list td {
-  padding: 10px;
-  border: 1px solid #ccc;
-  text-align: center;
-}
-body.dark-mode .budget-list th, body.dark-mode .budget-list td {
-  border-color: #b8b8b8;
-}
-.budget-list th {
-  background: #dedddd;
-}
-body.dark-mode .budget-list th {
-  background: #4b4b4b;
-}
-.budget-list tr:hover {
-  background: #f1f1f1;
-}
-body.dark-mode .budget-list tr:hover {
-  background: #545454;
 }
 
 .back-btn {

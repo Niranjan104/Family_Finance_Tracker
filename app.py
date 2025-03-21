@@ -1,17 +1,18 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file,Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from functools import wraps
 from flask_cors import CORS
 from datetime import datetime, timedelta,timezone
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, Expense, Category, Budget, User
+from models import *
 from io import BytesIO
 import random, string, os,re
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from threading import Thread
-
+import plotly.graph_objects as go 
+import numpy as np
 from graphs import * 
 
 app = Flask(__name__)
@@ -1157,12 +1158,620 @@ def get_line_chart(year):
 
 # FOR SAVINGS BUTTON WORKING (TEAM 3+4)-------------------------- STARTS HERE(and add code related to it below this line) ---->
 @app.route('/savings_dashboard')
-@login_required
-def savings_dashboard():
-    if not session.get('verified'):
-        return redirect(url_for('verify'))
+def savings_dashboard():  # Changed from saving_page to savings_dashboard
+    user_id = session.get('user_id')
+    user = User.query.get(user_id) if user_id else None
+    privilege = user.privilege if user else 'view'
+    bar_chart = plot_savings_progress()  # Main bar graph
+    gauge_chart = plot_gauge_charts()    #gauge chart for 1st load
+    return render_template('savings.html', bar_chart=bar_chart,gauges=gauge_chart,privilege=privilege)
+
+@app.route('/get_savings_data', methods=['GET'])
+def get_savings_data():  # For Plotly.js graph
+    user_id = session.get('user_id', None)
+
+    if not user_id:
+        return jsonify([])  # Empty response
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify([])  # Empty response
+
+    # Get family group user IDs
+    if user.role == "family_member":
+        superuser_id = user.approved_by
+        family_members = User.query.filter_by(approved_by=superuser_id).all()
+        family_group_user_ids = [fm.id for fm in family_members] + [superuser_id]
+    else:
+        family_members = User.query.filter_by(approved_by=user.id).all()
+        family_group_user_ids = [fm.id for fm in family_members] + [user.id]
+
+    if not family_group_user_ids:
+        return jsonify([])  # Empty response
+
+    # Build query
+    query = db.session.query(
+        User.username,
+        db.func.coalesce(db.func.sum(SavingsTarget.amount), 0).label('Total_Target_Savings'),
+        db.func.coalesce(db.func.sum(Savings.amount), 0).label('Total_Achieved_Savings')
+    ).outerjoin(SavingsTarget, User.id == SavingsTarget.user_id)\
+     .outerjoin(Savings, SavingsTarget.id == Savings.target_id)\
+     .filter(User.id.in_(family_group_user_ids))
+
+    # Group by username to aggregate savings properly
+    data = query.group_by(User.username).all()
+
+    # Prepare result
+    result = [
+        {
+            "username": row[0],
+            "Achieved_Savings": float(row[2]),
+            "Target_Savings": float(row[1])
+        } for row in data
+    ]
+    return jsonify(result)
+
+def generate_no_data_image():#Function for returning no data image when no data found
+    fig = go.Figure()
+    fig.add_annotation(
+        text="No Data Available",
+        x=0.5, y=0.5,
+        showarrow=False,
+        font=dict(size=24, color="grey")
+    )
+    fig.update_layout(
+        xaxis=dict(showgrid=False, zeroline=False, visible=False),
+        yaxis=dict(showgrid=False, zeroline=False, visible=False),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(t=0, b=0, l=0, r=0),
+        height=300  # You can adjust height/width if needed
+    )
+
+    img_io = BytesIO()
+    fig.write_image(img_io, format='png', scale=3)
+    img_io.seek(0)
+    return Response(img_io.getvalue(), mimetype='image/png') 
+
+#Bar graph
+def plot_savings_progress(user_id=None):  # Main bar graph
+    family_group_user_ids = []  # To hold all user_ids to filter on
+
+    # Check if user is logged in
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+
+        if not user:
+            return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
+
+        if user.role == "family_member":
+            # Family member: include self + their superuser + other family members under same superuser
+            superuser_id = user.approved_by
+            family_members = User.query.filter_by(approved_by=superuser_id).all()
+            family_group_user_ids = [fm.id for fm in family_members] + [superuser_id]
+        else:
+            # Superuser: include self + family members they approved
+            family_members = User.query.filter_by(approved_by=user.id).all()
+            family_group_user_ids = [fm.id for fm in family_members] + [user.id]
+    else:
+        # If not logged in, return 'no data'
+        return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
+
+    # Now apply filter to query only for these user IDs
+    query = db.session.query(
+        SavingCategory.name.label('category'),
+        db.func.coalesce(db.func.sum(SavingsTarget.amount), 0).label('target_savings'),
+        db.func.coalesce(db.func.sum(Savings.amount), 0).label('actual_savings')
+    ).outerjoin(SavingsTarget, SavingCategory.id == SavingsTarget.category_id)\
+     .outerjoin(Savings, SavingsTarget.id == Savings.target_id)\
+     .filter(SavingsTarget.user_id.in_(family_group_user_ids))  # Filter for family group
+
+    # Group and execute query
+    data = query.group_by(SavingCategory.name).all()
+
+    # If no data found, return 'no data' image
+    if not data:
+        return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
+
+    # Extract data for plotting
+    categories = [row.category for row in data]
+    target_savings = [row.target_savings for row in data]
+    actual_savings = [row.actual_savings for row in data]
+
+    # Plotting
+    x = np.arange(len(categories))
+    width = 0.35
+
+    plt.figure(figsize=(10, 6))
+    bars1 = plt.bar(x - width/2, target_savings, width, color='gray', label='Target Savings')
+    bars2 = plt.bar(x + width/2, actual_savings, width, color='blue', label='Actual Savings')
+
+    plt.xlabel('Savings Goals')
+    plt.ylabel('Amount ($)')
+    plt.title('Savings Target vs. Actual')
+    plt.xticks(x, categories, rotation=45, ha='right')
+    plt.legend()
+
+    # Annotate bar values
+    for bar in bars1 + bars2:
+        yval = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width() / 2, yval + 50, f"${yval:.2f}", ha='center', va='bottom')
+
+    plt.tight_layout()
+
+    # Save plot as base64-encoded PNG
+    img_io = BytesIO()
+    plt.savefig(img_io, format='png')
+    img_io.seek(0)
+    img_base64 = base64.b64encode(img_io.read()).decode('utf-8')
+    plt.close()
+    return img_base64
+
+#Pie chart
+@app.route('/savings_chart')
+def plot_savings_by_category():
+    if 'user_id' not in session:
+        return generate_no_data_image()
     
-    return "<h1>Savings Dashboard - Coming Soon!</h1>"  # Placeholder for now
+    user_id = session['user_id']
+
+    selected_month = request.args.get('month')
+    selected_year = request.args.get('year')
+
+    # Start base query with outer joins to include all categories
+    query = db.session.query(
+        SavingCategory.name.label('category'),
+        db.func.coalesce(db.func.sum(Savings.amount), 0).label('total_savings')
+    ).outerjoin(SavingsTarget, SavingCategory.id == SavingsTarget.category_id)\
+     .outerjoin(Savings, SavingsTarget.id == Savings.target_id)\
+     .filter(SavingsTarget.user_id == user_id)
+
+    # Apply filters only if selected
+    if selected_month:
+        query = query.filter(db.extract('month', Savings.date) == int(selected_month))
+    if selected_year:
+        query = query.filter(db.extract('year', Savings.date) == int(selected_year))
+
+    # Group by category
+    data = query.group_by(SavingCategory.name).all()
+
+    if not data: #Retun no data image if there is no data
+        return generate_no_data_image()
+    
+    # Ensure all categories are displayed (even if no savings)
+    all_categories = db.session.query(SavingCategory.name).all()
+    category_dict = {cat[0]: 0 for cat in all_categories}  # Default all categories to 0
+
+    # Update with actual data
+    for row in data:
+        category_dict[row.category] = row.total_savings
+
+    # Extract data for the plot
+    categories = list(category_dict.keys())
+    amounts = list(category_dict.values())
+
+    # Prevent division by zero
+    total = sum(amounts) if sum(amounts) != 0 else 1
+    percentages = [f'{(amt / total) * 100:.1f}%' for amt in amounts]
+
+    # Custom labels
+    custom_labels = [f"{cat}" for cat, perc in zip(categories, percentages)]
+
+    # Color palette
+    colors = ['blue', 'green', 'red', 'purple', 'orange']
+    colors = (colors * ((len(amounts) // len(colors)) + 1))[:len(amounts)]  # Extend colors if needed
+
+    # Create donut chart
+    fig = go.Figure(data=[go.Pie(
+        labels=categories,
+        values=amounts,
+        hole=0.6,  # Donut effect
+        marker=dict(colors=colors, line=dict(color='white', width=3)),  # White border
+        hoverinfo='label+percent',
+        text=custom_labels,  # Show category + percentage
+        textposition='outside',
+        pull=[0.05] * len(categories),  # Pull-out effect
+    )])
+
+    fig.update_layout(
+        showlegend=False,
+        paper_bgcolor='rgba(0,0,0,0)',  # Transparent
+        plot_bgcolor='rgba(0,0,0,0)',   # Transparent
+        margin=dict(t=50, b=0, l=0, r=0)
+    )
+
+    # Save as transparent PNG
+    img_io = BytesIO()
+    fig.write_image(img_io, format='png', scale=3)
+    img_io.seek(0)
+    return Response(img_io.getvalue(), mimetype='image/png') 
+
+# Gauge chart
+@app.route('/gauge_chart')
+def plot_gauge_charts():
+    if 'user_id' not in session:
+        return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
+
+    user_id = session['user_id']
+    selected_month = request.args.get('month')
+    selected_year = request.args.get('year')
+
+    # Base query with user filter
+    query = db.session.query(
+        SavingCategory.name.label('category'),
+        SavingsTarget.amount.label('target'),
+        db.func.coalesce(db.func.sum(Savings.amount), 0).label('saved')
+    ).join(SavingsTarget, SavingCategory.id == SavingsTarget.category_id)\
+     .outerjoin(Savings, SavingsTarget.id == Savings.target_id)\
+     .filter(SavingsTarget.user_id == user_id)
+
+    # Apply month and year filters
+    if selected_month:
+        query = query.filter(db.extract('month', Savings.date) == int(selected_month))
+    if selected_year:
+        query = query.filter(db.extract('year', Savings.date) == int(selected_year))
+
+    # Group data
+    data = query.group_by(SavingCategory.name, SavingsTarget.amount).all()
+
+    if not data:
+        return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
+
+    # Create figure
+    fig = go.Figure()
+    buttons = []
+
+    for idx, (cat, target, saved) in enumerate(data):
+        progress = (float(saved) / float(target)) * 100 if target else 0
+
+        fig.add_trace(
+            go.Indicator(
+                mode="gauge+number",
+                value=progress,
+                title={'text': f"{cat}"},
+                gauge={'axis': {'range': [0, 100]}, 'bar': {'color': 'blue'}},
+                visible=True if idx == 0 else False
+            )
+        )
+
+        buttons.append(
+            dict(
+                label=cat,
+                method="update",
+                args=[
+                    {"visible": [i == idx for i in range(len(data))]},
+                    {"title": f"Savings Progress: {cat}"}
+                ]
+            )
+        )
+
+    # Dropdown for categories
+    fig.update_layout(
+        updatemenus=[
+            dict(
+                active=0,
+                buttons=buttons,
+                x=1.15,
+                y=1,
+                xanchor='right',
+                yanchor='top'
+            )
+        ],
+        height=400,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
+
+    return fig.to_html(full_html=False, config={'displayModeBar': False})
+
+# get_category_savings is for gauge chart
+@app.route('/get_category_savings')
+def get_category_savings():  # Using for gauge chart to filter category
+    # Get user_id from session if logged in
+    user_id = session.get('user_id')
+    selected_month = request.args.get('month')
+    selected_year = request.args.get('year')
+
+    # Base query
+    query = db.session.query(
+        SavingCategory.name.label('category'),
+        db.func.coalesce(db.func.sum(Savings.amount), 0).label('total_saved')
+    ).outerjoin(SavingsTarget, SavingCategory.id == SavingsTarget.category_id)\
+     .outerjoin(Savings, SavingsTarget.id == Savings.target_id)
+
+    # Apply user filter if user_id is available
+    if user_id:
+        query = query.filter(SavingsTarget.user_id == user_id)
+
+    # Apply month and year filters
+    if selected_month:
+        query = query.filter(db.extract('month', Savings.date) == int(selected_month))
+    if selected_year:
+        query = query.filter(db.extract('year', Savings.date) == int(selected_year))
+
+    # Group data
+    data = query.group_by(SavingCategory.name).all()
+
+    # Preparing data to return as JSON
+    result = [{'category': row.category, 'saved_amount': row.total_saved} for row in data]
+    return jsonify(result)
+
+#get_savings_filters is for the filters for gauge and pie chart for monthyears
+@app.route('/get_savings_filters', methods=['GET'])  #For filters according to month and year
+def get_savings_filters():
+    user_id = session.get('user_id')  # Get the logged-in user's ID
+
+    if not user_id:
+        return jsonify({"error": "User not logged in"}), 401
+
+    # Fetch unique months and years
+    filters = db.session.query(
+        db.func.extract('month', Savings.date).label('month'),
+        db.func.extract('year', Savings.date).label('year')
+    ).filter(Savings.user_id == user_id).distinct().all()
+
+    # Format response
+    months_years = [{"month": int(m), "year": int(y)} for m, y in filters]
+
+    return jsonify(months_years)
+
+# get_filters_for_table is updated with session id and filters(user,monthyear,role)
+@app.route('/get_filters_for_table', methods=['GET']) #for month and year filter for tables
+def get_filters_for_table():
+    user_id = session.get('user_id')  # Get the logged-in user's ID
+
+    if not user_id:
+        return jsonify({"error": "User not logged in"}), 401
+
+    # Fetch unique months and years from SavingsTarget table
+    filters = db.session.query(
+        db.func.extract('month', SavingsTarget.target_date).label('month'),
+        db.func.extract('year', SavingsTarget.target_date).label('year')
+    ).filter(SavingsTarget.user_id == user_id).distinct().order_by(
+        db.func.extract('month', SavingsTarget.target_date).asc(),
+        db.func.extract('year', SavingsTarget.target_date).asc()
+    ).all()
+
+    # Format response
+    months_years = [{"month": int(m), "year": int(y)} for m, y in filters]
+
+    return jsonify(months_years)
+
+@app.route('/add_saving_target', methods=['POST'])
+def add_saving_target():
+    # Check if user is logged in
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    # check if user has edit privilages 
+    user = User.query.get(session['user_id'])
+    if user.privilege != 'edit':
+        return jsonify({"error": "Insufficient permissions"}), 403
+
+    user_id = session['user_id']
+    data = request.json
+
+    # Find or create the saving category
+    category = SavingCategory.query.filter_by(name=data['saving_category_name']).first()
+    if not category:
+        category = SavingCategory(
+            name=data['saving_category_name'],
+            description=data.get('saving_category_description', '')
+        )
+        db.session.add(category)
+        db.session.commit()
+
+    # Create a new savings target WITH USER_ID FROM SESSION
+    target = SavingsTarget(
+        user_id=user_id,  # Use session user_id instead of request data
+        category_id=category.id,
+        name=data['savings_goal_name'],
+        amount=data['savings_target_amount'],
+        target_date=datetime.strptime(data['savings_target_date'], '%Y-%m-%d').date()
+    )
+    db.session.add(target)
+    db.session.commit()
+
+    # Optional initial savings entry (also uses session user_id)
+    if data.get('initial_saving_amount', 0) > 0:
+        savings = Savings(
+            user_id=user_id,  # Use session user_id
+            target_id=target.id,
+            amount=data['initial_saving_amount'],
+            date=datetime.utcnow()
+        )
+        db.session.add(savings)
+        db.session.commit()
+
+    return jsonify({"message": "Savings target added successfully"}), 201
+
+
+@app.route('/update_saving_target/<int:id>', methods=['PUT'])
+def update_saving_target(id):
+    data = request.json
+    target = SavingsTarget.query.get(id)  # Get the savings target by ID
+    if target:
+        # Find or create the saving category
+        category = SavingCategory.query.filter_by(name=data['saving_category_name']).first()
+        if not category:
+            category = SavingCategory(
+                name=data['saving_category_name'],
+                description=data.get('saving_category_description', '')  # Use default empty description
+            )
+            db.session.add(category)
+            db.session.commit()
+
+        # Update target fields
+        target.category_id = category.id
+        target.name = data['savings_goal_name']
+        target.amount = data['savings_target_amount']
+        target.target_date = datetime.strptime(data['savings_target_date'], '%Y-%m-%d').date()
+
+        db.session.commit()
+        return jsonify({"message": "Savings target updated successfully"}), 200
+
+    return jsonify({"message": "Savings target not found"}), 404
+
+@app.route('/delete_saving_target/<int:id>', methods=['DELETE'])
+def delete_saving_target(id):
+    target = SavingsTarget.query.get(id)  # Get the savings target by ID
+    if target:
+        # Delete all associated savings
+        savings = Savings.query.filter_by(target_id=id).all()
+        for saving in savings:
+            db.session.delete(saving)
+
+        db.session.delete(target)  # Delete the target itself
+        db.session.commit()
+        return jsonify({"message": "Savings target and corresponding savings deleted successfully"}), 200
+
+    return jsonify({"message": "Savings target not found"}), 404
+
+@app.route('/add_savings', methods=['POST'])
+def add_savings():
+    data = request.json
+    user_id = session.get('user_id')
+
+    if not user_id:
+        return jsonify({"message": "User not authenticated"}), 401
+
+    # Check if savings entry exists for this target and user
+    savings = Savings.query.filter_by(target_id=data['savings_target_id'], user_id=user_id).first()
+
+    if savings:
+        # Update the existing savings entry
+        savings.amount = data['savings_amount_saved']
+        savings.mode = data['savings_payment_mode']
+        savings.date = datetime.strptime(data['savings_date_saved'], '%Y-%m-%d').date()
+        db.session.commit()
+        return jsonify({"message": "Savings updated successfully"}), 200
+    else:
+        # Add new savings entry
+        new_savings = Savings(
+            user_id=user_id,
+            target_id=data['savings_target_id'],  # ✅ Correct column name
+            amount=data['savings_amount_saved'],
+            mode=data['savings_payment_mode'],
+            date=datetime.strptime(data['savings_date_saved'], '%Y-%m-%d').date()  # ✅ Correct column name
+        )
+        db.session.add(new_savings)
+        db.session.commit()
+        return jsonify({"message": "Savings added successfully"}), 201
+
+@app.route('/get_savings/<int:id>', methods=['GET'])
+def get_savings(id):
+    # Fetch savings entry by target_id
+    savings = Savings.query.filter_by(target_id=id).first()
+    if savings:
+        # Retrieve the associated category through the savings target
+        category = SavingCategory.query.get(savings.savings_target.category_id)
+        return jsonify({"savings": {
+            "savings_target_id": savings.target_id,
+            "saving_category_name": category.name,
+            "saving_category_description": category.description,
+            "savings_goal_name": savings.savings_target.name,
+            "savings_target_amount": float(savings.savings_target.amount),
+            "savings_target_date": str(savings.savings_target.target_date),
+            "savings_amount_saved": float(savings.amount or 0),
+            "savings_payment_mode": savings.mode,
+            "savings_date_saved": str(savings.date)
+        }}), 200
+
+    # If no savings exist, retrieve the target instead
+    target = SavingsTarget.query.get(id)
+    if target:
+        category = SavingCategory.query.get(target.category_id)
+        return jsonify({"savings": {
+            "savings_target_id": target.id,
+            "saving_category_name": category.name,
+            "saving_category_description": category.description,
+            "savings_goal_name": target.name,
+            "savings_target_amount": float(target.amount),
+            "savings_target_date": str(target.target_date),
+            "savings_amount_saved": 0,
+            "savings_payment_mode": '',
+            "savings_date_saved": str(datetime.today().date())
+        }}), 200
+
+    # If neither savings nor target is found, return None
+    return jsonify({"savings": None}), 200
+
+@app.route('/update_savings/<int:id>', methods=['PUT'])
+def update_savings(id):
+    data = request.json
+    savings = Savings.query.filter_by(Sav_Target_id=id).first()
+    if savings:
+        savings.Amount = data['savings_amount_saved']
+        savings.Mode = data['savings_payment_mode']
+        savings.Date = datetime.strptime(data['savings_date_saved'], '%Y-%m-%d').date()
+        db.session.commit()
+        return jsonify({"message": "Savings updated successfully"}), 200
+    return jsonify({"message": "Savings not found"}), 404
+
+@app.route('/delete_savings/<int:id>', methods=['DELETE'])
+def delete_savings(id):
+    # Retrieve the savings entry by ID
+    savings = Savings.query.get(id)
+    if savings:
+        db.session.delete(savings)  # Delete the entry
+        db.session.commit()
+        return jsonify({"message": "Savings deleted successfully"}), 200
+
+    # If the savings entry is not found
+    return jsonify({"message": "Savings not found"}), 404
+
+# get_all_data_ is updated with session id and filters(user,monthyear,role)
+@app.route('/get_all_data', methods=['GET'])
+def get_all_data():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session["user_id"]
+    user = User.query.get(user_id)
+    # privilege = user.privilege
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    month = request.args.get("month")
+    year = request.args.get("year")
+
+    # Start base query
+    query = SavingsTarget.query.join(User, SavingsTarget.user_id == User.id)
+
+    # Role-based filtering
+    if user.role == "family_member":
+        query = query.filter(SavingsTarget.user_id == user.id)
+    elif user.role == "super_user":
+        family_members = User.query.filter_by(approved_by=user.id).all()  # Assuming this exists
+        family_member_ids = [member.id for member in family_members]
+        query = query.filter(SavingsTarget.user_id.in_([user.id] + family_member_ids))
+
+    # Apply month/year filters if provided
+    if month:
+        query = query.filter(db.extract("month", SavingsTarget.target_date) == int(month))
+    if year:
+        query = query.filter(db.extract("year", SavingsTarget.target_date) == int(year))
+
+    targets = query.all()
+    data = []
+    for target in targets:
+        savings = Savings.query.filter_by(target_id=target.id).first()
+        category = SavingCategory.query.get(target.category_id)
+        
+        data.append({
+            "savings_target_id": target.id,
+            "saving_category_name": category.name,
+            "saving_category_description": category.description,
+            "savings_goal_name": target.name,
+            "savings_target_amount": float(target.amount),
+            "savings_target_date": str(target.target_date),
+            "savings_amount_saved": float(savings.amount or 0) if savings else 0,
+            "savings_payment_mode": savings.mode if savings else '',
+            "savings_date_saved": str(savings.date) if savings else str(datetime.today().date()),
+            "savings_updated_date": str(savings.date) if savings else None,
+            # "userPrivilege":privilege,
+        })
+    return jsonify(data)
 
 
 with app.app_context():

@@ -51,4 +51,31 @@ class Budget(db.Model):
     recurring = db.Column(db.Boolean, default=False)
     created_on = db.Column(db.DateTime, default=db.func.current_timestamp())
 
+class SavingCategory(db.Model):
+    __tablename__ = 'saving_category'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255), nullable=True)
+    savings_targets = db.relationship('SavingsTarget', backref='saving_category', lazy=True)
+
+class SavingsTarget(db.Model):
+    __tablename__ = 'savings_target'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey('saving_category.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    target_date = db.Column(db.Date, nullable=True)
+    created_on = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    savings = db.relationship('Savings', backref='savings_target', lazy=True)
+
+class Savings(db.Model):
+    __tablename__ = 'savings'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    target_id = db.Column(db.Integer, db.ForeignKey('savings_target.id'), nullable=False)
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    mode = db.Column(db.String(50), nullable=True)
+    date = db.Column(db.Date, default=datetime.datetime.utcnow)
+
 

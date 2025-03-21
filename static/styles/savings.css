@@ -1,0 +1,356 @@
+/* GLOBAL STYLES */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-image: url('data:image/jpeg;base64,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');
+
+    background-size: cover;
+    background-attachment: fixed;
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background-color: #121212;
+    color: #ffffff;
+}
+
+/* HEADER */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #45b0e6; /* Blue Grey 500 */
+    color: #fff;
+    padding: 25px;
+    transition: background-color 0.3s ease-in-out; /* Smooth transition */
+}
+
+header.dark-mode {
+    background: #38647a;
+}
+
+header h1 {
+    margin: 0;
+    flex: 1;
+    text-align: left;
+    font-size: 1.5em; /* Make the text smaller */
+}
+
+h1 {
+    text-align: center;
+    margin: 20px 0;
+}
+
+/* TABLE HEADER */
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* CONTROLS */
+.controls {
+    display: flex;
+    justify-content: flex-end;
+    margin: 10px 20px;
+    gap: 10px;
+}
+
+.controls button {
+    padding: 10px 15px;
+    background: #2196F3;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: 0.2s ease-in-out;
+}
+
+.controls button:hover {
+    background: #1976D2;
+}
+
+/* NAVIGATION */
+nav {
+    display: flex;
+    gap: 15px;
+    flex: 2;
+    justify-content: center;
+}
+
+nav button {
+    padding: 10px 15px;
+    background: #CFD8DC;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+}
+
+nav button.dark-mode {
+    background: #6c95a8;
+    color: #ffffff;
+}
+
+nav button.dark-mode:hover {
+    background: #7b7a7a;
+}
+
+nav button:hover {
+    background: #B0BEC5;
+    transform: scale(1.05);
+}
+
+nav span {
+    align-self: center;
+    font-weight: bold;
+}
+
+/* MAIN CONTENT: Expense List & Add Expense Side by Side */
+.main-content {
+    display: flex;
+    gap: 10px;
+    margin: 20px;
+}
+
+/* TABLE CONTAINER */
+.table-container {
+    flex: 2;
+}
+
+
+/* EDIT/DELETE BUTTONS */
+button.update {
+    padding: 5px 8px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    color: #fff;
+    transition: 0.2s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #2196F3;
+    padding: 5px 10px; /* Adjust padding to fit text */
+}
+
+
+button.update:hover {
+    background: #1976D2;
+    transform: scale(1.05);
+    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Bar Graph Section */
+.graph-section {
+    background: #CFE9F0;
+    margin: 20px;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.bar-graph {
+    width: 100%; /* Take full width of parent */
+    max-width: 100%; /* Prevent overflowing */
+    overflow: hidden; /* Hide anything that overflows */
+    height: 400px; /* You can adjust height as needed */
+    margin: auto; /* Center align if needed */
+}
+#chart {
+    width: 100%; /* Make chart responsive */
+    height: 100%; /* Fit height of container */
+}
+
+/* Small Graphs Section */
+.small-graphs {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+}
+
+.small-graph {
+    background: #CFE9F0;
+    flex: 1;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.pie-chart img {
+    max-width: 100%; /* Prevent overflow */
+    height: auto; /* Maintain aspect ratio */
+    display: block; /* Remove extra spacing */
+    margin: 0 auto; /* Center it */
+    width: 400px; /* Optional fixed width if you want consistent size */
+}
+.img-fluid {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Pagination Buttons */
+#pagination {
+    position: relative; /* Relative to the table container */
+    text-align: center; /* Center the buttons */
+    margin-top: 20px; /* Add spacing between the table and buttons */
+    padding: 10px 0; /* Add padding for better spacing */
+    background: #f9f9f9; /* Optional: Add a background to separate it visually */
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1); /* Optional: Add a subtle shadow */
+    border-radius: 8px; /* Add rounded corners */
+}
+
+#pagination button {
+    padding: 10px 15px;
+    background: #2196F3; /* Primary color */
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: 0.3s ease-in-out;
+    margin: 0 5px; /* Add spacing between buttons */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#pagination button:hover {
+    background: #1976D2; /* Darker shade on hover */
+    transform: scale(1.1); /* Slight zoom effect */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Add shadow */
+}
+
+#pagination button:disabled {
+    background: #B0BEC5; /* Disabled button color */
+    cursor: not-allowed;
+    transform: none; /* Remove hover effects */
+    box-shadow: none;
+}
+
+#pagination span {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+    margin: 0 10px;
+}
+
+/* Dark Mode Styles for Pagination */
+body.dark-mode #pagination {
+    background: #28383f;
+}
+
+body.dark-mode #pagination button {
+    background: #6c95a8;
+    color: #ffffff;
+}
+
+body.dark-mode #pagination button:hover {
+    background: #7b7a7a;
+}
+
+body.dark-mode #pagination span {
+    color: #ffffff;
+}
+.filter-container {
+    display: flex;
+    justify-content: flex-end; /* Aligns selection to right */
+    padding: 20px;
+    gap: 10px; /* Space between dropdowns */
+}
+
+select {
+    padding: 8px 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    cursor: pointer;
+}
+
+select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+.filter-dropdown {
+    display: none;
+    position: absolute;
+    background: white;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    top: 100%; /* Moves it below the icon */
+    left: auto; /* Reset left positioning */
+    right: 0; /* Align the right edge of the dropdown with the left edge of the button */
+    transform: translateX(-100%); /* Shift the dropdown fully to the left */
+    z-index: 10;
+    width: max-content; /* Ensures dropdown width adjusts to content */
+}
+
+
+.filter-dropdown select,
+.filter-dropdown button {
+    display: block;
+    width: 100%;
+    margin: 5px 0;
+}
+
+.filter-dropdown button {
+    background-color: blue;
+    color: white;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+.Anchorbtn{
+    text-decoration: none;
+    color: white;
+}
+#insights-btn1{
+    background-color: #f44336;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: 0.2s ease-in-out;
+}
+/* Responsive */
+@media (max-width: 768px) {
+    .small-graphs {
+        flex-direction: column;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+}
+
+/* Mobile Optimization */
+@media screen and (max-width: 768px) {
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    nav {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .main-content {
+        flex-direction: column;
+    }
+}
