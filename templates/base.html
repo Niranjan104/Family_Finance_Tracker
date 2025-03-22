@@ -12,11 +12,11 @@
         <h1 class="small-header">FAMILY FINANCE TRACKER</h1>
         <nav>
             {% if is_super_user %}
-                <a href="{{ url_for('super_user_dashboard') }}" class="super-user-link">Super User <br>Dashboard</a>
+            <button class="super-user-button" onclick="window.location.href='/super_user_dashboard'">Super User <br>Dashboard</button>
             {% endif %}
-            <button id="budget-btn" class="hover-effect" style="color:black">Expense & Budget <br>Management</button>
-            <button id="insights-btn" class="hover-effect" style="color:black">Savings Management</button>
-            <a href="{{ url_for('logout') }}" class="logout-btn" onclick="return confirm('Are you sure you want to logout?')">Logout</a>
+            <button id="budget-btn" class="hover-effect" style="color:black" onclick="window.location.href='/dashboard'">Expense & Budget <br>Management</button>
+            <button id="insights-btn" class="hover-effect" style="color:black" onclick="window.location.href='/savings'">Savings Management</button>
+            <button class="logout-btn" onclick="if(confirm('Are you sure you want to logout?')) window.location.href='/logout'">Logout</button>
             <button id="dark-mode-toggle">🌙</button>
         </nav>
     </header>
@@ -40,10 +40,8 @@
         </div>
 
     {% block content %}{% endblock %}
-
     {% block graphs %}
     <div id="graph-section">
-        <h2>Graphs</h2>
         <!-- Graph content goes here -->
     </div>
     {% endblock %}
@@ -107,14 +105,6 @@
             displayRandomMessage();
             setInterval(displayRandomMessage, 3000);
 
-            // Add click handlers for navigation buttons
-            document.getElementById('budget-btn').addEventListener('click', () => {
-                window.location.href = "{{ url_for('dashboard') }}";
-            });
-
-            document.getElementById('insights-btn').addEventListener('click', () => {
-                window.location.href = "{{ url_for('savings_dashboard') }}";
-            });
         });
     </script>
 </body>

@@ -24,7 +24,7 @@ header {
   transition: background-color 0.3s ease-in-out;
 }
 
-.super-user-link {
+.super-user-button {
   color: #fff;
   background-color: #007bff;
   padding: 10px 20px;
@@ -32,11 +32,12 @@ header {
   text-decoration: none;
   font-weight: bold;
   font-size: small;
-  transition: background-color 0.3s ease;
+
 }
 
-.super-user-link:hover {
-  background-color: #0056b3;
+.super-user-button:hover {
+  background-color: #036ee1;
+  transform: scale(1.1);
 }
 
 #user-greeting {
@@ -318,7 +319,8 @@ body.dark-mode .table-list {
 
 /* Expense List Header */
 .expense-list-header,
-.budget-list-header {
+.budget-list-header,
+.table-header {
   display: flex;
   justify-content: space-between;
   align-items: center;

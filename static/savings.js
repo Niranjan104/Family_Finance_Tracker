@@ -245,12 +245,10 @@ function updateSavings(id) {
 }
 
 function showForm(formId) {
-    // Hide all forms and reset them
-    document.querySelectorAll('.form-popup').forEach(form => {
-        form.style.display = 'none';
-    });
     // Show the selected form
     document.getElementById(formId).style.display = 'block';
+    // Center the form
+    document.getElementById(formId).style.display = 'flex';
     // Show the backdrop
     document.getElementById('backdrop').style.display = 'block';
 }

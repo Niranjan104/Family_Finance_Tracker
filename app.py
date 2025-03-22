@@ -1156,15 +1156,33 @@ def get_line_chart(year):
 
 
 
-# FOR SAVINGS BUTTON WORKING (TEAM 3+4)-------------------------- STARTS HERE(and add code related to it below this line) ---->
-@app.route('/savings_dashboard')
-def savings_dashboard():  # Changed from saving_page to savings_dashboard
-    user_id = session.get('user_id')
-    user = User.query.get(user_id) if user_id else None
-    privilege = user.privilege if user else 'view'
+# FOR SAVINGS BUTTON WORKING (TEAM 3+4)-------------------------- STARTS HERE(and add code related to 
+@app.route('/savings')
+@login_required
+def savings():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    user = User.query.get(session['user_id'])
+    if not user:
+        return redirect(url_for('login'))
+    
+    # Determine privilege level
+    if user.role == 'super_user':
+        privilege = 'edit'  # Superusers always get edit privilege
+    else:
+        privilege = user.privilege  # Use the user's assigned privilege level
+
     bar_chart = plot_savings_progress()  # Main bar graph
     gauge_chart = plot_gauge_charts()    #gauge chart for 1st load
-    return render_template('savings.html', bar_chart=bar_chart,gauges=gauge_chart,privilege=privilege)
+    
+    return render_template('savings.html', 
+                         username=user.username,
+                         is_super_user=(user.role == 'super_user'),
+                         privilege=privilege,
+                         bar_chart=bar_chart,
+                         gauges=gauge_chart)
+
 
 @app.route('/get_savings_data', methods=['GET'])
 def get_savings_data():  # For Plotly.js graph
@@ -1578,6 +1596,7 @@ def add_saving_target():
             user_id=user_id,  # Use session user_id
             target_id=target.id,
             amount=data['initial_saving_amount'],
+            mode=data['savings_payment_mode'],
             date=datetime.utcnow()
         )
         db.session.add(savings)
