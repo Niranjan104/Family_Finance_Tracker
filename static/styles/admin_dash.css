@@ -220,3 +220,49 @@ h1 {
     background-color: #fff3cd;
     color: #856404;
 }
+
+.container {
+    background-color: rgba(133, 236, 245, 0.95);
+    border-radius: 20px;
+    width: 95%;
+    max-width: 1000px;
+    padding: 20px;
+    margin-top: 30px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+#searchBar {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+
+#familyTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#familyTable th, #familyTable td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+#familyTable th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+}
+
+#familyTable tr:hover {
+    background-color: #f9f9f9;
+}
+
+.container img {
+    margin-top: 20px;
+    width: 100%;
+    border-radius: 15px;
+}

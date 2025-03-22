@@ -78,4 +78,10 @@ class Savings(db.Model):
     mode = db.Column(db.String(50), nullable=True)
     date = db.Column(db.Date, default=datetime.datetime.utcnow)
 
+class Family(db.Model):
+    __tablename__ = 'family'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    count = db.Column(db.Integer, nullable=False)
+    cost_per_member = db.Column(db.Integer, nullable=False)
 

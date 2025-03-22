@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
-from models import db, Expense, Category, Budget, User
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file, Response
+from models import db, Expense, Category, Budget, User,Family,SavingCategory, SavingsTarget, Savings
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, or_
 from datetime import datetime, timedelta,timezone
@@ -10,8 +10,40 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import random, string, os,re, calendar
 import io
+import plotly.graph_objects as go 
+import numpy as np
 
 matplotlib.use('Agg')
+
+def create_bar_chart():
+    families = Family.query.all()
+    names = [family.name for family in families]
+    counts = [family.count for family in families]
+    bills = [family.count * family.cost_per_member for family in families]
+
+    plt.figure(figsize=(6, 3))
+    bars = plt.bar(names, counts, color='skyblue')
+    plt.xlabel("Family Name")
+    plt.ylabel("Number of Members")
+    plt.title("Family Members and Monthly Bills")
+
+    for i, bar in enumerate(bars):
+        family_members = counts[i]
+        bar_x = bar.get_x()
+        bar_width = bar.get_width()
+        
+        for j in range(1, family_members):
+            plt.plot([bar_x, bar_x + bar_width], [j, j], color='black', linestyle='--')
+
+        plt.text(bar_x + bar_width / 2, family_members + 0.2, f'₹{bills[i]:,}', 
+                 ha='center', fontsize=10, color='black')
+        
+    plt.tight_layout()
+    img_buffer = io.BytesIO()
+    plt.savefig(img_buffer, format='png')
+    img_buffer.seek(0)
+    plt.close()
+    return base64.b64encode(img_buffer.getvalue()).decode('utf-8')
 
 def generate_monthly_expenses_plot(user_id=None):
     # Initialize the base query
@@ -42,8 +74,9 @@ def generate_monthly_expenses_plot(user_id=None):
     plt.xlabel('Month')
     plt.ylabel('Total Expense')
     plt.title('Monthly Expenses')
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=90)
     plt.grid()
+    plt.tight_layout()
 
     # Save the plot to a BytesIO object
     img = io.BytesIO()
@@ -87,6 +120,7 @@ def generate_category_expenses_plot(year, month,user_id=None,):
     plt.ylabel('Total Expense')
     plt.title(f'Expenses by Category for {year}-{month:02d}')
     plt.xticks(rotation=45)
+    plt.tight_layout()
 
     # Save the plot to a BytesIO object
     img = io.BytesIO()
@@ -166,7 +200,7 @@ def generate_pie_chart(user_id=None, month=None, year=None):
         axs[1].set_title('Actual Expenses')
     else:
         axs[1].text(0.5, 0.5, "No Data", fontsize=15, ha='center')
-
+    
     # Save the plot to a BytesIO object
     img = io.BytesIO()
     plt.savefig(img, format='png')
@@ -383,3 +417,99 @@ def generate_line_chart(year=None, user_id=None):
     plt.close()
 
     return base64.b64encode(img.getvalue()).decode()
+
+#Bar graph
+def plot_savings_progress(user_id=None):  # Main bar graph
+    family_group_user_ids = []  # To hold all user_ids to filter on
+
+    # Check if user is logged in
+    if 'user_id' in session:
+        user = User.query.get(session['user_id'])
+
+        if not user:
+            return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
+
+        if user.role == "family_member":
+            # Family member: include self + their superuser + other family members under same superuser
+            superuser_id = user.approved_by
+            family_members = User.query.filter_by(approved_by=superuser_id).all()
+            family_group_user_ids = [fm.id for fm in family_members] + [superuser_id]
+        else:
+            # Superuser: include self + family members they approved
+            family_members = User.query.filter_by(approved_by=user.id).all()
+            family_group_user_ids = [fm.id for fm in family_members] + [user.id]
+    else:
+        # If not logged in, return 'no data'
+        return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
+
+    # Now apply filter to query only for these user IDs
+    query = db.session.query(
+        SavingCategory.name.label('category'),
+        db.func.coalesce(db.func.sum(SavingsTarget.amount), 0).label('target_savings'),
+        db.func.coalesce(db.func.sum(Savings.amount), 0).label('actual_savings')
+    ).outerjoin(SavingsTarget, SavingCategory.id == SavingsTarget.category_id)\
+     .outerjoin(Savings, SavingsTarget.id == Savings.target_id)\
+     .filter(SavingsTarget.user_id.in_(family_group_user_ids))  # Filter for family group
+
+    # Group and execute query
+    data = query.group_by(SavingCategory.name).all()
+
+    # If no data found, return 'no data' image
+    if not data:
+        return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
+
+    # Extract data for plotting
+    categories = [row.category for row in data]
+    target_savings = [row.target_savings for row in data]
+    actual_savings = [row.actual_savings for row in data]
+
+    # Plotting
+    x = np.arange(len(categories))
+    width = 0.35
+
+    plt.figure(figsize=(10, 6))
+    bars1 = plt.bar(x - width/2, target_savings, width, color='gray', label='Target Savings')
+    bars2 = plt.bar(x + width/2, actual_savings, width, color='blue', label='Actual Savings')
+
+    plt.xlabel('Savings Goals')
+    plt.ylabel('Amount ($)')
+    plt.title('Savings Target vs. Actual')
+    plt.xticks(x, categories, rotation=45, ha='right')
+    plt.legend()
+
+    # Annotate bar values
+    for bar in bars1 + bars2:
+        yval = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width() / 2, yval + 50, f"${yval:.2f}", ha='center', va='bottom')
+
+    plt.tight_layout()
+
+    # Save plot as base64-encoded PNG
+    img_io = BytesIO()
+    plt.savefig(img_io, format='png')
+    img_io.seek(0)
+    img_base64 = base64.b64encode(img_io.read()).decode('utf-8')
+    plt.close()
+    return img_base64
+
+def generate_no_data_image():#Function for returning no data image when no data found
+    fig = go.Figure()
+    fig.add_annotation(
+        text="No Data Available",
+        x=0.5, y=0.5,
+        showarrow=False,
+        font=dict(size=24, color="grey")
+    )
+    fig.update_layout(
+        xaxis=dict(showgrid=False, zeroline=False, visible=False),
+        yaxis=dict(showgrid=False, zeroline=False, visible=False),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin=dict(t=0, b=0, l=0, r=0),
+        height=300  # You can adjust height/width if needed
+    )
+
+    img_io = BytesIO()
+    fig.write_image(img_io, format='png', scale=3)
+    img_io.seek(0)
+    return Response(img_io.getvalue(), mimetype='image/png') 

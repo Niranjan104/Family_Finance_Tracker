@@ -77,7 +77,7 @@
                             </td>
                         </tr>
                         {% endfor %}
-                       
+                      
                     </tbody>
                 </table>
             </div>
@@ -95,6 +95,36 @@
             {% endif %}
         </div>
     </div>
+
+    <div class="container">
+        <h1> Family Monthly Bills List</h1>
+
+        <!-- Family Search Bar -->
+        <input type="text" id="searchBar" onkeyup="searchFamily()" placeholder="Search Family Name...">
+
+        <!-- Family Bills Table -->
+        <table id="familyTable">
+            <tr>
+                <th>Family Name</th>
+                <th>Members</th>
+                <th>Cost per Member</th>
+                <th>Monthly Bill</th>
+            </tr>
+            
+            {% for family in families %}
+            <tr>
+                <td>{{ family.name }}</td>
+                <td>{{ family.count }}</td>
+                <td>₹{{ "{:,}".format(family.cost_per_member) }}</td>
+                <td><b>₹{{ "{:,}".format(family.count * family.cost_per_member) }}</b></td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        <!-- Family Bar Chart -->
+        <img src="data:image/png;base64,{{ img_data }}" alt="Family Bar Chart">
+
+    </div>
 </body>
 </html>
     
@@ -110,6 +140,20 @@
                 // Next page logic
             });
         });
+
+        function searchFamily() {
+            let input = document.getElementById("searchBar").value.toUpperCase();
+            let table = document.getElementById("familyTable");
+            let tr = table.getElementsByTagName("tr");
+
+            for (let i = 1; i < tr.length; i++) {
+                let td = tr[i].getElementsByTagName("td")[0]; // First column (Family Name)
+                if (td) {
+                    let textValue = td.textContent || td.innerText;
+                    tr[i].style.display = textValue.toUpperCase().indexOf(input) > -1 ? "" : "none";
+                }
+            }
+        }
     </script>
 </body>
 </html>

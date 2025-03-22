@@ -17,6 +17,7 @@ document.getElementById("savingTargetForm").addEventListener("submit", function(
             loadData();
             closeForm('savingTargetForm');
             showMessage(response.message);
+            updateGraphs(); // Update graphs
         });
     console.log(savingsData);
 });
@@ -36,6 +37,7 @@ document.getElementById("savingsForm").addEventListener("submit", function(e) {
             loadData();
             closeForm('savingsForm');
             showMessage(response.message);
+            updateGraphs(); // Update graphs
         });
     console.log(savingsData);
 });
@@ -129,7 +131,19 @@ function displayTableData() {
     const startIndex = (currentPage - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     const pageData = savingsData.slice(startIndex, endIndex);
-    console.log(pageData)
+    console.log(pageData);
+
+    if (pageData.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 8; // Adjust based on the number of columns in your table
+        cell.textContent = "You Have No Savings Added.";
+        cell.style.textAlign = "center";
+        row.appendChild(cell);
+        tbody.appendChild(row);
+        return;
+    }
+
     pageData.forEach(item => {
         let remainingAmount;
         if (item.savings_amount_saved >= item.savings_target_amount) {
@@ -212,6 +226,7 @@ function deleteTarget(id) {
             .then(response => {
                 loadData();
                 showMessage(response.message);
+                updateGraphs(); // Update graphs
             });
     }
     console.log(savingsData);
@@ -220,8 +235,11 @@ function deleteTarget(id) {
 function deleteSavings(id) {
     fetch(`/delete_savings/${id}`, { method: "DELETE" })
         .then(response => response.json())
-        .then(() => loadData());
-        console.log(savingsData);
+        .then(() => {
+            loadData();
+            updateGraphs(); // Update graphs
+        });
+    console.log(savingsData);
 }
 
 function updateSavings(id) {
@@ -292,6 +310,86 @@ function loadDarkModePreference() {
     if (darkMode === "enabled") {
         toggleDarkMode();
     }
+}
+
+function updateGraphs() {
+    // Update the bar chart
+    fetch("/get_savings_data")
+        .then(response => response.json())
+        .then(data => {
+            let usernames = data.map(item => item.username);
+            let achieved_savings = data.map(item => item.Achieved_Savings);
+            let target_savings = data.map(item => item.Target_Savings);
+            let trace = {
+                x: usernames,
+                y: achieved_savings,
+                type: "bar",
+                text: achieved_savings.map((s, i) => `Saved: ${s}<br>Target: ${target_savings[i]}`),
+                hoverinfo: "text",
+                textposition: 'none', // Prevent text from showing on bar itself
+                marker: { color: "royalblue" }
+            };
+
+            let layout = {
+                title: {
+                    text: "User Saving",
+                    font: { color: "black" }
+                },
+                xaxis: { 
+                    title: { 
+                        text: "Users", 
+                        font: { color: "black" },  // Title color
+                    }, 
+                    tickfont: { color: "black" }, 
+                    automargin: true
+                },
+                yaxis: { 
+                    title: { 
+                        text: "Savings", 
+                        font: { color: "black" },  // Title color
+                        standoff: 20  // Increased spacing
+                    }, 
+                    tickfont: { color: "black" }, 
+                    automargin: true
+                },
+                margin: { l: 100 },  // Increase left margin to allow space
+                
+                paper_bgcolor: "rgba(0,0,0,0)",  /* Fully transparent chart background */
+                plot_bgcolor: "rgba(0,0,0,0)",   /* Fully transparent plot area */
+                margin: { t: 50, l: 50, r: 70, b: 50 }
+            };
+            
+            var config ={
+                displayModeBar: false,
+                textposition: 'none'
+            }
+            Plotly.newPlot("chart", [trace], layout, config);
+        });
+
+    // Update the pie chart
+    let month = document.getElementById("monthFilter").value;
+    let year = document.getElementById("yearFilter").value;
+    let img = document.getElementById("savingsPieChart");
+    let queryParams = new URLSearchParams();
+    if (month) queryParams.append("month", month);
+    if (year) queryParams.append("year", year);
+    img.src = "/savings_chart?" + queryParams.toString();
+
+    // Update the gauge chart
+    let gaugeChartContainer = document.getElementById("gaugeChartContainer");
+    fetch("/gauge_chart?" + queryParams.toString())
+        .then(response => response.text())
+        .then(html => {
+            gaugeChartContainer.innerHTML = html;
+
+            // Execute any embedded scripts in the response
+            let scripts = gaugeChartContainer.getElementsByTagName("script");
+            for (let i = 0; i < scripts.length; i++) {
+                let newScript = document.createElement("script");
+                newScript.textContent = scripts[i].textContent;
+                document.body.appendChild(newScript);  // Run script in the body
+            }
+        });
 }
 
 loadData();

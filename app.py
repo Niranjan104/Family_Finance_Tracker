@@ -1,19 +1,25 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file,Response
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file, Response
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import Session
+from sqlalchemy import func, and_, or_
 from flask_mail import Mail, Message
 from functools import wraps
 from flask_cors import CORS
 from datetime import datetime, timedelta,timezone
+from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import *
 from io import BytesIO
-import random, string, os,re
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.cron import CronTrigger
-from threading import Thread
-import plotly.graph_objects as go 
+import random, string, os,re, calendar,time
+import io
 import numpy as np
-from graphs import * 
+from graphs import *
+import base64
+import pandas as pd
+import plotly.graph_objects as go
+from apscheduler.schedulers.background import BackgroundScheduler 
+import pdfkit  
+from threading import Thread
 
 app = Flask(__name__)
 app.secret_key = "unifiedfamilyfinancetracker"
@@ -32,9 +38,9 @@ db.init_app(app)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'thariqali142@gmail.com'
-app.config['MAIL_PASSWORD'] = 'vheo bjfy yppk tyiu'  # Use App Password
-app.config['MAIL_DEFAULT_SENDER'] = 'thariqali142@gmail.com'  # Add this line
+app.config['MAIL_USERNAME'] = 'unifiedfamilyfinancetracker1@gmail.com'
+app.config['MAIL_PASSWORD'] = 'fmmt usra jono qbed'  # Use App Password
+app.config['MAIL_DEFAULT_SENDER'] = 'unifiedfamilyfinancetracker1@gmail.com'  # Add this line
 mail = Mail(app)
 
 # Function to generate OTP
@@ -212,12 +218,50 @@ def reset_password():
 def admin_dashboard():
     if "user_id" not in session or session.get("role") != "admin":
         return redirect(url_for("login"))
-    
+
+    # Sync family data automatically
+    family_names = db.session.query(User.family_name).filter_by(role="super_user").distinct().all()
+
+    for name_tuple in family_names:
+        name = name_tuple[0]
+
+        # Count how many super_users belong to this family
+        user_count = User.query.filter_by(family_name=name).count()
+
+        # Default cost per member
+        default_cost_per_member = 1500
+
+        # Check if family already exists
+        existing_family = Family.query.filter_by(name=name).first()
+
+        if not existing_family:
+            # Create new family entry
+            new_family = Family(name=name, count=user_count, cost_per_member=default_cost_per_member)
+            db.session.add(new_family)
+        else:
+            # Update count and cost
+            existing_family.count = user_count
+            existing_family.cost_per_member = default_cost_per_member
+
+    db.session.commit()
+    img_data=create_bar_chart()  
+
+    # Pagination for super users
     page = request.args.get('page', 1, type=int)
     users = User.query.filter_by(role="super_user").paginate(page=page, per_page=4, error_out=False)
 
-    return render_template("admin_dashboard.html", users=users)
+    # Family bill calculation
+    families = Family.query.all()
+    family_bills = {family.name: family.count * family.cost_per_member for family in families}
 
+    return render_template(
+        "admin_dashboard.html",
+        users=users,
+        family_bills=family_bills,
+        families=families,
+        time=time,
+        img_data=img_data
+    )
 @app.route('/verify', methods=['GET', 'POST'])
 @login_required
 def verify():
@@ -1229,102 +1273,6 @@ def get_savings_data():  # For Plotly.js graph
     ]
     return jsonify(result)
 
-def generate_no_data_image():#Function for returning no data image when no data found
-    fig = go.Figure()
-    fig.add_annotation(
-        text="No Data Available",
-        x=0.5, y=0.5,
-        showarrow=False,
-        font=dict(size=24, color="grey")
-    )
-    fig.update_layout(
-        xaxis=dict(showgrid=False, zeroline=False, visible=False),
-        yaxis=dict(showgrid=False, zeroline=False, visible=False),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        margin=dict(t=0, b=0, l=0, r=0),
-        height=300  # You can adjust height/width if needed
-    )
-
-    img_io = BytesIO()
-    fig.write_image(img_io, format='png', scale=3)
-    img_io.seek(0)
-    return Response(img_io.getvalue(), mimetype='image/png') 
-
-#Bar graph
-def plot_savings_progress(user_id=None):  # Main bar graph
-    family_group_user_ids = []  # To hold all user_ids to filter on
-
-    # Check if user is logged in
-    if 'user_id' in session:
-        user = User.query.get(session['user_id'])
-
-        if not user:
-            return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
-
-        if user.role == "family_member":
-            # Family member: include self + their superuser + other family members under same superuser
-            superuser_id = user.approved_by
-            family_members = User.query.filter_by(approved_by=superuser_id).all()
-            family_group_user_ids = [fm.id for fm in family_members] + [superuser_id]
-        else:
-            # Superuser: include self + family members they approved
-            family_members = User.query.filter_by(approved_by=user.id).all()
-            family_group_user_ids = [fm.id for fm in family_members] + [user.id]
-    else:
-        # If not logged in, return 'no data'
-        return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
-
-    # Now apply filter to query only for these user IDs
-    query = db.session.query(
-        SavingCategory.name.label('category'),
-        db.func.coalesce(db.func.sum(SavingsTarget.amount), 0).label('target_savings'),
-        db.func.coalesce(db.func.sum(Savings.amount), 0).label('actual_savings')
-    ).outerjoin(SavingsTarget, SavingCategory.id == SavingsTarget.category_id)\
-     .outerjoin(Savings, SavingsTarget.id == Savings.target_id)\
-     .filter(SavingsTarget.user_id.in_(family_group_user_ids))  # Filter for family group
-
-    # Group and execute query
-    data = query.group_by(SavingCategory.name).all()
-
-    # If no data found, return 'no data' image
-    if not data:
-        return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
-
-    # Extract data for plotting
-    categories = [row.category for row in data]
-    target_savings = [row.target_savings for row in data]
-    actual_savings = [row.actual_savings for row in data]
-
-    # Plotting
-    x = np.arange(len(categories))
-    width = 0.35
-
-    plt.figure(figsize=(10, 6))
-    bars1 = plt.bar(x - width/2, target_savings, width, color='gray', label='Target Savings')
-    bars2 = plt.bar(x + width/2, actual_savings, width, color='blue', label='Actual Savings')
-
-    plt.xlabel('Savings Goals')
-    plt.ylabel('Amount ($)')
-    plt.title('Savings Target vs. Actual')
-    plt.xticks(x, categories, rotation=45, ha='right')
-    plt.legend()
-
-    # Annotate bar values
-    for bar in bars1 + bars2:
-        yval = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width() / 2, yval + 50, f"${yval:.2f}", ha='center', va='bottom')
-
-    plt.tight_layout()
-
-    # Save plot as base64-encoded PNG
-    img_io = BytesIO()
-    plt.savefig(img_io, format='png')
-    img_io.seek(0)
-    img_base64 = base64.b64encode(img_io.read()).decode('utf-8')
-    plt.close()
-    return img_base64
-
 #Pie chart
 @app.route('/savings_chart')
 def plot_savings_by_category():
@@ -1791,6 +1739,144 @@ def get_all_data():
             # "userPrivilege":privilege,
         })
     return jsonify(data)
+
+# #automation
+@app.route('/generate_report', methods=['POST'])
+def generate_report():
+    if "user_id" not in session:
+        return jsonify({'error': 'Unauthorized access. Please log in.'}), 401
+
+    user = User.query.get(session["user_id"])
+    if not user:
+        return jsonify({'error': 'User not found in database.'}), 404
+
+    report_path = generate_report_for_user(user)
+    if not report_path:
+        return jsonify({'error': 'Failed to generate report'}), 500
+
+    send_report_email(user.email, report_path)
+    return jsonify({'message': f'Report for {user.username} sent to {user.email}'})
+
+
+# --- Function: Generate PDF Report for User ---
+def generate_report_for_user(user):
+    try:
+        today = datetime.today()
+        first_day_of_current_month = today.replace(day=1)
+        last_month_date = first_day_of_current_month - timedelta(days=1)
+        month, year = last_month_date.month, last_month_date.year
+
+        # Fetch expenses for current month and year
+        expenses = Expense.query.filter(
+            Expense.user_id == user.id,
+            db.func.strftime('%Y', Expense.date) == str(year),
+            db.func.strftime('%m', Expense.date) == f"{month:02d}"
+        ).all()
+
+        # Fetch budget
+        budget_entry = Budget.query.filter_by(user_id=user.id, month=month, year=year).first()
+        total_budget = budget_entry.amount if budget_entry else 0
+        total_expense = sum(exp.amount for exp in expenses)
+        savings = total_budget - total_expense
+
+        # Prepare data for HTML
+        expense_data = [{
+            "date": exp.date.strftime("%Y-%m-%d"),
+            "category": exp.category.name if exp.category else "Unknown",
+            "amount": exp.amount,
+            "description": exp.description
+        } for exp in expenses]
+
+        report_html = render_template(
+            "report_template.html",
+            user=user,
+            expenses=expense_data,
+            total_budget=total_budget,
+            total_expense=total_expense,
+            savings=savings,
+            month=month,
+            year=year)
+
+        # # Generate report file
+        # os.makedirs("reports", exist_ok=True)
+        report_path = f"reports/{user.username}_report_{month}_{year}.pdf"
+        # pdfkit.from_string(report_html, report_path)
+        # PDFKit configuration with wkhtmltopdf path
+        path_wkhtmltopdf = r"T:\Projects\Intern_Project Team 1\Infosys_Intern_UFFT_UM\wkhtmltopdf\bin\wkhtmltopdf.exe"
+        if not os.path.exists(path_wkhtmltopdf):
+            raise FileNotFoundError(f"wkhtmltopdf not found at: {path_wkhtmltopdf}")
+        
+        config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+
+        # ✅ Generate PDF from HTML string
+        
+        pdfkit.from_string(report_html, report_path, configuration=config)
+
+        return report_path
+
+    except Exception as e:
+        print(f"❌ Error generating report for {user.username}: {str(e)}")
+        return None
+
+
+#automation for sending mail
+def send_report_email(email, report_path):
+    """Sends the monthly financial report via email to users in ufft_database."""
+    if not os.path.exists(report_path):
+        print(f"❌ Error: Report file not found for {email}")
+        return
+
+    try:
+        msg = Message(
+            "📊 Monthly Financial Report - Family Finance Tracker",
+            sender=app.config['MAIL_USERNAME'],
+            recipients=[email]
+        )
+        msg.body = """
+            Dear User,  
+
+            We hope you're doing well! Your Monthly Financial Report is now available.  
+
+            Regular financial tracking helps you stay on top of your goals and make informed decisions. We encourage you to review your report and track your savings progress.  
+
+            📩 Your financial report is attached to this email.  
+
+            If you have any questions or need further assistance, feel free to reach out.  
+
+            Thank you for trusting us with your financial tracking!  
+
+            Best Regards,  
+            Your Unified Finance Tracker Team
+        """
+
+        with open(report_path, "rb") as pdf:
+            msg.attach(os.path.basename(report_path), "application/pdf", pdf.read())
+
+        mail.send(msg)
+        
+
+    except Exception as e:
+        print(f"❌ Error sending email: {str(e)}")
+
+
+# @app.route('/test_report')
+# def manual_generate_report():
+#     user = User.query.get(2)
+#     if not user:
+#         return "❌ User with ID 2 not found.", 404
+
+#     report_path = generate_report_for_user(user)
+#     if not report_path:
+#         return "❌ Failed to generate report.", 500
+
+#     send_report_email(user.email, report_path)
+#     return f"✅ Report for {user.username} sent to {user.email}."
+
+
+# --- Scheduler for Every Month First week of Friday at 8 AM ---
+scheduler = BackgroundScheduler()
+scheduler.add_job(generate_report, 'cron',day='1-7', day_of_week='fri', hour=8)
+scheduler.start()
 
 
 with app.app_context():
