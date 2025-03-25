@@ -321,9 +321,9 @@ def dashboard():
     stacked_bar_chart = generate_stacked_bar_chart(user_id=user.id, month=default_month, year=default_year)
     line_chart = generate_line_chart(year=default_year, user_id=user.id)
 
-    if user.role == "super_user":
-        return render_template("dashboard_edit.html", is_super_user=True,
-                               username=user.username,
+    if user.role == "super_user" or (user.role == "family_member" and user.status == "approved" and user.privilege == "edit"):
+        return render_template("dashboard_edit.html", is_super_user=(user.role == "super_user"),
+                               username=user.username, 
                                users=all_users,
                                default_user=default_user,
                                monthly_plot=monthly_plot,
@@ -336,38 +336,22 @@ def dashboard():
                                default_month=default_month,
                                current_year=current_year)  # Pass current_year
 
-    elif user.role == "family_member" and user:
-        if user.status == "approved":
-            if user.privilege == "view":
-                return render_template("dashboard_view.html", username=user.username,
-                                       users=all_users,
-                                       default_user=default_user,
-                                       monthly_plot=monthly_plot,
-                                       category_plot=category_plot,
-                                       pie_chart=pie_chart,
-                                       bar_chart=bar_chart,
-                                       stacked_bar_chart=stacked_bar_chart,
-                                       line_chart=line_chart,
-                                       default_year=default_year,
-                                       default_month=default_month,
-                                       current_year=current_year)  # Pass current_year
+    elif user.role == "family_member" and user.status == "approved" and user.privilege == "view" and user:
+        return render_template("dashboard_view.html", username=user.username,
+                                users=all_users,
+                                default_user=default_user,
+                                monthly_plot=monthly_plot,
+                                category_plot=category_plot,
+                                pie_chart=pie_chart,
+                                bar_chart=bar_chart,
+                                stacked_bar_chart=stacked_bar_chart,
+                                line_chart=line_chart,
+                                default_year=default_year,
+                                default_month=default_month,
+                                current_year=current_year)  # Pass current_year
 
-            elif user.privilege == "edit":
-                return render_template("dashboard_edit.html", username=user.username,
-                                       users=all_users,
-                                       default_user=default_user,
-                                       monthly_plot=monthly_plot,
-                                       category_plot=category_plot,
-                                       pie_chart=pie_chart,
-                                       bar_chart=bar_chart,
-                                       stacked_bar_chart=stacked_bar_chart,
-                                       line_chart=line_chart,
-                                       default_year=default_year,
-                                       default_month=default_month,
-                                       current_year=current_year)  # Pass current_year
-
-            flash("Your account is pending approval.", "warning")
-            return redirect(url_for("login"))
+    flash("Your account is pending approval.", "warning")
+    return redirect(url_for("login"))
 
 
 @app.route("/update_approved_by", methods=["POST"])
@@ -645,8 +629,8 @@ def send_budget_alert_async(recipients, category_name, budget_amount, total_spen
 # Update add_expense route to check budget after adding expense
 @app.route("/add_expense", methods=["POST"])
 def add_expense():
-    if 'user_id' not in session:
-        return jsonify({"message": "Unauthorized"}), 401
+    # if 'user_id' not in session:
+    #     return jsonify({"message": "Unauthorized"}), 401
 
     try:
         # Get user context
@@ -720,8 +704,8 @@ def add_expense():
 
 @app.route("/get_expenses")
 def get_expenses():
-    if 'user_id' not in session:
-        return jsonify({"message": "Unauthorized"}), 401
+    # if 'user_id' not in session:
+    #     return jsonify({"message": "Unauthorized"}), 401
 
     # Consolidated user context logic
     user_id = session['user_id']
@@ -786,8 +770,8 @@ def get_file(expense_id):
 
 @app.route("/edit_expense/<int:expense_id>", methods=["PUT"])
 def edit_expense(expense_id):
-    if 'user_id' not in session:
-        return jsonify({"message": "Unauthorized"}), 401
+    # if 'user_id' not in session:
+    #     return jsonify({"message": "Unauthorized"}), 401
 
     # Consolidated user context logic
     user_id = session['user_id']
@@ -844,8 +828,8 @@ def edit_expense(expense_id):
 
 @app.route("/delete_expense/<int:expense_id>", methods=["DELETE"])
 def delete_expense(expense_id):
-    if 'user_id' not in session:
-        return jsonify({"message": "Unauthorized"}), 401
+    # if 'user_id' not in session:
+    #     return jsonify({"message": "Unauthorized"}), 401
 
     # Consolidated user context logic
     user_id = session['user_id']
@@ -873,8 +857,8 @@ def delete_expense(expense_id):
 
 @app.route("/get_stats")
 def get_stats():
-    if 'user_id' not in session:
-        return jsonify({"message": "Unauthorized"}), 401
+    # if 'user_id' not in session:
+    #     return jsonify({"message": "Unauthorized"}), 401
 
     # Get the correct user context
     user_id = session['user_id']
@@ -996,8 +980,8 @@ def check_and_create_recurring_budgets(user_id):
 
 @app.route("/add_budget", methods=["POST"])
 def add_budget():
-    if 'user_id' not in session:
-        return jsonify({"message": "Unauthorized"}), 401
+    # if 'user_id' not in session:
+    #     return jsonify({"message": "Unauthorized"}), 401
 
     # Consolidated user context logic
     user_id = session['user_id']
@@ -1049,8 +1033,8 @@ def add_budget():
 
 @app.route("/get_budgets")
 def get_budgets():
-    if 'user_id' not in session:
-        return jsonify({"message": "Unauthorized"}), 401
+    # if 'user_id' not in session:
+    #     return jsonify({"message": "Unauthorized"}), 401
 
     user_id = session['user_id']
     role = session['role']
@@ -1104,8 +1088,8 @@ def get_budget(budget_id):
 # Edit Budget --------->
 @app.route("/edit_budget/<int:budget_id>", methods=["PUT"])
 def edit_budget(budget_id):
-    if 'user_id' not in session:
-        return jsonify({"message": "Unauthorized"}), 401
+    # if 'user_id' not in session:
+    #     return jsonify({"message": "Unauthorized"}), 401
 
     user_id = session['user_id']
     budget = Budget.query.filter_by(budget_id=budget_id, user_id=user_id).first()
@@ -1146,8 +1130,8 @@ def edit_budget(budget_id):
 # Delete budget--------->
 @app.route("/delete_budget/<int:budget_id>", methods=["DELETE"])
 def delete_budget(budget_id):
-    if 'user_id' not in session:
-        return jsonify({"message": "Unauthorized"}), 401
+    # if 'user_id' not in session:
+    #     return jsonify({"message": "Unauthorized"}), 401
 
     user_id = session['user_id']
     budget = Budget.query.filter_by(budget_id=budget_id, user_id=user_id).first()
@@ -1204,8 +1188,8 @@ def get_line_chart(year):
 @app.route('/savings')
 @login_required
 def savings():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
+    # if 'user_id' not in session:
+    #     return redirect(url_for('login'))
     
     user = User.query.get(session['user_id'])
     if not user:
@@ -1232,12 +1216,12 @@ def savings():
 def get_savings_data():  # For Plotly.js graph
     user_id = session.get('user_id', None)
 
-    if not user_id:
-        return jsonify([])  # Empty response
+    # if not user_id:
+    #     return jsonify([])  # Empty response
 
     user = User.query.get(user_id)
-    if not user:
-        return jsonify([])  # Empty response
+    # if not user:
+    #     return jsonify([])  # Empty response
 
     # Get family group user IDs
     if user.role == "family_member":
@@ -1276,8 +1260,8 @@ def get_savings_data():  # For Plotly.js graph
 #Pie chart
 @app.route('/savings_chart')
 def plot_savings_by_category():
-    if 'user_id' not in session:
-        return generate_no_data_image()
+    # if 'user_id' not in session:
+    #     return generate_no_data_image()
     
     user_id = session['user_id']
 
@@ -1355,8 +1339,8 @@ def plot_savings_by_category():
 # Gauge chart
 @app.route('/gauge_chart')
 def plot_gauge_charts():
-    if 'user_id' not in session:
-        return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
+    # if 'user_id' not in session:
+    #     return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
 
     user_id = session['user_id']
     selected_month = request.args.get('month')
@@ -1467,8 +1451,8 @@ def get_category_savings():  # Using for gauge chart to filter category
 def get_savings_filters():
     user_id = session.get('user_id')  # Get the logged-in user's ID
 
-    if not user_id:
-        return jsonify({"error": "User not logged in"}), 401
+    # if not user_id:
+    #     return jsonify({"error": "User not logged in"}), 401
 
     # Fetch unique months and years
     filters = db.session.query(
@@ -1486,8 +1470,8 @@ def get_savings_filters():
 def get_filters_for_table():
     user_id = session.get('user_id')  # Get the logged-in user's ID
 
-    if not user_id:
-        return jsonify({"error": "User not logged in"}), 401
+    # if not user_id:
+    #     return jsonify({"error": "User not logged in"}), 401
 
     # Fetch unique months and years from SavingsTarget table
     filters = db.session.query(
@@ -1506,8 +1490,8 @@ def get_filters_for_table():
 @app.route('/add_saving_target', methods=['POST'])
 def add_saving_target():
     # Check if user is logged in
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
+    # if 'user_id' not in session:
+    #     return jsonify({"error": "Unauthorized"}), 401
     
     # check if user has edit privilages 
     user = User.query.get(session['user_id'])
@@ -1599,8 +1583,8 @@ def add_savings():
     data = request.json
     user_id = session.get('user_id')
 
-    if not user_id:
-        return jsonify({"message": "User not authenticated"}), 401
+    # if not user_id:
+    #     return jsonify({"message": "User not authenticated"}), 401
 
     # Check if savings entry exists for this target and user
     savings = Savings.query.filter_by(target_id=data['savings_target_id'], user_id=user_id).first()
@@ -1857,20 +1841,6 @@ def send_report_email(email, report_path):
 
     except Exception as e:
         print(f"❌ Error sending email: {str(e)}")
-
-
-# @app.route('/test_report')
-# def manual_generate_report():
-#     user = User.query.get(2)
-#     if not user:
-#         return "❌ User with ID 2 not found.", 404
-
-#     report_path = generate_report_for_user(user)
-#     if not report_path:
-#         return "❌ Failed to generate report.", 500
-
-#     send_report_email(user.email, report_path)
-#     return f"✅ Report for {user.username} sent to {user.email}."
 
 
 # --- Scheduler for Every Month First week of Friday at 8 AM ---
