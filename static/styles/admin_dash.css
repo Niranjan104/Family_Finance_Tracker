@@ -17,6 +17,63 @@ body {
     align-items: center;
 }
 
+/* Header Styles */
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #45b0e6; /* Blue Grey 500 */
+    color: #fff;
+    padding: 20px;
+    position: relative; /* Fix the header to the top */
+    width: 100vw; /* Changed from 100% to 100vw */
+    left: 50%;  
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: +45vw;
+    margin-top: -2vw;
+    box-shadow: #000 0px 0px 10px; /* Add shadow to header */
+    z-index: 1000; /* Ensure header is above other content */
+}
+
+header img {
+    height: 60px;
+    width: 60px;
+    border-radius: 10px;
+}
+
+header h1 {
+    margin: 0;
+    flex: 1;
+    text-align: left;
+    font-size: 1.5em;
+    color: white; /* Remove glowing effect */
+    text-shadow: none; /* Ensure no text shadow */
+}
+
+nav {
+    display: flex;
+    gap: 15px;
+}
+
+
+header .logout-btn {
+    background-color: #ff0000 !important;
+    color: white !important;
+    border: none;
+    border-radius: 5px;
+    margin-right: 40px;
+    padding: 10px 40px;
+    font-size: 16px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+header .logout-btn:hover {
+    background-color: #d32f2f !important;
+}
+
 h1 {
     color: #000;
     margin: 20px 0;
@@ -168,17 +225,6 @@ h1 {
     width: 95%;
     max-width: 1200px;
     margin-top: 20px;
-}
-
-.logout-btn {
-    background-color: #ff0000;
-    color: white;
-    border: none;
-    padding: 10px 25px;
-    font-size: 16px;
-    cursor: pointer;
-    text-transform: uppercase;
-    text-decoration: none;
 }
 
 .navigation {

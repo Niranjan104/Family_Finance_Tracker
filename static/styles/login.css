@@ -7,6 +7,16 @@ body {
     overflow: hidden;
 }
 
+/* Centered title */
+.centered-title {
+    text-align: center;
+    padding-left: 350px;
+    padding-right: 300px;
+    font-weight: bold;
+    color: #ffffff; 
+}   
+
+
 .background-container {
     position: fixed;
     top: 0;

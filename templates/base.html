@@ -5,17 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Family Finance Tracker{% endblock %}</title>
     {% block styles %}{% endblock %}
+    <link rel="icon"  href="{{ url_for('static', filename='images/logo.png') }}">
 </head>
 <body>
 
     <header>
-        <img src="{{ url_for('static', filename='image.jpg') }}" alt="Logo" style="height: 60px; width: 60px; border-radius: 10px; margin-right: 20px; margin-left: -10px;">
-        <h1 class="small-header">FAMILY FINANCE TRACKER</h1>
+        <div class="header-content" style="display: flex; align-items: center;">
+            <!-- Logo and tagline container -->
+            <div style="display: flex; flex-direction: column; align-items: center;">
+              <img class="logo" 
+                   src="{{ url_for('static', filename='images/logo.png') }}" 
+                   alt="Logo" 
+                   style="height: 45px; width: 45px;" />
+              <span style="color: #e74c3c; font-size: 12px; font-weight: bold; margin-top: 4px; text-shadow: 1px 1px 2px #000;">
+                Track. Manage. Unify.
+              </span>
+            </div>
+            <!-- Main heading -->
+            <h1 style="font-size: 24px; margin: 0;">FAMILY FINANCE TRACKER</h1>
+          </div>
+          
+          
+          
         <nav>
             {% if is_super_user %}
-            <button class="super-user-button" onclick="window.location.href='/super_user_dashboard'">Super User <br>Dashboard</button>
+            <button class="super-user-button" onclick="window.location.href='/super_user_dashboard'">Super User Dashboard</button>
             {% endif %}
-            <button id="budget-btn" class="hover-effect" style="color:black" onclick="window.location.href='/dashboard'">Expense & Budget <br>Management</button>
+            <button id="budget-btn" class="hover-effect" style="color:black" onclick="window.location.href='/dashboard'">Expense & Budget Management</button>
             <button id="insights-btn" class="hover-effect" style="color:black" onclick="window.location.href='/savings'">Savings Management</button>
             <button class="logout-btn" onclick="if(confirm('Are you sure you want to logout?')) window.location.href='/logout'">Logout</button>
             <button id="dark-mode-toggle">🌙</button>
@@ -34,9 +50,9 @@
             </div>
             <div class="welcome-images">
                 <!-- Replace with your image URLs -->
-                <img src="https://i.pinimg.com/736x/8e/90/80/8e9080b568929a595e9396ba8b23b04a.jpg" alt="Person analyzing data" class="welcome-image">
-                <img src="https://i.pinimg.com/736x/8e/90/80/8e9080b568929a595e9396ba8b23b04a.jpg" alt="Person analyzing data" class="welcome-image">
                 <img src="https://i.pinimg.com/736x/c1/85/a1/c185a134c6e32e2135afcb39d5b33b59.jpg" alt="Person with finances" class="welcome-image">
+                <img src="https://cdni.iconscout.com/illustration/premium/thumb/business-budget-4650416-3851413.png" alt="Person with finances" class="welcome-image">
+                <img src="https://static.vecteezy.com/system/resources/previews/012/732/181/non_2x/personal-income-and-expense-management-family-budget-strategy-and-planning-vector.jpg" alt="Person analyzing data" class="welcome-image">
             </div>
         </div>
 

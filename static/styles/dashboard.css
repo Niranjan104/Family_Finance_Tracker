@@ -135,6 +135,8 @@ nav {
 nav button {
   padding: 10px 15px;
   background: #CFD8DC;
+  font-weight: bold;
+  box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -147,6 +149,7 @@ body.dark-mode nav button {
 nav button:hover {
   background: #B0BEC5;
   transform: scale(1.05);
+  box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.8);
 }
 body.dark-mode nav button:hover {
   background: #444;
@@ -273,8 +276,10 @@ body.dark-mode #message {
 }
 
 .pagination-controls button {
-  background-color: #969696; /* Green background */
-  color: white; /* White text */
+  background-color: #c2ebfd; /* Green background */
+  color: #000000;
+  font-weight: bold;
+  text-transform: uppercase; /* Uppercase text */
   border: none; /* Remove border */
   padding: 10px 20px; /* Add padding */
   margin: 5px; /* Add margin for spacing */
@@ -307,7 +312,7 @@ body.dark-mode #message {
 body.dark-mode .budget-list,
 body.dark-mode .expense-list,
 body.dark-mode .table-list {
-  background: #666565;
+  background: #b5e6fc;
   color: #E0E0E0;
 }
 .budget-list h2,
@@ -328,9 +333,10 @@ body.dark-mode .table-list {
 }
 
 #add-expense-btn,
-#set-budget-btn {
+#set-budget-btn,
+.controls button {
   padding: 10px 20px;
-  background: #4CAF50;
+  background: #2196F3;
   color: #fff;
   border: none;
   border-radius: 5px;
@@ -339,9 +345,16 @@ body.dark-mode .table-list {
 }
 
 #add-expense-btn:hover,
-#set-budget-btn:hover {
-  background: #45a049;
-  transform: scale(1.05);
+#set-budget-btn:hover,
+.controls button:hover {
+  background: #1976D2;
+}
+
+.controls {
+  display: flex;
+  justify-content: flex-end;
+  margin: 10px 20px;
+  gap: 10px;
 }
 
 /* TABLE STYLING */
@@ -365,13 +378,13 @@ body.dark-mode th, body.dark-mode td {
   border-color: #b8b8b8;
 }
 th {
-  background: #dedddd;
+  background: #c2ebfd;
 }
 body.dark-mode th {
   background: #4b4b4b;
 }
 tr:hover {
-  background: #f1f1f1;
+  background: #e7f8fe;
 }
 body.dark-mode tr:hover {
   background: #545454;

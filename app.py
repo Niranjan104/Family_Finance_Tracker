@@ -1,17 +1,25 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file, Response
-from werkzeug.security import generate_password_hash, check_password_hash
-from apscheduler.schedulers.background import BackgroundScheduler 
-from datetime import datetime, timedelta,timezone, date
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import Session
+from sqlalchemy import func, and_, or_
 from flask_mail import Mail, Message
-import plotly.graph_objects as go
-import random, string, os,time
-from threading import Thread
 from functools import wraps
-from io import BytesIO
-import pdfkit  
-
-from graphs import *
+from flask_cors import CORS
+from datetime import datetime, timedelta,timezone
+from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 from models import *
+from io import BytesIO
+import random, string, os,re, calendar,time
+import io
+import numpy as np
+from graphs import *
+import base64
+import pandas as pd
+import plotly.graph_objects as go
+from apscheduler.schedulers.background import BackgroundScheduler 
+import pdfkit  
+from threading import Thread
 
 app = Flask(__name__)
 app.secret_key = "unifiedfamilyfinancetracker"
@@ -290,7 +298,7 @@ def dashboard():
     # Check and create recurring budgets for this month
     check_and_create_recurring_budgets(user.id if user.role == "super_user" else user.approved_by)
 
-    today = date.today()
+    today = datetime.today()
     default_year = today.year
     default_month = today.month
     current_year = today.year  # Add this line
@@ -1633,7 +1641,7 @@ def get_savings(id):
             "savings_target_date": str(target.target_date),
             "savings_amount_saved": 0,
             "savings_payment_mode": '',
-            "savings_date_saved": str(date.today())
+            "savings_date_saved": str(datetime.today().date())
         }}), 200
 
     # If neither savings nor target is found, return None
@@ -1710,7 +1718,7 @@ def get_all_data():
             "savings_target_date": str(target.target_date),
             "savings_amount_saved": float(savings.amount or 0) if savings else 0,
             "savings_payment_mode": savings.mode if savings else '',
-            "savings_date_saved": str(savings.date) if savings else str(date.today()),
+            "savings_date_saved": str(savings.date) if savings else str(datetime.today().date()),
             "savings_updated_date": str(savings.date) if savings else None,
             # "userPrivilege":privilege,
         })
@@ -1737,7 +1745,7 @@ def generate_report():
 # --- Function: Generate PDF Report for User ---
 def generate_report_for_user(user):
     try:
-        today = date.today()
+        today = datetime.today()
         first_day_of_current_month = today.replace(day=1)
         last_month_date = first_day_of_current_month - timedelta(days=1)
         month, year = last_month_date.month, last_month_date.year

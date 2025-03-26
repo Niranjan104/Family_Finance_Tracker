@@ -5,8 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <!-- Link to external CSS file -->
+    <link rel="icon"  href="{{ url_for('static', filename='images/logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/admin_dash.css') }}">
 </head>
+<header>
+    <div class="header-content" style="display: flex; align-items: center;">
+        <!-- Logo and tagline container -->
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <img class="logo" 
+               src="{{ url_for('static', filename='images/logo.png') }}" 
+               alt="Logo" 
+               style="height: 45px; width: 45px;" />
+          <span style="color: #e74c3c; font-size: 12px; font-weight: bold; margin-top: 4px; text-shadow: 1px 1px 2px #000;">
+            Track. Manage. Unify.
+          </span>
+        </div>
+        <!-- Main heading -->
+        <h1 style="font-size: 28px; margin: 0;">FAMILY FINANCE TRACKER</h1>
+      </div>
+    <nav>
+        <a href="{{ url_for('logout') }}" class="logout-btn">LOGOUT</a>
+    </nav>
+</header>
+
 <body>
     <h1>ADMIN DASHBOARD</h1>
     
@@ -85,7 +106,6 @@
     </div>
     
     <div class="footer">
-        <a href="{{ url_for('logout') }}" class="logout-btn">LOGOUT</a>
         <div class="navigation">
             {% if users.has_prev %}
                 <a href="{{ url_for('admin_dashboard', page=users.prev_num) }}" class="nav-btn">←</a>
