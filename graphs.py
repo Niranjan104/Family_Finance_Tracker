@@ -285,42 +285,64 @@ def generate_stacked_bar_chart(user_id=None, month=None, year=None):
         today = datetime.today()
         month, year = today.month, today.year
 
-    # Query to get expenses by family members and categories
+    # Fetch the logged-in user
+    user = db.session.get(User, user_id)
+    if not user:
+        print("❗ User not found. Returning empty plot.")
+        return None
+
+    if user.role == "family_member":
+        superuser_id = user.approved_by
+        family_members = User.query.filter_by(approved_by=superuser_id).all()
+        family_user_ids = [fm.id for fm in family_members] + [superuser_id]
+    else:
+        family_members = User.query.filter_by(approved_by=user.id).all()
+        family_user_ids = [fm.id for fm in family_members] + [user.id]
+
+    # Fetch all relevant users
+    all_users = {u.id: u.username for u in User.query.filter(User.id.in_(family_user_ids)).all()}
+
+    # Query expenses for the determined users
     query = db.session.query(
-        User.username,
+        Expense.user_id,
         Category.name,
         db.func.sum(Expense.amount).label('total_expense')
-    ).join(Expense, User.id == Expense.user_id).join(
-        Category, Expense.category_id == Category.category_id
-    ).filter(
-        db.func.strftime('%m', Expense.date) == f'{month:02d}'
-    ).filter(
-        db.func.strftime('%Y', Expense.date) == str(year)
-    )
+    ).join(Category, Expense.category_id == Category.category_id).filter(
+        db.func.strftime('%m', Expense.date) == f'{month:02d}',
+        db.func.strftime('%Y', Expense.date) == str(year),
+        Expense.user_id.in_(family_user_ids)
+    ).group_by(Expense.user_id, Category.name)
 
-    # Filter by user_id if provided
-    if user_id:
-        user = User.query.get(session['user_id'])
-        if user.role == "family_member":
-            user_id = user.approved_by  # Use the super_user's ID
-        else:
-            user_id = user.id 
-        query = query.filter(Expense.user_id == user_id)
+    data = query.all()
 
-    # Group by username and category, then execute the query
-    data = query.group_by(User.username, Category.name).all()
-
-    # Convert to a DataFrame
-    df = pd.DataFrame(data, columns=['username', 'category', 'total_expense'])
+    # Convert to DataFrame
+    df = pd.DataFrame(data, columns=['user_id', 'category', 'total_expense'])
+    df['username'] = df['user_id'].map(all_users)
+    df = df[['username', 'category', 'total_expense']]
 
     if df.empty:
-        print("❗ No expense data found for this month and year. Returning empty plot.")
-        return None  # Return None to indicate no data
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.text(0.5, 0.5, "No Data Available", fontsize=15, ha='center', va='center')
+        ax.set_xticks([])  # Remove x-axis
+        ax.set_yticks([])  # Remove y-axis
+        ax.set_frame_on(False)  # Remove border
+        
+        img = io.BytesIO()
+        plt.savefig(img, format='png', bbox_inches='tight')
+        img.seek(0)
+        plt.close(fig)
 
-    # Pivot the DataFrame for stacked bar chart
+        return base64.b64encode(img.getvalue()).decode()
+
+    # Ensure all users are included even if they have no expenses
+    for user_id, username in all_users.items():
+        if username not in df['username'].values:
+            for category in Category.query.with_entities(Category.name).all():
+                df = pd.concat([df, pd.DataFrame([[username, category[0], 0]], columns=['username', 'category', 'total_expense'])], ignore_index=True)
+
+    # Pivot for stacked bar chart
     df_pivot = df.pivot(index='username', columns='category', values='total_expense').fillna(0)
-
-    # Ensure numeric values
+    df_pivot = df_pivot.reindex(list(all_users.values()), fill_value=0)
     df_pivot = df_pivot.apply(pd.to_numeric, errors='coerce').fillna(0)
 
     # Generate the plot

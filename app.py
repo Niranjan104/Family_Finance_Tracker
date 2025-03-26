@@ -1,25 +1,17 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file, Response
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
-from flask_mail import Mail, Message
-from functools import wraps
-from flask_cors import CORS
-from datetime import datetime, timedelta,timezone
-from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import *
-from io import BytesIO
-import random, string, os,re, calendar,time
-import io
-import numpy as np
-from graphs import *
-import base64
-import pandas as pd
-import plotly.graph_objects as go
 from apscheduler.schedulers.background import BackgroundScheduler 
-import pdfkit  
+from datetime import datetime, timedelta,timezone, date
+from flask_mail import Mail, Message
+import plotly.graph_objects as go
+import random, string, os,time
 from threading import Thread
+from functools import wraps
+from io import BytesIO
+import pdfkit  
+
+from graphs import *
+from models import *
 
 app = Flask(__name__)
 app.secret_key = "unifiedfamilyfinancetracker"
@@ -49,6 +41,7 @@ def generate_otp():
 
 # Function to send OTP
 def send_otp(email, otp):
+    print(f"Generated OTP for {email}: {otp}") # Print OTP in console for testing
     msg = Message("Your OTP for Unified Family Finance Tracker", sender="your_email@gmail.com", recipients=[email])
     msg.body = f"""
                 Dear User,
@@ -297,7 +290,7 @@ def dashboard():
     # Check and create recurring budgets for this month
     check_and_create_recurring_budgets(user.id if user.role == "super_user" else user.approved_by)
 
-    today = datetime.today()
+    today = date.today()
     default_year = today.year
     default_month = today.month
     current_year = today.year  # Add this line
@@ -441,7 +434,7 @@ def create_subaccount():
         role="family_member",
         privilege=privilege,
         status="pending",  # Set initial status as pending
-        approved_by=None  # Will be set when approved
+        approved_by=superuser.id  # Set approved_by to the superuser's ID
     )
 
     db.session.add(new_user)
@@ -629,8 +622,8 @@ def send_budget_alert_async(recipients, category_name, budget_amount, total_spen
 # Update add_expense route to check budget after adding expense
 @app.route("/add_expense", methods=["POST"])
 def add_expense():
-    # if 'user_id' not in session:
-    #     return jsonify({"message": "Unauthorized"}), 401
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
 
     try:
         # Get user context
@@ -704,8 +697,8 @@ def add_expense():
 
 @app.route("/get_expenses")
 def get_expenses():
-    # if 'user_id' not in session:
-    #     return jsonify({"message": "Unauthorized"}), 401
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
 
     # Consolidated user context logic
     user_id = session['user_id']
@@ -770,8 +763,8 @@ def get_file(expense_id):
 
 @app.route("/edit_expense/<int:expense_id>", methods=["PUT"])
 def edit_expense(expense_id):
-    # if 'user_id' not in session:
-    #     return jsonify({"message": "Unauthorized"}), 401
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
 
     # Consolidated user context logic
     user_id = session['user_id']
@@ -828,8 +821,8 @@ def edit_expense(expense_id):
 
 @app.route("/delete_expense/<int:expense_id>", methods=["DELETE"])
 def delete_expense(expense_id):
-    # if 'user_id' not in session:
-    #     return jsonify({"message": "Unauthorized"}), 401
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
 
     # Consolidated user context logic
     user_id = session['user_id']
@@ -857,8 +850,8 @@ def delete_expense(expense_id):
 
 @app.route("/get_stats")
 def get_stats():
-    # if 'user_id' not in session:
-    #     return jsonify({"message": "Unauthorized"}), 401
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
 
     # Get the correct user context
     user_id = session['user_id']
@@ -900,9 +893,7 @@ def get_stats():
         Category.name, db.func.sum(Expense.amount)
     ).join(Category).group_by(Category.name).order_by(db.func.sum(Expense.amount).desc()).first()
     highest_amount = query.with_entities(db.func.max(Expense.amount)).scalar() or 0
-    # Using decimal Unicode instead of hex
-    empty_face = chr(128566)  # Decimal Unicode for 😶
-    highest_category_name = highest_category[0] if highest_category else f"Empty!{empty_face}"
+    highest_category_name = highest_category[0] if highest_category else f"Empty!{chr(128566) }" # Decimal Unicode for 😶
     
     return jsonify({
         "total_spent": float(total_spent),
@@ -980,8 +971,8 @@ def check_and_create_recurring_budgets(user_id):
 
 @app.route("/add_budget", methods=["POST"])
 def add_budget():
-    # if 'user_id' not in session:
-    #     return jsonify({"message": "Unauthorized"}), 401
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
 
     # Consolidated user context logic
     user_id = session['user_id']
@@ -1033,8 +1024,8 @@ def add_budget():
 
 @app.route("/get_budgets")
 def get_budgets():
-    # if 'user_id' not in session:
-    #     return jsonify({"message": "Unauthorized"}), 401
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
 
     user_id = session['user_id']
     role = session['role']
@@ -1088,8 +1079,8 @@ def get_budget(budget_id):
 # Edit Budget --------->
 @app.route("/edit_budget/<int:budget_id>", methods=["PUT"])
 def edit_budget(budget_id):
-    # if 'user_id' not in session:
-    #     return jsonify({"message": "Unauthorized"}), 401
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
 
     user_id = session['user_id']
     budget = Budget.query.filter_by(budget_id=budget_id, user_id=user_id).first()
@@ -1130,8 +1121,8 @@ def edit_budget(budget_id):
 # Delete budget--------->
 @app.route("/delete_budget/<int:budget_id>", methods=["DELETE"])
 def delete_budget(budget_id):
-    # if 'user_id' not in session:
-    #     return jsonify({"message": "Unauthorized"}), 401
+    if 'user_id' not in session:
+        return jsonify({"message": "Unauthorized"}), 401
 
     user_id = session['user_id']
     budget = Budget.query.filter_by(budget_id=budget_id, user_id=user_id).first()
@@ -1188,8 +1179,8 @@ def get_line_chart(year):
 @app.route('/savings')
 @login_required
 def savings():
-    # if 'user_id' not in session:
-    #     return redirect(url_for('login'))
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
     
     user = User.query.get(session['user_id'])
     if not user:
@@ -1216,12 +1207,12 @@ def savings():
 def get_savings_data():  # For Plotly.js graph
     user_id = session.get('user_id', None)
 
-    # if not user_id:
-    #     return jsonify([])  # Empty response
+    if not user_id:
+        return jsonify([])  # Empty response
 
     user = User.query.get(user_id)
-    # if not user:
-    #     return jsonify([])  # Empty response
+    if not user:
+        return jsonify([])  # Empty response
 
     # Get family group user IDs
     if user.role == "family_member":
@@ -1260,8 +1251,8 @@ def get_savings_data():  # For Plotly.js graph
 #Pie chart
 @app.route('/savings_chart')
 def plot_savings_by_category():
-    # if 'user_id' not in session:
-    #     return generate_no_data_image()
+    if 'user_id' not in session:
+        return generate_no_data_image()
     
     user_id = session['user_id']
 
@@ -1339,8 +1330,8 @@ def plot_savings_by_category():
 # Gauge chart
 @app.route('/gauge_chart')
 def plot_gauge_charts():
-    # if 'user_id' not in session:
-    #     return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
+    if 'user_id' not in session:
+        return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
 
     user_id = session['user_id']
     selected_month = request.args.get('month')
@@ -1451,8 +1442,8 @@ def get_category_savings():  # Using for gauge chart to filter category
 def get_savings_filters():
     user_id = session.get('user_id')  # Get the logged-in user's ID
 
-    # if not user_id:
-    #     return jsonify({"error": "User not logged in"}), 401
+    if not user_id:
+        return jsonify({"error": "User not logged in"}), 401
 
     # Fetch unique months and years
     filters = db.session.query(
@@ -1470,8 +1461,8 @@ def get_savings_filters():
 def get_filters_for_table():
     user_id = session.get('user_id')  # Get the logged-in user's ID
 
-    # if not user_id:
-    #     return jsonify({"error": "User not logged in"}), 401
+    if not user_id:
+        return jsonify({"error": "User not logged in"}), 401
 
     # Fetch unique months and years from SavingsTarget table
     filters = db.session.query(
@@ -1490,8 +1481,8 @@ def get_filters_for_table():
 @app.route('/add_saving_target', methods=['POST'])
 def add_saving_target():
     # Check if user is logged in
-    # if 'user_id' not in session:
-    #     return jsonify({"error": "Unauthorized"}), 401
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
     
     # check if user has edit privilages 
     user = User.query.get(session['user_id'])
@@ -1583,8 +1574,8 @@ def add_savings():
     data = request.json
     user_id = session.get('user_id')
 
-    # if not user_id:
-    #     return jsonify({"message": "User not authenticated"}), 401
+    if not user_id:
+        return jsonify({"message": "User not authenticated"}), 401
 
     # Check if savings entry exists for this target and user
     savings = Savings.query.filter_by(target_id=data['savings_target_id'], user_id=user_id).first()
@@ -1626,6 +1617,7 @@ def get_savings(id):
             "savings_amount_saved": float(savings.amount or 0),
             "savings_payment_mode": savings.mode,
             "savings_date_saved": str(savings.date)
+            # "savings_updated_date": str(savings.date) if savings else None
         }}), 200
 
     # If no savings exist, retrieve the target instead
@@ -1641,7 +1633,7 @@ def get_savings(id):
             "savings_target_date": str(target.target_date),
             "savings_amount_saved": 0,
             "savings_payment_mode": '',
-            "savings_date_saved": str(datetime.today().date())
+            "savings_date_saved": str(date.today())
         }}), 200
 
     # If neither savings nor target is found, return None
@@ -1718,7 +1710,7 @@ def get_all_data():
             "savings_target_date": str(target.target_date),
             "savings_amount_saved": float(savings.amount or 0) if savings else 0,
             "savings_payment_mode": savings.mode if savings else '',
-            "savings_date_saved": str(savings.date) if savings else str(datetime.today().date()),
+            "savings_date_saved": str(savings.date) if savings else str(date.today()),
             "savings_updated_date": str(savings.date) if savings else None,
             # "userPrivilege":privilege,
         })
@@ -1745,7 +1737,7 @@ def generate_report():
 # --- Function: Generate PDF Report for User ---
 def generate_report_for_user(user):
     try:
-        today = datetime.today()
+        today = date.today()
         first_day_of_current_month = today.replace(day=1)
         last_month_date = first_day_of_current_month - timedelta(days=1)
         month, year = last_month_date.month, last_month_date.year
