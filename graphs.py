@@ -15,6 +15,33 @@ import numpy as np
 
 matplotlib.use('Agg')
 
+def remove_emojis(text):
+    """Remove all emojis from text and return cleaned string"""
+    if not isinstance(text, str):
+        return text
+    # Dictionary mapping emojis to empty strings
+    emoji_pattern = {
+        '🍕': '',  # pizza
+        '🛍️': '',  # shopping
+        '🩺': '',  # medical
+        '🚂': '',  # transport
+        '💸': '',  # money
+        '🤡': ''  # entertainment
+    }
+    result = text
+    for emoji, replacement in emoji_pattern.items():
+        result = result.replace(emoji, replacement)
+    return result.strip()
+
+def save_plot_to_base64(fig, close=True):
+    """Save matplotlib figure to base64 string"""
+    img = io.BytesIO()
+    fig.savefig(img, format='png', bbox_inches='tight')
+    img.seek(0)
+    if close:
+        plt.close(fig)
+    return base64.b64encode(img.getvalue()).decode()
+
 def create_bar_chart():
     families = Family.query.all()
     names = [family.name for family in families]
@@ -69,7 +96,7 @@ def generate_monthly_expenses_plot(user_id=None):
     expenses = [float(row.total_expense) for row in monthly_expenses]
 
     # Generate the plot
-    plt.figure(figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     plt.plot(months, expenses, marker='o', linestyle='-', color='b')
     plt.xlabel('Month')
     plt.ylabel('Total Expense')
@@ -78,14 +105,8 @@ def generate_monthly_expenses_plot(user_id=None):
     plt.grid()
     plt.tight_layout()
 
-    # Save the plot to a BytesIO object
-    img = io.BytesIO()
-    plt.savefig(img, format='png')
-    img.seek(0)
-    plt.close()
-
     # Return the plot as a base64-encoded string
-    return base64.b64encode(img.getvalue()).decode()
+    return save_plot_to_base64(fig)
 
 def generate_category_expenses_plot(year, month,user_id=None,):
     query = db.session.query(
@@ -110,11 +131,11 @@ def generate_category_expenses_plot(year, month,user_id=None,):
     category_expenses = query.all()
 
     # Extract data for plotting
-    categories = [row.name for row in category_expenses]
+    categories = [remove_emojis(row.name) for row in category_expenses]
     expenses = [float(row.total_expense) for row in category_expenses]
 
     # Generate the plot
-    plt.figure(figsize=(8, 5))
+    fig = plt.figure(figsize=(8, 5))
     plt.bar(categories, expenses, color='orange')
     plt.xlabel('Category')
     plt.ylabel('Total Expense')
@@ -122,15 +143,8 @@ def generate_category_expenses_plot(year, month,user_id=None,):
     plt.xticks(rotation=45)
     plt.tight_layout()
 
-    # Save the plot to a BytesIO object
-    img = io.BytesIO()
-    plt.savefig(img, format='png')
-    img.seek(0)
-    plt.close()
-
     # Return the plot as a base64-encoded string
-    return base64.b64encode(img.getvalue()).decode()
-
+    return save_plot_to_base64(fig)
 
 def generate_pie_chart(user_id=None, month=None, year=None):
     if month is None or year is None:
@@ -180,10 +194,10 @@ def generate_pie_chart(user_id=None, month=None, year=None):
     expense_data = expense_query.group_by(Category.name).all()
 
     # Extract data for plotting
-    categories_budget = [row.name for row in budget_data]
+    categories_budget = [remove_emojis(row.name) for row in budget_data]
     budget_amounts = [float(row.total_budget) for row in budget_data]
 
-    categories_expense = [row.name for row in expense_data]
+    categories_expense = [remove_emojis(row.name) for row in expense_data]
     expense_amounts = [float(row.total_expense) for row in expense_data]
 
     # Generate the plot
@@ -201,14 +215,8 @@ def generate_pie_chart(user_id=None, month=None, year=None):
     else:
         axs[1].text(0.5, 0.5, "No Data", fontsize=15, ha='center')
     
-    # Save the plot to a BytesIO object
-    img = io.BytesIO()
-    plt.savefig(img, format='png')
-    img.seek(0)
-    plt.close()
-
     # Return the plot as a base64-encoded string
-    return base64.b64encode(img.getvalue()).decode()
+    return save_plot_to_base64(fig)
 
 def generate_bar_chart(user_id=None, month=None, year=None):
     if month is None or year is None:
@@ -250,7 +258,7 @@ def generate_bar_chart(user_id=None, month=None, year=None):
     if not data or all(row[1] == 0 and row[2] == 0 for row in data):
         ax.text(0.5, 0.5, "No Data Available", fontsize=15, ha='center', va='center')
     else:
-        categories = [row[0] for row in data]
+        categories = [remove_emojis(row[0]) for row in data]
         budgets = [row[1] for row in data]
         expenses = [row[2] for row in data]
         x_indexes = range(len(categories))
@@ -271,14 +279,8 @@ def generate_bar_chart(user_id=None, month=None, year=None):
         ax.text(1.05, 0.98, legend_text, transform=ax.transAxes, fontsize=12, verticalalignment='top',
                 bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.5'))
 
-    # Save the plot to a BytesIO object
-    img = io.BytesIO()
-    plt.savefig(img, format="png", bbox_inches="tight")
-    img.seek(0)
-    plt.close()
-
     # Return the plot as a base64-encoded string
-    return base64.b64encode(img.getvalue()).decode()
+    return save_plot_to_base64(fig)
 
 def generate_stacked_bar_chart(user_id=None, month=None, year=None):
     if month is None or year is None:
@@ -327,12 +329,7 @@ def generate_stacked_bar_chart(user_id=None, month=None, year=None):
         ax.set_yticks([])  # Remove y-axis
         ax.set_frame_on(False)  # Remove border
         
-        img = io.BytesIO()
-        plt.savefig(img, format='png', bbox_inches='tight')
-        img.seek(0)
-        plt.close(fig)
-
-        return base64.b64encode(img.getvalue()).decode()
+        return save_plot_to_base64(fig)
 
     # Ensure all users are included even if they have no expenses
     for user_id, username in all_users.items():
@@ -340,8 +337,12 @@ def generate_stacked_bar_chart(user_id=None, month=None, year=None):
             for category in Category.query.with_entities(Category.name).all():
                 df = pd.concat([df, pd.DataFrame([[username, category[0], 0]], columns=['username', 'category', 'total_expense'])], ignore_index=True)
 
+    # Clean category names using the utility function
+    df['category'] = df['category'].apply(remove_emojis)
+
     # Pivot for stacked bar chart
-    df_pivot = df.pivot(index='username', columns='category', values='total_expense').fillna(0)
+    df_pivot = df.pivot(index='username', columns='category', values='total_expense')
+    df_pivot = df_pivot.fillna(0).infer_objects(copy=False)
     df_pivot = df_pivot.reindex(list(all_users.values()), fill_value=0)
     df_pivot = df_pivot.apply(pd.to_numeric, errors='coerce').fillna(0)
 
@@ -354,14 +355,8 @@ def generate_stacked_bar_chart(user_id=None, month=None, year=None):
     plt.xticks(rotation=0)
     plt.legend(title='Category', bbox_to_anchor=(1.05, 1), loc='upper left')
 
-    # Save the plot to a BytesIO object
-    img = io.BytesIO()
-    plt.savefig(img, format='png', bbox_inches='tight')
-    img.seek(0)
-    plt.close()
-
     # Return the plot as a base64-encoded string
-    return base64.b64encode(img.getvalue()).decode()
+    return save_plot_to_base64(plt.gcf())
 
 def generate_line_chart(year=None, user_id=None):
     # Query to get budget and expense data for the year
@@ -414,7 +409,7 @@ def generate_line_chart(year=None, user_id=None):
     total_budget = df['TotalBudget'].tolist()
     total_expense = df['TotalExpense'].tolist()
 
-    plt.figure(figsize=(12, 6))
+    fig = plt.figure(figsize=(12, 6))
     plt.plot(months, total_budget, label='Budget', marker='o', linestyle='-', color='#007bff', linewidth=2)
     plt.plot(months, total_expense, label='Expense', marker='o', linestyle='-', color='#ffa500', linewidth=2)
 
@@ -432,13 +427,8 @@ def generate_line_chart(year=None, user_id=None):
     plt.legend()
     plt.grid(color='gray', linestyle='--', linewidth=0.5)
 
-    # Save plot as image and return base64-encoded string
-    img = io.BytesIO()
-    plt.savefig(img, format='png')
-    img.seek(0)
-    plt.close()
-
-    return base64.b64encode(img.getvalue()).decode()
+    # Return the plot as a base64-encoded string
+    return save_plot_to_base64(fig)
 
 #Bar graph
 def plot_savings_progress(user_id=None):  # Main bar graph
@@ -481,7 +471,7 @@ def plot_savings_progress(user_id=None):  # Main bar graph
         return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
 
     # Extract data for plotting
-    categories = [row.category for row in data]
+    categories = [remove_emojis(row.category) for row in data]
     target_savings = [row.target_savings for row in data]
     actual_savings = [row.actual_savings for row in data]
 
@@ -489,7 +479,7 @@ def plot_savings_progress(user_id=None):  # Main bar graph
     x = np.arange(len(categories))
     width = 0.35
 
-    plt.figure(figsize=(10, 6))
+    fig = plt.figure(figsize=(10, 6))
     bars1 = plt.bar(x - width/2, target_savings, width, color='gray', label='Target Savings')
     bars2 = plt.bar(x + width/2, actual_savings, width, color='blue', label='Actual Savings')
 
@@ -506,13 +496,8 @@ def plot_savings_progress(user_id=None):  # Main bar graph
 
     plt.tight_layout()
 
-    # Save plot as base64-encoded PNG
-    img_io = BytesIO()
-    plt.savefig(img_io, format='png')
-    img_io.seek(0)
-    img_base64 = base64.b64encode(img_io.read()).decode('utf-8')
-    plt.close()
-    return img_base64
+    # Return the plot as a base64-encoded string
+    return save_plot_to_base64(fig)
 
 def generate_no_data_image():#Function for returning no data image when no data found
     fig = go.Figure()
@@ -534,4 +519,4 @@ def generate_no_data_image():#Function for returning no data image when no data 
     img_io = BytesIO()
     fig.write_image(img_io, format='png', scale=3)
     img_io.seek(0)
-    return Response(img_io.getvalue(), mimetype='image/png') 
+    return Response(img_io.getvalue(), mimetype='image/png')

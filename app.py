@@ -64,6 +64,12 @@ def send_otp(email, otp):
                 Unified Family Finance Tracker Team """
     mail.send(msg)
 
+def send_otp_async(email, otp):
+    def send_async():
+        with app.app_context():
+            send_otp(email, otp)
+    Thread(target=send_async).start()
+
 
 @app.route('/')
 def home():
@@ -129,7 +135,8 @@ def login():
             elif user.role == "super_user" or user.role == "family_member":
                 otp = generate_otp()
                 session['otp'] = otp  
-                send_otp(email, otp)
+                # send_otp(email, otp)  # Use sync version
+                send_otp_async(email, otp)  # Use async version
                 return redirect(url_for('verify'))
             
         flash('Invalid email or password')
