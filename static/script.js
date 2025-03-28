@@ -441,6 +441,24 @@ document.getElementById("set-budget-period-btn").addEventListener("click", funct
     document.getElementById("set-category-amount-section").style.display = "block";
 });
 
+// Show add expense popup with form reset
+document.getElementById("add-expense-btn").addEventListener("click", function() {
+    document.getElementById("expense-form").reset();
+    document.getElementById("expense-id").value = "";
+    document.getElementById("file-upload-label").textContent = "Upload File";
+    document.getElementById("add-expense-popup").style.display = "flex";
+    document.body.style.overflow = "hidden";
+});
+
+// Show budget popup with form reset
+document.getElementById("set-budget-btn").addEventListener("click", function() {
+    document.getElementById("budget-form").reset();
+    document.getElementById("budget-id").value = "";
+    document.getElementById("set-category-amount-section").style.display = "none";
+    document.getElementById("budget-popup").style.display = "flex";
+    document.body.style.overflow = "hidden";
+});
+
 // Initialization
 fetchExpenses();
 fetchStats();

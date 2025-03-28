@@ -38,6 +38,7 @@ document.getElementById("savingsForm").addEventListener("submit", function(e) {
             closeForm('savingsForm');
             showMessage(response.message);
             updateGraphs(); // Update graphs
+            updateTables(); // Also update tables
         });
     console.log(savingsData);
 });
@@ -45,6 +46,7 @@ document.getElementById("savingsForm").addEventListener("submit", function(e) {
 let currentPage = 1;
 const rowsPerPage = 5; // Number of rows to display per page
 let savingsData = []; // Store all fetched data
+let totalPages;
 
 document.addEventListener("DOMContentLoaded", function () {
     loadFiltersfortables()       // Loads filters for the chart
@@ -55,8 +57,10 @@ function loadData() {
     fetch('/get_all_data')
         .then(response => response.json())
         .then(data => {
-            savingsData = data; // Store the data globally
-            displayTableData(); // Display the first page
+            savingsData = data.data; // Store the data array
+            currentPage = data.current_page;
+            totalPages = data.total_pages;
+            displayTableData();
         });
     console.log(savingsData);
 }
@@ -92,18 +96,27 @@ function updateTables() {    // Updates the table data based on the selected fil
     const selectedYear = document.getElementById("tableYearFilter").value;
 
     let url = '/get_all_data';
-    if (selectedMonth || selectedYear) {
-        url += `?month=${selectedMonth}&year=${selectedYear}`;
+    const queryParams = new URLSearchParams();
+
+    if (selectedMonth) queryParams.append("month", selectedMonth);
+    if (selectedYear) queryParams.append("year", selectedYear);
+    queryParams.append("page", currentPage); // Add the page parameter
+
+    if (queryParams.toString()) {
+        url += `?${queryParams.toString()}`; // Append query parameters
     }
 
     fetch(url)
         .then(response => response.json())
         .then(data => {
-            savingsData = data;
-            displayTableData();
+            savingsData = data.data; // Update table data
+            currentPage = data.current_page; // Update current page
+            totalPages = data.total_pages; // Update total pages
+            displayTableData(); // Render table
+            updatePaginationControls(); // Update pagination buttons
+            updateGraphs();
         })
         .catch(error => console.error("Failed to load filtered table data:", error));
-    console.log(savingsData);
 }
 function toggleFilter() {
     const filterOptions = document.getElementById("filterOptions");
@@ -128,15 +141,10 @@ function displayTableData() {
     const tbody = document.getElementById("savingsTable").querySelector("tbody");
     tbody.innerHTML = "";
 
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    const pageData = savingsData.slice(startIndex, endIndex);
-    console.log(pageData);
-
-    if (pageData.length === 0) {
+    if (!savingsData || savingsData.length === 0) {
         const row = document.createElement("tr");
         const cell = document.createElement("td");
-        cell.colSpan = 8; // Adjust based on the number of columns in your table
+        cell.colSpan = 8;
         cell.textContent = "You Have No Savings Added.";
         cell.style.textAlign = "center";
         row.appendChild(cell);
@@ -144,7 +152,7 @@ function displayTableData() {
         return;
     }
 
-    pageData.forEach(item => {
+    savingsData.forEach(item => {
         let remainingAmount;
         if (item.savings_amount_saved >= item.savings_target_amount) {
             remainingAmount = item.savings_amount_saved == item.savings_target_amount ? "Reached" : "Exceeded";
@@ -180,27 +188,19 @@ function displayTableData() {
 }
 
 function updatePaginationControls() {
-    const totalPages = Math.ceil(savingsData.length / rowsPerPage);
-
-    document.getElementById("prevPage").disabled = currentPage === 1;
-    document.getElementById("nextPage").disabled = currentPage === totalPages;
-
-    document.getElementById("pageInfo").textContent = `Page ${currentPage} of ${totalPages}`;
+    const paginationControls = document.getElementById("savings-pagination-controls");
+    paginationControls.innerHTML = `
+        <button onclick="changePage(1)" ${currentPage === 1 ? 'disabled' : ''}>First</button>
+        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Prev</button>
+        <span>Page ${currentPage} of ${totalPages}</span>
+        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+        <button onclick="changePage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>Last</button>
+    `;
 }
 
-function prevPage() {
-    if (currentPage > 1) {
-        currentPage--;
-        displayTableData();
-    }
-}
-
-function nextPage() {
-    const totalPages = Math.ceil(savingsData.length / rowsPerPage);
-    if (currentPage < totalPages) {
-        currentPage++;
-        displayTableData();
-    }
+function changePage(page) {
+    currentPage = page; // Update the current page
+    updateTables(); // Fetch data for the new page
 }
 
 function editTarget(id) {
@@ -248,39 +248,47 @@ function updateSavings(id) {
         .then(response => response.json())
         .then(data => {
             document.getElementById("savings_target_id").value = id;
-            if (data.savings) {
-                document.getElementById("savings_amount_saved").value = data.savings.savings_amount_saved;
-                document.getElementById("savings_payment_mode").value = data.savings.savings_payment_mode;
-                document.getElementById("savings_date_saved").value = data.savings.savings_date_saved;
-            } else {
-                document.getElementById("savings_amount_saved").value = '';
-                document.getElementById("savings_payment_mode").value = '';
-                document.getElementById("savings_date_saved").value = '';
-            }
+            document.getElementById("savings_amount_saved").value = data.savings.savings_amount_saved;
+            document.getElementById("savings_payment_mode").value = data.savings.savings_payment_mode;
+            document.getElementById("savings_date_saved").value = data.savings.savings_date_saved;
             showForm('savingsForm');
         });
         console.log(savingsData);
 }
 
 function showForm(formId) {
-    // Show the selected form
-    document.getElementById(formId).style.display = 'block';
-    // Center the form
+    // Only clear form when adding new (not editing)
+    if (formId === 'savingTargetForm') {
+        if (!document.getElementById("savingTargetForm").dataset.id) {
+            const form = document.getElementById(formId).querySelector('form');
+            form.reset();
+            // Clear hidden fields and dataset
+            document.getElementById("savingTargetForm").dataset.id = '';
+        }
+    } else if (formId === 'savingsForm') {
+        if (!document.getElementById("savings_target_id").value) {
+            const form = document.getElementById(formId).querySelector('form');
+            form.reset();
+            document.getElementById("savings_target_id").value = '';
+            document.getElementById("savings_date_saved").valueAsDate = new Date();
+        }
+    }
+    
     document.getElementById(formId).style.display = 'flex';
-    // Show the backdrop
     document.getElementById('backdrop').style.display = 'block';
 }
 
 function closeForm(formId) {
-    document.getElementById(formId).style.display = 'none';
-    // Hide the backdrop
-    document.getElementById('backdrop').style.display = 'none';
-    // Clear form data
-    const form = document.getElementById(formId).querySelector('.form-container');
+    // Always clear form completely when closing
+    const form = document.getElementById(formId).querySelector('form');
     form.reset();
+
     if (formId === 'savingTargetForm') {
         document.getElementById("savingTargetForm").dataset.id = '';
     }
+
+    document.getElementById(formId).style.display = 'none';
+    document.getElementById('backdrop').style.display = 'none';
 }
 
 function showMessage(message) {

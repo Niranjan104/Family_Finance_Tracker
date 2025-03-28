@@ -1352,10 +1352,11 @@ def plot_gauge_charts():
     selected_month = request.args.get('month')
     selected_year = request.args.get('year')
 
-    # Base query with user filter
+    # Base query with category ID for proper grouping
     query = db.session.query(
+        SavingCategory.id,
         SavingCategory.name.label('category'),
-        SavingsTarget.amount.label('target'),
+        db.func.coalesce(db.func.sum(SavingsTarget.amount), 0).label('target'),
         db.func.coalesce(db.func.sum(Savings.amount), 0).label('saved')
     ).join(SavingsTarget, SavingCategory.id == SavingsTarget.category_id)\
      .outerjoin(Savings, SavingsTarget.id == Savings.target_id)\
@@ -1367,8 +1368,8 @@ def plot_gauge_charts():
     if selected_year:
         query = query.filter(db.extract('year', Savings.date) == int(selected_year))
 
-    # Group data
-    data = query.group_by(SavingCategory.name, SavingsTarget.amount).all()
+    # Group by category ID instead of just name to prevent duplicates
+    data = query.group_by(SavingCategory.id, SavingCategory.name).all()
 
     if not data:
         return "<div style='text-align:center;'><h3>No Data Available</h3></div>"
@@ -1377,8 +1378,8 @@ def plot_gauge_charts():
     fig = go.Figure()
     buttons = []
 
-    for idx, (cat, target, saved) in enumerate(data):
-        progress = (float(saved) / float(target)) * 100 if target else 0
+    for idx, (cat_id, cat, target, saved) in enumerate(data):
+        progress = (float(saved) / float(target) * 100) if target else 0  # Prevent division by zero
 
         fig.add_trace(
             go.Indicator(
@@ -1403,16 +1404,14 @@ def plot_gauge_charts():
 
     # Dropdown for categories
     fig.update_layout(
-        updatemenus=[
-            dict(
-                active=0,
-                buttons=buttons,
-                x=1.15,
-                y=1,
-                xanchor='right',
-                yanchor='top'
-            )
-        ],
+        updatemenus=[{
+            "active": 0,
+            "buttons": buttons,
+            "x": 1.15,
+            "y": 2,
+            "xanchor": "right",
+            "yanchor": "top"
+        }],
         height=400,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)'
@@ -1422,20 +1421,20 @@ def plot_gauge_charts():
 
 # get_category_savings is for gauge chart
 @app.route('/get_category_savings')
-def get_category_savings():  # Using for gauge chart to filter category
-    # Get user_id from session if logged in
+def get_category_savings():
     user_id = session.get('user_id')
     selected_month = request.args.get('month')
     selected_year = request.args.get('year')
 
-    # Base query
+    # Base query with category ID to properly group values
     query = db.session.query(
+        SavingCategory.id,
         SavingCategory.name.label('category'),
         db.func.coalesce(db.func.sum(Savings.amount), 0).label('total_saved')
     ).outerjoin(SavingsTarget, SavingCategory.id == SavingsTarget.category_id)\
      .outerjoin(Savings, SavingsTarget.id == Savings.target_id)
 
-    # Apply user filter if user_id is available
+    # Apply user filter
     if user_id:
         query = query.filter(SavingsTarget.user_id == user_id)
 
@@ -1445,12 +1444,13 @@ def get_category_savings():  # Using for gauge chart to filter category
     if selected_year:
         query = query.filter(db.extract('year', Savings.date) == int(selected_year))
 
-    # Group data
-    data = query.group_by(SavingCategory.name).all()
+    # Group by category ID instead of just name
+    data = query.group_by(SavingCategory.id, SavingCategory.name).all()
 
-    # Preparing data to return as JSON
+    # Preparing unique categories with summed values
     result = [{'category': row.category, 'saved_amount': row.total_saved} for row in data]
     return jsonify(result)
+
 
 #get_savings_filters is for the filters for gauge and pie chart for monthyears
 @app.route('/get_savings_filters', methods=['GET'])  #For filters according to month and year
@@ -1686,9 +1686,12 @@ def get_all_data():
 
     user_id = session["user_id"]
     user = User.query.get(user_id)
-    # privilege = user.privilege
     if not user:
         return jsonify({"error": "User not found"}), 404
+
+    # Get pagination parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = 6  # Fixed number of items per page
 
     month = request.args.get("month")
     year = request.args.get("year")
@@ -1700,7 +1703,7 @@ def get_all_data():
     if user.role == "family_member":
         query = query.filter(SavingsTarget.user_id == user.id)
     elif user.role == "super_user":
-        family_members = User.query.filter_by(approved_by=user.id).all()  # Assuming this exists
+        family_members = User.query.filter_by(approved_by=user.id).all()
         family_member_ids = [member.id for member in family_members]
         query = query.filter(SavingsTarget.user_id.in_([user.id] + family_member_ids))
 
@@ -1710,7 +1713,14 @@ def get_all_data():
     if year:
         query = query.filter(db.extract("year", SavingsTarget.target_date) == int(year))
 
+    # Get total count for pagination
+    total_count = query.count()
+    total_pages = (total_count + per_page - 1) // per_page
+
+    # Apply pagination
+    query = query.offset((page - 1) * per_page).limit(per_page)
     targets = query.all()
+
     data = []
     for target in targets:
         savings = Savings.query.filter_by(target_id=target.id).first()
@@ -1727,9 +1737,15 @@ def get_all_data():
             "savings_payment_mode": savings.mode if savings else '',
             "savings_date_saved": str(savings.date) if savings else str(datetime.today().date()),
             "savings_updated_date": str(savings.date) if savings else None,
-            # "userPrivilege":privilege,
         })
-    return jsonify(data)
+
+    return jsonify({
+        "data": data,
+        "current_page": page,
+        "total_pages": total_pages,
+        "total_count": total_count,
+        "per_page": per_page
+    })
 
 # #automation
 @app.route('/generate_report', methods=['POST'])

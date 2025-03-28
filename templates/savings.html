@@ -47,23 +47,17 @@
                         <th>Remaining Amount</th>
                         <th>Payment Mode</th>
                         {% if privilege == 'edit' %}
-                            <th>Edit/Delete</th>
-                            <th>Update Savings</th>
+                        <th>Edit/Delete</th>
+                        <th>Update Savings</th>
                         {% endif %}
                     </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody>
+                    <!-- Data will be dynamically added here -->
+                </tbody>
             </table>
-
-            <!-- Pagination Buttons -->
-            <div id="pagination">
-                <button id="prevPage" onclick="prevPage()" disabled>
-                    <span>&#9664;</span> <!-- Left arrow icon -->
-                </button>
-                <span id="pageInfo">Page 1</span>
-                <button id="nextPage" onclick="nextPage()">
-                    <span>&#9654;</span> <!-- Right arrow icon -->
-                </button>
+            <div id="savings-pagination-controls" class="pagination-controls center">
+                <!-- Pagination buttons will be dynamically added here -->
             </div>
         </div>
 
