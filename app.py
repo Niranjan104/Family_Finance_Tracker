@@ -224,52 +224,41 @@ def reset_password():
 @app.route("/admin_dashboard")
 @login_required
 def admin_dashboard():
-    if "user_id" not in session or session.get("role") != "admin":
-        return redirect(url_for("login"))
+    # Fetch family-wise user count (excluding admins)
+    family_data = db.session.query(
+        User.family_name,
+        db.func.count(User.id).label("total_members")
+    ).filter(User.role.in_(["super_user", "family_member"])).group_by(User.family_name).all()
 
-    # Sync family data automatically
-    family_names = db.session.query(User.family_name).filter_by(role="super_user").distinct().all()
+    # Define fixed cost per user
+    cost_per_user = 500
 
-    for name_tuple in family_names:
-        name = name_tuple[0]
+    # Compute billing dynamically with a fixed cost
+    families = [
+        {
+            "name": family_name,
+            "count": total_members,
+            "cost_per_member": cost_per_user,
+            "monthly_bill": total_members * cost_per_user  # Fixed 500 per user
+        }
+        for family_name, total_members in family_data
+    ]
 
-        # Count how many super_users belong to this family
-        user_count = User.query.filter_by(family_name=name).count()
-
-        # Default cost per member
-        default_cost_per_member = 1500
-
-        # Check if family already exists
-        existing_family = Family.query.filter_by(name=name).first()
-
-        if not existing_family:
-            # Create new family entry
-            new_family = Family(name=name, count=user_count, cost_per_member=default_cost_per_member)
-            db.session.add(new_family)
-        else:
-            # Update count and cost
-            existing_family.count = user_count
-            existing_family.cost_per_member = default_cost_per_member
-
-    db.session.commit()
-    img_data=create_bar_chart()  
-
-    # Pagination for super users
+    # Paginate users (excluding admins)
     page = request.args.get('page', 1, type=int)
-    users = User.query.filter_by(role="super_user").paginate(page=page, per_page=4, error_out=False)
+    users = User.query.filter(User.role.in_(["super_user", "family_member"])).all()
 
-    # Family bill calculation
-    families = Family.query.all()
-    family_bills = {family.name: family.count * family.cost_per_member for family in families}
+    # Generate the graph
+    img_data = generate_family_chart(users)  # ✅ Pass only super_users + family_members
 
     return render_template(
         "admin_dashboard.html",
         users=users,
-        family_bills=family_bills,
         families=families,
-        time=time,
-        img_data=img_data
+        img_data=img_data  # ✅ Send graph data to template
     )
+
+
 @app.route('/verify', methods=['GET', 'POST'])
 @login_required
 def verify():
@@ -1381,15 +1370,25 @@ def plot_gauge_charts():
     for idx, (cat_id, cat, target, saved) in enumerate(data):
         progress = (float(saved) / float(target) * 100) if target else 0  # Prevent division by zero
 
+        gauge_color = "red" if progress <= 30 else "yellow" if progress <= 70 else "green"
+
         fig.add_trace(
-            go.Indicator(
-                mode="gauge+number",
-                value=progress,
-                title={'text': f"{cat}"},
-                gauge={'axis': {'range': [0, 100]}, 'bar': {'color': 'blue'}},
-                visible=True if idx == 0 else False
-            )
+        go.Indicator(
+            mode="gauge+number",
+            value=progress,
+            title={'text': f"{cat}"},
+            gauge={
+                'axis': {'range': [0, 100]},
+                'bar': {'color': gauge_color},  # Dynamically set color
+                'threshold': {
+                    'line': {'color': gauge_color, 'width': 5},  # Needle color
+                    'thickness': 0.75,
+                    'value': progress
+                }
+            },
+            visible=True if idx == 0 else False
         )
+    )
 
         buttons.append(
             dict(

@@ -1,17 +1,19 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file, Response
-from models import db, Expense, Category, Budget, User,Family,SavingCategory, SavingsTarget, Savings
-from sqlalchemy.orm import Session
-from sqlalchemy import func, and_, or_
-from datetime import datetime, timedelta,timezone
+from flask import session, Response
+from models import db, Expense, Category, Budget, User,SavingCategory, SavingsTarget, Savings
+from sqlalchemy import func
+from datetime import datetime
 from io import BytesIO
 import base64
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
-import random, string, os,re, calendar
+import calendar
 import io
+from flask import jsonify
+from matplotlib.ticker import MaxNLocator
 import plotly.graph_objects as go 
 import numpy as np
+from collections import defaultdict
 
 matplotlib.use('Agg')
 
@@ -42,35 +44,51 @@ def save_plot_to_base64(fig, close=True):
         plt.close(fig)
     return base64.b64encode(img.getvalue()).decode()
 
-def create_bar_chart():
-    families = Family.query.all()
-    names = [family.name for family in families]
-    counts = [family.count for family in families]
-    bills = [family.count * family.cost_per_member for family in families]
+def generate_family_chart(users):
+    family_member_counts = defaultdict(int)  # Count family members
+    super_user_counts = defaultdict(int)  # Count super users
 
-    plt.figure(figsize=(6, 3))
-    bars = plt.bar(names, counts, color='skyblue')
-    plt.xlabel("Family Name")
-    plt.ylabel("Number of Members")
-    plt.title("Family Members and Monthly Bills")
+    for user in users:
+        if user.family_name and user.role != "admin":
+            if user.role == "super_user":
+                super_user_counts[user.family_name] += 1
+            else:
+                family_member_counts[user.family_name] += 1
 
-    for i, bar in enumerate(bars):
-        family_members = counts[i]
-        bar_x = bar.get_x()
-        bar_width = bar.get_width()
-        
-        for j in range(1, family_members):
-            plt.plot([bar_x, bar_x + bar_width], [j, j], color='black', linestyle='--')
+    families = list(family_member_counts.keys())  # Get all families
+    family_members = [family_member_counts[fam] for fam in families]
+    super_users = [super_user_counts.get(fam, 0) for fam in families]  # Ensure all families exist
 
-        # plt.text(bar_x + bar_width / 2, family_members + 0.2, f'₹{bills[i]:,}', 
-        #          ha='center', fontsize=10, color='black')
-        
-    plt.tight_layout()
-    img_buffer = io.BytesIO()
-    plt.savefig(img_buffer, format='png')
-    img_buffer.seek(0)
-    plt.close()
-    return base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+    fig, ax = plt.subplots(figsize=(8, 3))  # Adjust size to match table width
+    bar_width = 0.3  # Adjust bar width for clarity
+
+    # Plot bars
+    family_bars = ax.bar(families, family_members, width=bar_width, color='skyblue', label="Family Members")
+    super_user_bars = ax.bar(families, super_users, width=bar_width, bottom=family_members, color='#7995E5', label="Super Users")
+
+    ax.set_xlabel("Family Name")
+    ax.set_ylabel("Number of Members")
+    ax.set_title("Family Size Distribution")
+    ax.legend(loc='upper right', bbox_to_anchor=(1, 1.25))  # Add legend for clarity
+
+    plt.xticks(rotation=30, ha="right")
+    ax.yaxis.get_major_locator().set_params(integer=True)  # Ensure Y-axis is whole numbers
+
+    # Add text labels above bars
+    for bar1, bar2, fam, total in zip(family_bars, super_user_bars, families, [x + y for x, y in zip(family_members, super_users)]):
+        height1 = bar1.get_height()
+        height2 = bar2.get_height()
+        ax.text(bar1.get_x() + bar1.get_width()/2, height1 / 2, str(height1), ha='center', va='center', fontsize=12, color='black')
+        if height2 > 0:
+            ax.text(bar2.get_x() + bar2.get_width()/2, height1 + height2 / 2, str(height2), ha='center', va='center', fontsize=12, color='black')
+
+    # Convert to Base64 for embedding
+    img = io.BytesIO()
+    plt.savefig(img, format='png', bbox_inches="tight")
+    img.seek(0)
+    img_data = base64.b64encode(img.getvalue()).decode()
+
+    return img_data  # Return image to template
 
 def generate_monthly_expenses_plot(user_id=None):
     # Initialize the base query
