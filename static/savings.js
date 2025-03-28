@@ -54,7 +54,8 @@ document.addEventListener("DOMContentLoaded", function () {
     loadData();          // Loads savings data
 });
 function loadData() {
-    fetch('/get_all_data')
+    let url = '/get_all_data';
+    fetch(url)
         .then(response => response.json())
         .then(data => {
             savingsData = data.data; // Store the data array
@@ -188,6 +189,9 @@ function displayTableData() {
 }
 
 function updatePaginationControls() {
+    const fromDate = document.getElementById("from-date").value;
+    const toDate = document.getElementById("to-date").value;
+
     const paginationControls = document.getElementById("savings-pagination-controls");
     paginationControls.innerHTML = `
         <button onclick="changePage(1)" ${currentPage === 1 ? 'disabled' : ''}>First</button>
@@ -198,9 +202,32 @@ function updatePaginationControls() {
     `;
 }
 
-function changePage(page) {
-    currentPage = page; // Update the current page
-    updateTables(); // Fetch data for the new page
+function changePage(newPage) {
+    const fromDate = document.getElementById("from-date").value;
+    const toDate = document.getElementById("to-date").value;
+
+    let url = '/get_all_data';
+    const queryParams = new URLSearchParams();
+
+    // Always include the page parameter first
+    queryParams.append("page", newPage);
+
+    // Add date filters if they exist
+    if (fromDate) queryParams.append("from_date", fromDate);
+    if (toDate) queryParams.append("to_date", toDate);
+
+    url += `?${queryParams.toString()}`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            savingsData = data.data;
+            currentPage = data.current_page;
+            totalPages = data.total_pages;
+            displayTableData();
+            updatePaginationControls();
+        })
+        .catch(error => console.error("Failed to change page:", error));
 }
 
 function editTarget(id) {
@@ -398,6 +425,38 @@ function updateGraphs() {
                 document.body.appendChild(newScript);  // Run script in the body
             }
         });
+}
+
+function filterSavings() {
+    const fromDate = document.getElementById("from-date").value;
+    const toDate = document.getElementById("to-date").value;
+
+    let url = '/get_all_data';
+    const queryParams = new URLSearchParams();
+
+    // Reset to page 1 when filtering
+    queryParams.append("page", 1);
+    if (fromDate) queryParams.append("from_date", fromDate);
+    if (toDate) queryParams.append("to_date", toDate);
+
+    url += `?${queryParams.toString()}`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            savingsData = data.data;
+            currentPage = data.current_page;
+            totalPages = data.total_pages;
+            displayTableData();
+            updatePaginationControls();
+        })
+        .catch(error => console.error("Failed to filter savings:", error));
+}
+
+function resetFilters() {
+    document.getElementById("from-date").value = "";
+    document.getElementById("to-date").value = "";
+    loadData(); // Reload the full list
 }
 
 loadData();

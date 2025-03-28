@@ -1694,6 +1694,8 @@ def get_all_data():
 
     month = request.args.get("month")
     year = request.args.get("year")
+    from_date = request.args.get("from_date")
+    to_date = request.args.get("to_date")
 
     # Start base query
     query = SavingsTarget.query.join(User, SavingsTarget.user_id == User.id)
@@ -1711,6 +1713,12 @@ def get_all_data():
         query = query.filter(db.extract("month", SavingsTarget.target_date) == int(month))
     if year:
         query = query.filter(db.extract("year", SavingsTarget.target_date) == int(year))
+
+    # Apply date filters if provided
+    if from_date:
+        query = query.filter(SavingsTarget.target_date >= from_date)
+    if to_date:
+        query = query.filter(SavingsTarget.target_date <= to_date)
 
     # Get total count for pagination
     total_count = query.count()
@@ -1770,7 +1778,7 @@ def generate_report_for_user(user):
         today = datetime.today()
         first_day_of_current_month = today.replace(day=1)
         last_month_date = first_day_of_current_month - timedelta(days=1)
-        month, year = last_month_date.month, last_month_date.year
+        month, year = last_month_date.month, year
 
         # Fetch expenses for current month and year
         expenses = Expense.query.filter(

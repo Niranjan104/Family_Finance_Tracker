@@ -15,11 +15,22 @@
             <div class="table-header">
                 <h2>All Savings Targets</h2>
                 <div class="controls">
+                    <div class="filter-container">
+                        <label for="from-date">From:</label>
+                        <input type="date" id="from-date">
+                        
+                        <label for="to-date">To:</label>
+                        <input type="date" id="to-date">
+                        
+                        <button id="search-btn" onclick="filterSavings()">Search</button>
+                        <button id="reset-btn" onclick="resetFilters()">Reset</button>
+                    </div>
                     <!-- jinja templates for privilages -->
                     {% if privilege == 'edit' %}
                         <button onclick="showForm('savingTargetForm')">Add Saving Target</button>
                     {% endif %}
                     <button id="filterToggle" onclick="toggleFilter()">📅</button>
+                    
                 </div>
                 <!-- Month & Year Filter (Initially Hidden) -->
                 <div id="filterOptions" class="filter-dropdown">
@@ -122,17 +133,6 @@
     </div>   
     <!-- Main graph section from below -->
 
-    </div>
-    <div class="filter-container">
-        <select id="monthFilter">
-            <option value="">Select Month</option>
-        </select>
-    
-        <select id="yearFilter">
-            <option value="">Select Year</option>
-        </select>
-        <button onclick="updateChart()">Apply Filter</button>
-        <p id="error-message" style="color: red; display: none;">Please select both month and year.</p>
     </div>
     
     <script>
