@@ -13,13 +13,11 @@ button.update {
     padding: 5px 10px; /* Adjust padding to fit text */
 }
 
-
 button.update:hover {
     background: #1976D2;
     transform: scale(1.05);
     box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.1);
 }
-
 
 /* Bar Graph Section */
 .graph-section {
@@ -167,7 +165,6 @@ select:focus {
     width: max-content; /* Ensures dropdown width adjusts to content */
 }
 
-
 .filter-dropdown select,
 .filter-dropdown button {
     display: block;
@@ -196,6 +193,34 @@ select:focus {
     margin-left: 10px;
     transition: 0.2s ease-in-out;
 }
+
+/* Updated controls container to handle positioning */
+.controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 20px;
+    position: relative; /* Added for absolute positioning of filterToggle */
+    width: 100%; /* Take full width */
+}
+
+/* Center the filter elements */
+.filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 auto; /* Center the filter div */
+}
+
+/* Position the filter toggle button to the right */
+#filterToggle {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .small-graphs {

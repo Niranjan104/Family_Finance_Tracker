@@ -13,40 +13,47 @@
     <div class="main-content">
         <div class="table-list">
             <div class="table-header">
-                <h2>All Savings Targets</h2>
-                <div class="controls">
-                    <div class="filter-container">
-                        <label for="from-date">From:</label>
-                        <input type="date" id="from-date">
-                        
-                        <label for="to-date">To:</label>
-                        <input type="date" id="to-date">
-                        
-                        <button id="search-btn" onclick="filterSavings()">Search</button>
-                        <button id="reset-btn" onclick="resetFilters()">Reset</button>
-                    </div>
-                    <!-- jinja templates for privilages -->
-                    {% if privilege == 'edit' %}
-                        <button onclick="showForm('savingTargetForm')">Add Saving Target</button>
-                    {% endif %}
-                    <button id="filterToggle" onclick="toggleFilter()">📅</button>
-                    
-                </div>
-                <!-- Month & Year Filter (Initially Hidden) -->
-                <div id="filterOptions" class="filter-dropdown">
-                    <label for="tableMonthFilter">Month:</label>
-                    <select id="tableMonthFilter">
-                        <option value="">Select Month</option>
-                    </select>
-                
-                    <label for="tableYearFilter">Year:</label>
-                    <select id="tableYearFilter">
-                        <option value="">Select Year</option>
-                    </select>
-                
-                    <button onclick="updateTables()">Apply</button>
-                </div>                
+                <h2 style="text-align: center; flex: 1;">All Savings Targets</h2>
+                {% if privilege == 'edit' %}
+                <button onclick="showForm('savingTargetForm')">Add Saving Target</button>
+                {% endif %}                
             </div>
+            <div class="controls">
+                <div class="filter">
+                    <label>From: <input type="date" id="from-date" class="small-input" name="from-date" /></label>
+                    <label>To: <input type="date" id="to-date" class="small-input" name="to-date" /></label>
+                    <button id="filter-btn" class="hover-effect" onclick="filterSavings()">&#128269;</button>
+                    <button id="refresh-btn" class="hover-effect" onclick="resetFilters()">&#8635;</button>
+                </div>
+                <button id="filterToggle" onclick="toggleFilter()">Month &#128269;</button>
+            </div>
+            <!-- Month & Year Filter (Initially Hidden) -->
+            <div id="filterOptions" class="filter-dropdown">
+                <label for="tableMonthFilter">Month:</label>
+                <select id="tableMonthFilter">
+                    <option value="">Select Month</option>
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+            
+                <label for="tableYearFilter">Year:</label>
+                <select id="tableYearFilter">
+                    <option value="">Select Year</option>
+                </select>
+            
+                <button onclick="updateTablesAndHide()">Apply</button>  <!-- Changed this line -->
+            </div>
+
             <table id="savingsTable" class="styled-table">
                 <thead>
                     <tr>
@@ -199,6 +206,11 @@
     });
 
             img.src = "/savings_chart?" + queryParams.toString();  // Update image source
+        }
+
+        function updateTablesAndHide() {  // Add this new function
+            updateTables();  // Call the existing update function
+            document.getElementById("filterOptions").style.display = "none";  // Hide dropdown
         }
     </script>
 

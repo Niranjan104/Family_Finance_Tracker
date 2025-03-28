@@ -65,7 +65,7 @@ function loadData() {
         });
     console.log(savingsData);
 }
-function loadFiltersfortables() {      // Loads filters for the table
+function loadFiltersfortables() {      
     fetch('/get_filters_for_table')
         .then(response => response.json())
         .then(data => {
@@ -74,27 +74,25 @@ function loadFiltersfortables() {      // Loads filters for the table
                 return;
             }
 
-            const monthFilter = document.getElementById("tableMonthFilter");
             const yearFilter = document.getElementById("tableYearFilter");
-
-            monthFilter.innerHTML = '<option value="">Select Month</option>';
             yearFilter.innerHTML = '<option value="">Select Year</option>';
 
+            // Only handle years since months are static in HTML
+            const addedYears = new Set();
             data.forEach(item => {
-                if (!monthFilter.querySelector(`option[value="${item.month}"]`)) {
-                    monthFilter.innerHTML += `<option value="${item.month}">${item.month}</option>`;
-                }
                 if (!yearFilter.querySelector(`option[value="${item.year}"]`)) {
                     yearFilter.innerHTML += `<option value="${item.year}">${item.year}</option>`;
+                    addedYears.add(item.year);
                 }
             });
         })
         .catch(error => console.error("Failed to load filters:", error));
-        console.log(savingsData);
 }
+
 function updateTables() {    // Updates the table data based on the selected filters
     const selectedMonth = document.getElementById("tableMonthFilter").value;
     const selectedYear = document.getElementById("tableYearFilter").value;
+    currentPage = 1; // Reset to first page when applying filters
 
     let url = '/get_all_data';
     const queryParams = new URLSearchParams();
@@ -114,11 +112,12 @@ function updateTables() {    // Updates the table data based on the selected fil
             currentPage = data.current_page; // Update current page
             totalPages = data.total_pages; // Update total pages
             displayTableData(); // Render table
-            updatePaginationControls(); // Update pagination buttons
+            updatePaginationControls(selectedMonth, selectedYear); // Pass the filters
             updateGraphs();
         })
         .catch(error => console.error("Failed to load filtered table data:", error));
 }
+
 function toggleFilter() {
     const filterOptions = document.getElementById("filterOptions");
     const filterButton = document.getElementById("filterToggle");
@@ -188,21 +187,23 @@ function displayTableData() {
     updatePaginationControls();
 }
 
-function updatePaginationControls() {
-    const fromDate = document.getElementById("from-date").value;
-    const toDate = document.getElementById("to-date").value;
-
+function updatePaginationControls(selectedMonth = null, selectedYear = null, fromDate = null, toDate = null) {
     const paginationControls = document.getElementById("savings-pagination-controls");
+    
+    // Use either month/year filters or date range filters
+    const useMonthYear = selectedMonth && selectedYear;
+    const useDateRange = fromDate && toDate;
+
     paginationControls.innerHTML = `
-        <button onclick="changePage(1)" ${currentPage === 1 ? 'disabled' : ''}>First</button>
-        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Prev</button>
+        <button onclick="changePage(1, ${useMonthYear ? `'${selectedMonth}', '${selectedYear}'` : 'null, null'}, ${useDateRange ? `'${fromDate}', '${toDate}'` : 'null, null'})" ${currentPage === 1 ? 'disabled' : ''}>First</button>
+        <button onclick="changePage(${currentPage - 1}, ${useMonthYear ? `'${selectedMonth}', '${selectedYear}'` : 'null, null'}, ${useDateRange ? `'${fromDate}', '${toDate}'` : 'null, null'})" ${currentPage === 1 ? 'disabled' : ''}>Prev</button>
         <span>Page ${currentPage} of ${totalPages}</span>
-        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
-        <button onclick="changePage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>Last</button>
+        <button onclick="changePage(${currentPage + 1}, ${useMonthYear ? `'${selectedMonth}', '${selectedYear}'` : 'null, null'}, ${useDateRange ? `'${fromDate}', '${toDate}'` : 'null, null'})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+        <button onclick="changePage(${totalPages}, ${useMonthYear ? `'${selectedMonth}', '${selectedYear}'` : 'null, null'}, ${useDateRange ? `'${fromDate}', '${toDate}'` : 'null, null'})" ${currentPage === totalPages ? 'disabled' : ''}>Last</button>
     `;
 }
 
-function changePage(newPage) {
+function changePage(newPage, selectedMonth = "", selectedYear = "") {
     const fromDate = document.getElementById("from-date").value;
     const toDate = document.getElementById("to-date").value;
 
@@ -212,7 +213,11 @@ function changePage(newPage) {
     // Always include the page parameter first
     queryParams.append("page", newPage);
 
-    // Add date filters if they exist
+    // Add month/year filters if they exist
+    if (selectedMonth) queryParams.append("month", selectedMonth);
+    if (selectedYear) queryParams.append("year", selectedYear);
+
+    // Add date range filters if they exist
     if (fromDate) queryParams.append("from_date", fromDate);
     if (toDate) queryParams.append("to_date", toDate);
 
@@ -225,7 +230,7 @@ function changePage(newPage) {
             currentPage = data.current_page;
             totalPages = data.total_pages;
             displayTableData();
-            updatePaginationControls();
+            updatePaginationControls(selectedMonth, selectedYear);
         })
         .catch(error => console.error("Failed to change page:", error));
 }
@@ -448,9 +453,61 @@ function filterSavings() {
             currentPage = data.current_page;
             totalPages = data.total_pages;
             displayTableData();
-            updatePaginationControls();
+            updatePaginationControls(null, null, fromDate, toDate); // Pass date range filters
         })
         .catch(error => console.error("Failed to filter savings:", error));
+}
+
+function updatePaginationControls(selectedMonth = null, selectedYear = null, fromDate = null, toDate = null) {
+    const paginationControls = document.getElementById("savings-pagination-controls");
+    
+    // Use either month/year filters or date range filters
+    const useMonthYear = selectedMonth && selectedYear;
+    const useDateRange = fromDate && toDate;
+
+    paginationControls.innerHTML = `
+        <button onclick="changePage(1, ${useMonthYear ? `'${selectedMonth}', '${selectedYear}'` : 'null, null'}, ${useDateRange ? `'${fromDate}', '${toDate}'` : 'null, null'})" ${currentPage === 1 ? 'disabled' : ''}>First</button>
+        <button onclick="changePage(${currentPage - 1}, ${useMonthYear ? `'${selectedMonth}', '${selectedYear}'` : 'null, null'}, ${useDateRange ? `'${fromDate}', '${toDate}'` : 'null, null'})" ${currentPage === 1 ? 'disabled' : ''}>Prev</button>
+        <span>Page ${currentPage} of ${totalPages}</span>
+        <button onclick="changePage(${currentPage + 1}, ${useMonthYear ? `'${selectedMonth}', '${selectedYear}'` : 'null, null'}, ${useDateRange ? `'${fromDate}', '${toDate}'` : 'null, null'})" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+        <button onclick="changePage(${totalPages}, ${useMonthYear ? `'${selectedMonth}', '${selectedYear}'` : 'null, null'}, ${useDateRange ? `'${fromDate}', '${toDate}'` : 'null, null'})" ${currentPage === totalPages ? 'disabled' : ''}>Last</button>
+    `;
+}
+
+function changePage(page, selectedMonth = null, selectedYear = null, fromDate = null, toDate = null) {
+    let url = '/get_all_data';
+    const queryParams = new URLSearchParams();
+
+    // Always include page parameter
+    queryParams.append("page", page);
+
+    // Add either month/year filters or date range filters
+    if (selectedMonth && selectedYear) {
+        queryParams.append("month", selectedMonth);
+        queryParams.append("year", selectedYear);
+    } else if (fromDate && toDate) {
+        queryParams.append("from_date", fromDate);
+        queryParams.append("to_date", toDate);
+    } else {
+        // If no filters, check if there are any active date range filters in the inputs
+        const currentFromDate = document.getElementById("from-date").value;
+        const currentToDate = document.getElementById("to-date").value;
+        if (currentFromDate) queryParams.append("from_date", currentFromDate);
+        if (currentToDate) queryParams.append("to_date", currentToDate);
+    }
+
+    url += `?${queryParams.toString()}`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            savingsData = data.data;
+            currentPage = data.current_page;
+            totalPages = data.total_pages;
+            displayTableData();
+            updatePaginationControls(selectedMonth, selectedYear, fromDate, toDate);
+        })
+        .catch(error => console.error("Failed to change page:", error));
 }
 
 function resetFilters() {
