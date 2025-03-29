@@ -717,7 +717,7 @@ def get_expenses():
     from_date = request.args.get("from_date")
     to_date = request.args.get("to_date")
     page = request.args.get("page", 1, type=int)
-    per_page = 10
+    per_page = 7
 
     query = Expense.query.filter_by(user_id=user_id)
     if from_date:
@@ -1028,36 +1028,63 @@ def add_budget():
 
 @app.route("/get_budgets")
 def get_budgets():
-    if 'user_id' not in session:
-        return jsonify({"message": "Unauthorized"}), 401
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    page = request.args.get('page', 1, type=int)
+    month = request.args.get('month', type=int)
+    year = request.args.get('year', type=int)
+    per_page = 7
 
     user_id = session['user_id']
-    role = session['role']
-    
-    if role == "family_member":
-        user = User.query.get(user_id)
-        if user.privilege not in ['view', 'edit']:
-            return jsonify({"message": "Insufficient privileges"}), 403
+    user = User.query.get(user_id)
+    if user.role == "family_member":
         user_id = user.approved_by
-        if not user_id:
-            return jsonify({"message": "Not linked to any family"}), 400
 
-    page = request.args.get("page", 1, type=int)
-    per_page = 10
+    # Base query
+    query = Budget.query.filter_by(user_id=user_id)
 
-    budgets = Budget.query.filter_by(user_id=user_id).paginate(page=page, per_page=per_page, error_out=False)
+    # Apply filters if provided
+    if month:
+        query = query.filter_by(month=month)
+    if year:
+        query = query.filter_by(year=year)
+
+    # Apply pagination
+    paginated = query.order_by(Budget.year.desc(), Budget.month.desc()).\
+        paginate(page=page, per_page=per_page, error_out=False)
+
+    budgets = [{
+        "id": b.budget_id,
+        "year": b.year,
+        "month": b.month,
+        "category": b.category.name,
+        "amount": float(b.amount),
+        "recurring": b.recurring
+    } for b in paginated.items]
+
     return jsonify({
-        "budgets": [{
-            "id": budget.budget_id,
-            "year": budget.year,
-            "month": budget.month,
-            "category": budget.category.name if budget.category else "Unknown",
-            "amount": budget.amount,
-            "recurring": budget.recurring
-        } for budget in budgets.items],
-        "total_pages": budgets.pages,
-        "current_page": budgets.page
+        "budgets": budgets,
+        "current_page": paginated.page,
+        "total_pages": paginated.pages
     })
+
+@app.route('/get_budget_years')
+def get_budget_years():
+    if 'user_id' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session['user_id']
+    user = User.query.get(user_id)
+    if user.role == "family_member":
+        user_id = user.approved_by
+
+    # Query distinct years from budgets
+    years = db.session.query(db.distinct(Budget.year)).\
+        filter_by(user_id=user_id).\
+        order_by(Budget.year.asc()).all()
+
+    return jsonify({"years": [year[0] for year in years]})
 
 @app.route("/get_budget/<int:budget_id>")
 def get_budget(budget_id):

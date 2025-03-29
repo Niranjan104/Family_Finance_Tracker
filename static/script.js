@@ -275,46 +275,57 @@ async function toggleRecurring(id, isRecurring) {
 
 // Fetch and display budgets
 async function fetchBudgets(page = 1) {
+    const month = document.getElementById('budget-month-select').value;
+    const year = document.getElementById('budget-year-select').value;
+    
     let url = `${API_URL}/get_budgets?page=${page}`;
-    let response = await fetch(url);
-    let data = await response.json();
-    let budgets = data.budgets;
-    let tableBody = document.getElementById("budget-table-body");
-    tableBody.innerHTML = "";
+    if (month) url += `&month=${month}`;
+    if (year) url += `&year=${year}`;
 
-    if (!budgets || budgets.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="6" class="empty-table-message">No budgets found</td></tr>`;
-        return;
-    }
+    try {
+        let response = await fetch(url);
+        let data = await response.json();
+        
+        // Update table body
+        let tableBody = document.getElementById("budget-table-body");
+        tableBody.innerHTML = "";
 
-    budgets.forEach(budget => {
-        let row = document.createElement("tr");
-        row.setAttribute("data-id", budget.id);
-        row.innerHTML = `
-            <td>${budget.year}</td>
-            <td>${budget.month}</td>
-            <td>${budget.category}</td>
-            <td>₹${budget.amount}</td>
-            <td>
-                <button class="edit-btn edit" onclick="editBudget(${budget.id})">✏️</button>
-                <button class="delete-btn delete" onclick="deleteBudget(${budget.id})">❌</button>
-            </td>
-             <td>
-                <input type="checkbox" ${budget.recurring ? "checked" : ""} onclick="toggleRecurring(${budget.id}, this.checked)" />
-            </td>
+        if (!data.budgets || data.budgets.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="empty-table-message">No budgets found</td></tr>';
+            return;
+        }
+
+        data.budgets.forEach(budget => {
+            let row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${budget.year}</td>
+                <td>${budget.month}</td>
+                <td>${budget.category}</td>
+                <td>₹${budget.amount}</td>
+                <td>
+                    <button class="edit-btn edit" onclick="editBudget(${budget.id})">✏️</button>
+                    <button class="delete-btn delete" onclick="deleteBudget(${budget.id})">❌</button>
+                </td>
+                <td>
+                    <input type="checkbox" ${budget.recurring ? "checked" : ""} 
+                    onclick="toggleRecurring(${budget.id}, this.checked)" />
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        // Update pagination controls
+        let paginationControls = document.getElementById("budget-pagination-controls");
+        paginationControls.innerHTML = `
+            <button onclick="fetchBudgets(1)">First</button>
+            <button onclick="fetchBudgets(${data.current_page - 1})" ${data.current_page === 1 ? 'disabled' : ''}>Prev</button>
+            <span>Page ${data.current_page} / ${data.total_pages}</span>
+            <button onclick="fetchBudgets(${data.current_page + 1})" ${data.current_page === data.total_pages ? 'disabled' : ''}>Next</button>
+            <button onclick="fetchBudgets(${data.total_pages})">Last</button>
         `;
-        tableBody.appendChild(row);
-    });
-
-    // Add pagination controls
-    let paginationControls = document.getElementById("budget-pagination-controls");
-    paginationControls.innerHTML = `
-        <button onclick="fetchBudgets(1)">First</button>
-        <button onclick="fetchBudgets(${data.current_page - 1})" ${data.current_page === 1 ? 'disabled' : ''}>Prev</button>
-        <span>Page ${data.current_page} / ${data.total_pages}</span>
-        <button onclick="fetchBudgets(${data.current_page + 1})" ${data.current_page === data.total_pages ? 'disabled' : ''}>Next</button>
-        <button onclick="fetchBudgets(${data.total_pages})">Last</button>
-    `;
+    } catch (error) {
+        console.error('Error fetching budgets:', error);
+    }
 }
 
 // Add new budget
@@ -459,6 +470,27 @@ document.getElementById("set-budget-btn").addEventListener("click", function() {
     document.body.style.overflow = "hidden";
 });
 
+// Load available budget years
+async function loadBudgetYears() {
+    try {
+        const response = await fetch(`${API_URL}/get_budget_years`);
+        const data = await response.json();
+        const yearSelect = document.getElementById('budget-year-select');
+        
+        // Keep the "All Years" option
+        yearSelect.innerHTML = '<option value="">YEAR</option>';
+        
+        data.years.forEach(year => {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            yearSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading budget years:', error);
+    }
+}
+
 // Initialization
 fetchExpenses();
 fetchStats();
@@ -476,8 +508,6 @@ function showTemporaryAlert(message, type = 'info') {
     }, 3000);
 }
 
-
-
 function initializeDateFilters() {
     // Set default date range to last 7 days
     const today = new Date();
@@ -490,6 +520,19 @@ function initializeDateFilters() {
     fromDateInput.valueAsDate = sevenDaysAgo;
     toDateInput.valueAsDate = today;
 }
+
+// Add event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // ...existing code...
+    loadBudgetYears();
+    
+    document.getElementById('budget-filter-btn').addEventListener('click', () => fetchBudgets(1));
+    document.getElementById('budget-refresh-btn').addEventListener('click', () => {
+        document.getElementById('budget-month-select').value = '';
+        document.getElementById('budget-year-select').value = '';
+        fetchBudgets(1);
+    });
+});
 
 // Call initializeDateFilters on page load
 window.addEventListener("load", function() {
