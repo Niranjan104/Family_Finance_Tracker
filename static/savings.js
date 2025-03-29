@@ -49,10 +49,10 @@ let savingsData = []; // Store all fetched data
 let totalPages;
 
 document.addEventListener("DOMContentLoaded", function () {
-    loadFiltersfortables()       // Loads filters for the chart
-     // Loads filters for the table
-    loadData();          // Loads savings data
+    loadFiltersfortables()       
+    loadData();          
 });
+
 function loadData() {
     let url = '/get_all_data';
     fetch(url)
@@ -65,6 +65,7 @@ function loadData() {
         });
     console.log(savingsData);
 }
+
 function loadFiltersfortables() {      
     fetch('/get_filters_for_table')
         .then(response => response.json())
@@ -80,7 +81,7 @@ function loadFiltersfortables() {
             // Only handle years since months are static in HTML
             const addedYears = new Set();
             data.forEach(item => {
-                if (!yearFilter.querySelector(`option[value="${item.year}"]`)) {
+                if (!addedYears.has(item.year)) {
                     yearFilter.innerHTML += `<option value="${item.year}">${item.year}</option>`;
                     addedYears.add(item.year);
                 }

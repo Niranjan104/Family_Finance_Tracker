@@ -128,11 +128,34 @@ body.dark-mode #pagination button:hover {
 body.dark-mode #pagination span {
     color: #ffffff;
 }
+.filter-container-wrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 0px;
+}
+
 .filter-container {
     display: flex;
-    justify-content: flex-end; /* Aligns selection to right */
-    padding: 20px;
-    gap: 10px; /* Space between dropdowns */
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: #ffffff1a;
+    border-radius: 8px;
+}
+
+.filter-header h3 {
+    margin: 0;
+    padding: 0;
+    color: #000;
+    text-align: center;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
 }
 
 select {
