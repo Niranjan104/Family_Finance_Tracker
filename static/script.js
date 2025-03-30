@@ -195,19 +195,7 @@ document.getElementById("filter-btn").addEventListener("click", function() {
     const fromDate = document.getElementById("from-date").value;
     const toDate = document.getElementById("to-date").value;
     if (!fromDate || !toDate) {
-        const alertBox = document.createElement("div");
-        alertBox.textContent = "😯Please fill out both date fields😅 ";
-        alertBox.style.position = "fixed";
-        alertBox.style.top = "5px";
-        alertBox.style.left = "50%";
-        alertBox.style.transform = "translateX(-50%)";
-        alertBox.style.backgroundColor = "#f44336";
-        alertBox.style.color = "#fff";
-        alertBox.style.padding = "20px";
-        alertBox.style.borderRadius = "20px";
-        alertBox.style.boxShadow = "3px 3px 10px rgba(0, 0, 0, 0.1)";
-        document.body.appendChild(alertBox);
-        setTimeout(() => { document.body.removeChild(alertBox); }, 2000);
+        showTemporaryAlert("😯Please fill out both date fields😅", "error");
         return;
     }
     fetchExpenses(fromDate, toDate);
@@ -262,15 +250,32 @@ function populateYearSelect() {
 
 // Toggle recurring status
 async function toggleRecurring(id, isRecurring) {
+    const checkbox = event.target; // Get the checkbox element that triggered the event
+    const originalState = !isRecurring; // Store the original state (opposite of what it's changing to)
+    
     const confirmation = confirm(`Set as ${isRecurring ? "recurring" : "non-recurring"}?`);
-    if (!confirmation) return;
+    if (!confirmation) {
+        checkbox.checked = originalState; // Revert checkbox to original state if cancelled
+        return;
+    }
 
-    await fetch(`${API_URL}/toggle_recurring/${id}`, {
-        method: "PUT",
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ recurring: isRecurring })
-    });
-    fetchBudgets();
+    try {
+        const response = await fetch(`${API_URL}/toggle_recurring/${id}`, {
+            method: "PUT",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recurring: isRecurring })
+        });
+        
+        if (!response.ok) {
+            // If the server request fails, revert the checkbox
+            checkbox.checked = originalState;
+            throw new Error('Failed to update recurring status');
+        }
+    } catch (error) {
+        console.error('Error updating recurring status:', error);
+        checkbox.checked = originalState;
+        showTemporaryAlert('Failed to update recurring status', 'error');
+    }
 }
 
 // Fetch and display budgets
@@ -371,6 +376,7 @@ function handleBudgetFormSubmit(event) {
         document.getElementById("year-select").value = year; // Keep selected year
         document.getElementById("month-select").value = month; // Keep selected month
         document.getElementById("set-category-amount-section").style.display = "none";
+        document.getElementById("set-budget-period-btn").style.display = "block"; // Show the button again
     });
 }
 
@@ -445,10 +451,22 @@ document.getElementById("set-budget-btn").addEventListener("click", function() {
 document.getElementById("close-budget-popup-btn").addEventListener("click", function() {
     document.getElementById("budget-popup").style.display = "none";
     document.body.style.overflow = "auto"; // Enable background scrolling
+    document.getElementById("budget-form").reset();
+    document.getElementById("set-category-amount-section").style.display = "none";
+    document.getElementById("set-budget-period-btn").style.display = "block"; // Show the button
 });
 
-// Handle set budget button click
+// Handle set budget period button click
 document.getElementById("set-budget-period-btn").addEventListener("click", function() {
+    const year = document.getElementById("year-select").value;
+    const month = document.getElementById("month-select").value;
+
+    if (!year || !month) {
+        showTemporaryAlert("😯 Please select both Year and Month 😅", "error");
+        return;
+    }
+
+    document.getElementById("set-budget-period-btn").style.display = "none"; // Hide the button
     document.getElementById("set-category-amount-section").style.display = "block";
 });
 
@@ -466,6 +484,7 @@ document.getElementById("set-budget-btn").addEventListener("click", function() {
     document.getElementById("budget-form").reset();
     document.getElementById("budget-id").value = "";
     document.getElementById("set-category-amount-section").style.display = "none";
+    document.getElementById("set-budget-period-btn").style.display = "block"; // Show the button
     document.getElementById("budget-popup").style.display = "flex";
     document.body.style.overflow = "hidden";
 });
@@ -478,9 +497,12 @@ async function loadBudgetYears() {
         const yearSelect = document.getElementById('budget-year-select');
         
         // Keep the "All Years" option
-        yearSelect.innerHTML = '<option value="">YEAR</option>';
+        yearSelect.innerHTML = '<option value="">All Years</option>';
         
-        data.years.forEach(year => {
+        // Sort years in descending order (most recent first)
+        const sortedYears = data.years.sort((a, b) => b - a);
+        
+        sortedYears.forEach(year => {
             const option = document.createElement('option');
             option.value = year;
             option.textContent = year;
