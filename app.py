@@ -20,6 +20,7 @@ import plotly.graph_objects as go
 from apscheduler.schedulers.background import BackgroundScheduler 
 import pdfkit  
 from threading import Thread
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.secret_key = "unifiedfamilyfinancetracker"
@@ -32,7 +33,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["UPLOAD_FOLDER"] = "uploads"
 
 db.init_app(app)
-
+migrate = Migrate(app, db)  # Add this line after db.init_app(app)
 
 # Configure Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -658,8 +659,7 @@ def add_expense():
             category = Category.query.filter_by(name=data.get("category")).first()
             if not category:
                 category = Category(
-                    name=data.get("category"),
-                    category_desc=data.get("category-desc", "")
+                    name=data.get("category")
                 )
                 db.session.add(category)
                 db.session.flush()
@@ -750,7 +750,6 @@ def get_expense(expense_id):
         "id": expense.id,
         "name": expense.name,
         "category": expense.category.name if expense.category else "Unknown",
-        "category_desc": expense.category.category_desc if expense.category else "",
         "date": expense.date.strftime("%Y-%m-%d"),
         "amount": expense.amount,
         "description": expense.description,
@@ -799,8 +798,7 @@ def edit_expense(expense_id):
     
     category = Category.query.filter_by(name=category_name).first()
     if not category:
-        category_desc = data.get("category-desc", "")
-        category = Category(name=category_name, category_desc=category_desc)
+        category = Category(name=category_name)
         db.session.add(category)
         db.session.commit()
     expense.category_id = category.category_id
@@ -921,57 +919,67 @@ def toggle_recurring(budget_id):
 
 def check_and_create_recurring_budgets(user_id):
     """Check and create recurring budgets for current month if not already created"""
-    try:
-        with app.app_context():
-            now = datetime.now()
-            current_month = now.month
-            current_year = now.year
-            
-            # Get last month's info
-            if current_month == 1:
-                last_month = 12
-                last_year = current_year - 1
-            else:
-                last_month = current_month - 1
-                last_year = current_year
-            
-            # Find recurring budgets from last month
-            recurring_budgets = Budget.query.filter_by(
-                user_id=user_id,
-                recurring=True,
-                month=last_month,
-                year=last_year
-            ).all()
-            
-            created_count = 0
-            for budget in recurring_budgets:
-                # Check if budget already exists for current month
-                existing_budget = Budget.query.filter_by(
-                    user_id=user_id,
-                    category_id=budget.category_id,
-                    month=current_month,
-                    year=current_year
-                ).first()
+    
+    # Only run for first 3 days of the month
+    now = datetime.now()
+    if now.day > 3:
+        return
+        
+    def async_create_budgets():
+        try:
+            with app.app_context():
+                current_month = now.month
+                current_year = now.year
                 
-                if not existing_budget:
-                    new_budget = Budget(
+                # Get last month's info
+                if current_month == 1:
+                    last_month = 12
+                    last_year = current_year - 1
+                else:
+                    last_month = current_month - 1
+                    last_year = current_year
+                
+                # Find recurring budgets from last month
+                recurring_budgets = Budget.query.filter_by(
+                    user_id=user_id,
+                    recurring=True, 
+                    month=last_month,
+                    year=last_year
+                ).all()
+                
+                created_count = 0
+                for budget in recurring_budgets:
+                    # Check if budget already exists for current month
+                    existing_budget = Budget.query.filter_by(
                         user_id=user_id,
                         category_id=budget.category_id,
-                        amount=budget.amount,
                         month=current_month,
-                        year=current_year,
-                        recurring=True
-                    )
-                    db.session.add(new_budget)
-                    created_count += 1
-            
-            if created_count > 0:
-                db.session.commit()
-                print(f"[DEBUG] Created {created_count} recurring budgets for {current_month}/{current_year}")
+                        year=current_year
+                    ).first()
+                    
+                    if not existing_budget:
+                        new_budget = Budget(
+                            user_id=user_id,
+                            category_id=budget.category_id,
+                            amount=budget.amount,
+                            month=current_month,
+                            year=current_year,
+                            recurring=True
+                        )
+                        db.session.add(new_budget)
+                        created_count += 1
                 
-    except Exception as e:
-        print(f"[ERROR] Failed to create recurring budgets: {str(e)}")
-        db.session.rollback()
+                if created_count > 0:
+                    db.session.commit()
+                    print(f"[DEBUG] Created {created_count} recurring budgets for {current_month}/{current_year}")
+                    
+        except Exception as e:
+            print(f"[ERROR] Failed to create recurring budgets: {str(e)}")
+            with app.app_context():
+                db.session.rollback()
+
+    # Start the budget creation in a separate thread
+    Thread(target=async_create_budgets).start()
 
 @app.route("/add_budget", methods=["POST"])
 def add_budget():
@@ -1538,7 +1546,6 @@ def add_saving_target():
     if not category:
         category = SavingCategory(
             name=data['saving_category_name'],
-            description=data.get('saving_category_description', '')
         )
         db.session.add(category)
         db.session.commit()
@@ -1578,8 +1585,7 @@ def update_saving_target(id):
         category = SavingCategory.query.filter_by(name=data['saving_category_name']).first()
         if not category:
             category = SavingCategory(
-                name=data['saving_category_name'],
-                description=data.get('saving_category_description', '')  # Use default empty description
+                name=data['saving_category_name']
             )
             db.session.add(category)
             db.session.commit()
@@ -1651,14 +1657,12 @@ def get_savings(id):
         return jsonify({"savings": {
             "savings_target_id": savings.target_id,
             "saving_category_name": category.name,
-            "saving_category_description": category.description,
             "savings_goal_name": savings.savings_target.name,
             "savings_target_amount": float(savings.savings_target.amount),
             "savings_target_date": str(savings.savings_target.target_date),
             "savings_amount_saved": float(savings.amount or 0),
             "savings_payment_mode": savings.mode,
             "savings_date_saved": str(savings.date)
-            # "savings_updated_date": str(savings.date) if savings else None
         }}), 200
 
     # If no savings exist, retrieve the target instead
@@ -1668,7 +1672,6 @@ def get_savings(id):
         return jsonify({"savings": {
             "savings_target_id": target.id,
             "saving_category_name": category.name,
-            "saving_category_description": category.description,
             "savings_goal_name": target.name,
             "savings_target_amount": float(target.amount),
             "savings_target_date": str(target.target_date),
@@ -1763,7 +1766,6 @@ def get_all_data():
         data.append({
             "savings_target_id": target.id,
             "saving_category_name": category.name,
-            "saving_category_description": category.description,
             "savings_goal_name": target.name,
             "savings_target_amount": float(target.amount),
             "savings_target_date": str(target.target_date),

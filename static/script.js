@@ -175,7 +175,6 @@ async function fetchExpenseDetails(id) {
     document.getElementById("expense-id").value = expense.id;
     document.getElementById("name").value = expense.name;
     document.getElementById("category").value = expense.category;
-    document.getElementById("category-desc").value = expense.category_desc; // Ensure this line is present
     document.getElementById("date").value = expense.date;
     document.getElementById("amount").value = expense.amount;
     document.getElementById("description").value = expense.description;
@@ -234,18 +233,6 @@ async function updateStats(fromDate, toDate) {
     document.getElementById("last-7days-spent-value").textContent = stats.last_7days_spent.toFixed(2);
     document.getElementById("highest-category-value").textContent = stats.highest_category;
     document.getElementById("highest-amount-value").textContent = stats.highest_amount.toFixed(2);
-}
-
-// Populate year select dropdown
-function populateYearSelect() {
-    const yearSelect = document.getElementById("year-select");
-    const currentYear = new Date().getFullYear();
-    for (let i = currentYear; i <= currentYear + 10; i++) {
-        let option = document.createElement("option");
-        option.value = i;
-        option.textContent = i;
-        yearSelect.appendChild(option);
-    }
 }
 
 // Toggle recurring status
@@ -489,29 +476,45 @@ document.getElementById("set-budget-btn").addEventListener("click", function() {
     document.body.style.overflow = "hidden";
 });
 
-// Load available budget years
-async function loadBudgetYears() {
+async function loadAllYearDropdowns() {
     try {
         const response = await fetch(`${API_URL}/get_budget_years`);
         const data = await response.json();
-        const yearSelect = document.getElementById('budget-year-select');
+        const yearDropdowns = ['year', 'pieYear', 'year-select', 'budget-year-select'];
         
-        // Keep the "All Years" option
-        yearSelect.innerHTML = '<option value="">All Years</option>';
-        
-        // Sort years in descending order (most recent first)
-        const sortedYears = data.years.sort((a, b) => b - a);
-        
-        sortedYears.forEach(year => {
-            const option = document.createElement('option');
-            option.value = year;
-            option.textContent = year;
-            yearSelect.appendChild(option);
+        yearDropdowns.forEach(dropdownId => {
+            const dropdown = document.getElementById(dropdownId);
+            if (dropdown) {
+                // Keep only the first option (Select Year/All Years)
+                const firstOption = dropdown.options[0];
+                dropdown.innerHTML = '';
+                dropdown.appendChild(firstOption);
+                
+                // Sort years in descending order
+                const sortedYears = data.years.sort((a, b) => b - a);
+                
+                sortedYears.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    if (year === new Date().getFullYear()) {
+                        option.selected = true;
+                    }
+                    dropdown.appendChild(option);
+                });
+            }
         });
     } catch (error) {
-        console.error('Error loading budget years:', error);
+        console.error('Error loading years:', error);
     }
 }
+
+// Update the DOMContentLoaded event listener
+document.addEventListener('DOMContentLoaded', function() {
+    loadAllYearDropdowns();  // Replace loadBudgetYears() with this
+    updateCharts();
+    // ...rest of your existing initialization code...
+});
 
 // Initialization
 fetchExpenses();
@@ -545,9 +548,6 @@ function initializeDateFilters() {
 
 // Add event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    // ...existing code...
-    loadBudgetYears();
-    
     document.getElementById('budget-filter-btn').addEventListener('click', () => fetchBudgets(1));
     document.getElementById('budget-refresh-btn').addEventListener('click', () => {
         document.getElementById('budget-month-select').value = '';
@@ -558,6 +558,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Call initializeDateFilters on page load
 window.addEventListener("load", function() {
-    populateYearSelect();
     initializeDateFilters(); // Initialize date filters to last 7 days
 });

@@ -121,6 +121,9 @@
             <table class="bills-table">
                 <thead>
                     <tr>
+                                            <!-- Family Search Bar -->
+            <input type="text" id="searchBar" onkeyup="searchFamily()" placeholder="Search Family Name...">
+            
                         <th>🏠 Family Name</th>
                         <th>👨‍👩‍👧‍👦 Members Count</th>
                         <th>💰 Cost per Member</th>
@@ -153,14 +156,14 @@
     <script>
         function searchFamily() {
             let input = document.getElementById("searchBar").value.toUpperCase();
-            let table = document.getElementById("familyTable");
+            let table = document.getElementById("familyTable"); 
             let tr = table.getElementsByTagName("tr");
 
-            for (let i = 1; i < tr.length; i++) {
-                let td = tr[i].getElementsByTagName("td")[0]; // First column (Family Name)
+            for (let i = 1; i < tr.length; i++) { 
+                let td = tr[i].getElementsByTagName("td")[0]; 
                 if (td) {
                     let textValue = td.textContent || td.innerText;
-                    tr[i].style.display = textValue.toUpperCase().indexOf(input) > -1 ? "" : "none";
+                    tr[i].style.display = textValue.toUpperCase().includes(input) ? "" : "none";
                 }
             }
         }

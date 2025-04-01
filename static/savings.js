@@ -4,7 +4,6 @@ document.getElementById("savingTargetForm").addEventListener("submit", function(
     const category = document.getElementById("saving_category_name").value;
     const data = {
         saving_category_name: category,
-        saving_category_description: document.getElementById("saving_category_description").value,
         savings_goal_name: document.getElementById("savings_goal_name").value,
         savings_target_amount: document.getElementById("savings_target_amount").value,
         savings_target_date: document.getElementById("savings_target_date").value
@@ -242,7 +241,6 @@ function editTarget(id) {
         .then(data => {
             const target = data.savings;
             document.getElementById("saving_category_name").value = target.saving_category_name;
-            document.getElementById("saving_category_description").value = target.saving_category_description;
             document.getElementById("savings_goal_name").value = target.savings_goal_name;
             document.getElementById("savings_target_amount").value = target.savings_target_amount;
             document.getElementById("savings_target_date").value = target.savings_target_date;
@@ -510,6 +508,7 @@ function changePage(page, selectedMonth = null, selectedYear = null, fromDate = 
         })
         .catch(error => console.error("Failed to change page:", error));
 }
+
 
 function resetFilters() {
     document.getElementById("from-date").value = "";

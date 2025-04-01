@@ -24,11 +24,12 @@ def remove_emojis(text):
     # Dictionary mapping emojis to empty strings
     emoji_pattern = {
         '🍕': '',  # pizza
-        '🛍️': '',  # shopping
+        '👜': '',  # shopping
         '🩺': '',  # medical
         '🚂': '',  # transport
         '💸': '',  # money
-        '🤡': ''  # entertainment
+        '🤡': '',
+         '🤷':''
     }
     result = text
     for emoji, replacement in emoji_pattern.items():

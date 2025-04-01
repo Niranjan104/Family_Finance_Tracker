@@ -206,48 +206,57 @@ function initializeDateFilters() {
     toDateInput.valueAsDate = today;
 }
 
+// Add this new function to handle all year dropdowns
+async function loadAllYearDropdowns() {
+    try {
+        const response = await fetch(`${API_URL}/get_budget_years`);
+        const data = await response.json();
+        const yearDropdowns = ['year', 'pieYear', 'budget-year-select'];
+        
+        yearDropdowns.forEach(dropdownId => {
+            const dropdown = document.getElementById(dropdownId);
+            if (dropdown) {
+                // Keep only the first option
+                const firstOption = dropdown.options[0];
+                dropdown.innerHTML = '';
+                dropdown.appendChild(firstOption);
+                
+                // Sort years in descending order
+                const sortedYears = data.years.sort((a, b) => b - a);
+                
+                sortedYears.forEach(year => {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    if (year === new Date().getFullYear()) {
+                        option.selected = true;
+                    }
+                    dropdown.appendChild(option);
+                });
+            }
+        });
+    } catch (error) {
+        console.error('Error loading years:', error);
+    }
+}
+
 // Initialize on page load
 window.addEventListener("load", function() {
     initializeDateFilters();
+    loadAllYearDropdowns();
+});
+
+document.addEventListener("DOMContentLoaded", function() {
+    loadAllYearDropdowns();
     fetchExpenses();
     fetchStats();
     fetchBudgets();
-    loadBudgetYears(); // Add this line to load budget years
-
+    
     // Add budget filter event listeners
-    document.getElementById('budget-filter-btn').addEventListener('click', () => {
-        const month = document.getElementById('budget-month-select').value;
-        const year = document.getElementById('budget-year-select').value;
-        fetchBudgets(1); // Reset to page 1 when filtering
-    });
-
+    document.getElementById('budget-filter-btn').addEventListener('click', () => fetchBudgets(1));
     document.getElementById('budget-refresh-btn').addEventListener('click', () => {
         document.getElementById('budget-month-select').value = '';
         document.getElementById('budget-year-select').value = '';
         fetchBudgets(1);
     });
 });
-
-// Add the loadBudgetYears function
-async function loadBudgetYears() {
-    try {
-        const response = await fetch(`${API_URL}/get_budget_years`);
-        const data = await response.json();
-        const yearSelect = document.getElementById('budget-year-select');
-        
-        // Keep the "All Years" option
-        yearSelect.innerHTML = '<option value="">All Years</option>';
-        
-        // Sort years in descending order (most recent first)
-        const sortedYears = data.years.sort((a, b) => b - a);
-        
-        sortedYears.forEach(year => {
-            const option = document.createElement('option');
-            option.value = year;
-            option.textContent = year;
-            yearSelect.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Error loading budget years:', error);
-    }
-}
